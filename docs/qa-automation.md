@@ -2,6 +2,37 @@
 
 The automated suite covers the public site, seeded demo, signed-out route/API boundaries, and the shipped PostgreSQL row-level security policies. Authenticated deployment checks are a separate, explicit command. A public-demo pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
 
+## Local QA army
+
+TesterArmy is optional. The repository can run its browser instances on this computer with no TesterArmy account or run quota:
+
+```sh
+pnpm qa:army
+```
+
+This runs type checks, lint, unit/database contracts, a production build, and all six browser configurations. It picks an unused local port and uses synthetic demo data; the SQL contracts run in ephemeral PostgreSQL. It writes a separate dashboard and browser evidence to `qa-runs/<run>/index.html`. Each run reports failures, skips and flaky cases explicitly and exits unsuccessfully if any occur. Nothing is installed or purchased by this command.
+
+```sh
+pnpm qa:army --quick                    # Desktop Chromium only
+pnpm qa:army --workers 4 --repeat 3      # Repeat every browser case three times
+pnpm qa:ui                              # Select and watch public/demo tests interactively
+pnpm qa:army --plan                     # Preview the selected work without starting it
+```
+
+On this Mac, double-click `Open QA Dashboard.command` in the QA checkout to open the interactive dashboard.
+
+Two workers are the default for this laptop. `--workers` supports 1 to 16, and `--repeat` supports 1 to 100; higher concurrency needs more memory and may be slower on a busy computer. One runner owns the local build at a time; its workers are the parallel instances. Ctrl+C stops its child processes and marks the run interrupted. The interactive dashboard binds to localhost; it does not expose a control server to the network. Quick mode skips the separate unit/lint/type stages, while the production build still performs its standard checks.
+
+To run locally controlled browsers against the deployed app, including all 32 existing synthetic accounts:
+
+```sh
+pnpm qa:army --url https://boilerhub.work --accounts
+```
+
+This mode uses the private `.qa/credentials-regression.json` bank and `.env.qa.local` already provisioned on this computer. It refreshes sessions through the existing account helper and caps account workers at four. Account checks are restricted to the verified app origin to avoid sending session cookies to another host. They use the live Supabase project, and opening a boiler performs its normal snapshot sync. Account failure contents, browser states, traces, videos and screenshots are excluded from the generated report. No new accounts or calendar grants are created.
+
+This replaces the browser execution, parallel runs, repetition and reporting parts of TesterArmy. The scenarios are scripted: discovering new journeys still requires exploration and adding cases. `tests/e2e` holds the browser scenarios, and the historical cloud suite remains in `tests/testerarmy/suite.json`. Ordinary local runs don't contact TesterArmy or require an AI API key.
+
 ## Run locally
 
 Use Node 24 and pnpm 11.25.0.
@@ -14,7 +45,7 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 33 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (198 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
+There are 34 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (204 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
 
 The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
@@ -70,7 +101,7 @@ The current 32-account bank and browser states were provisioned and verified in 
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 198 browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. All regression checks block CI. There are no quarantined or expected-failure defects.
+`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 204 browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. All regression checks block CI. There are no quarantined or expected-failure defects.
 
 `Authenticated QA` is a separate manual workflow against `https://boilerhub.work`. It checks out trusted main, prepares private sessions, and verifies all 32 live QA identities with four workers. `QA_ACCOUNT_BANK_JSON` and `QA_SUPABASE_ANON_KEY` are encrypted repository secrets; no Supabase admin key is used by this workflow. Every member identity also checks that both team APIs suppress hidden-member aggregates. It uploads no authenticated traces, screenshots, sessions or password files and removes `.qa` before finishing. Fork pull requests never receive these credentials.
 
