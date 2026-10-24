@@ -21,7 +21,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   return (
     <div className="min-h-screen">
       <SiteHeader
-        variant="marketing"
+        variant={viewer ? "app" : "marketing"}
+        mobileNavigation={viewer ? "header" : undefined}
         account={viewer ? (
           <AccountControls viewer={viewer} />
         ) : (
