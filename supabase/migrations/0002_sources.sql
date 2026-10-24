@@ -68,7 +68,7 @@ create policy source_item_state_owner_all on public.source_item_state
 revoke all on public.sources from anon, authenticated;
 grant select (id, user_id, kind, label, coursework, last_synced_at, status, error, created_at)
   on public.sources to authenticated;
-grant insert (user_id, kind, label, secret_encrypted, coursework)
+grant insert (id, user_id, kind, label, secret_encrypted, coursework)
   on public.sources to authenticated;
 grant update (label, coursework) on public.sources to authenticated;
 grant delete on public.sources to authenticated;

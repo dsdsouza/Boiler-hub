@@ -36,6 +36,8 @@ export interface LoadedSources {
 export interface LoadOptions {
   /** Skip the in-memory cache (Refresh button, adding a source, Test). */
   fresh?: boolean;
+  /** Keep the result in the cache (default true). Off when the time zone is only a guess. */
+  store?: boolean;
   fetchImpl?: typeof fetch;
 }
 
@@ -76,12 +78,54 @@ export async function fetchSource(
   }
   const source: AdapterSource = { id: row.id, kind: row.kind, label: row.label, coursework: row.coursework, secret };
   const items = await adapter.fetchItems(source, ctx);
-  cache.set(row.id, { at: ctx.now.getTime(), items });
+  if (opts.store !== false) cache.set(row.id, { at: ctx.now.getTime(), items });
   return { items, cached: false };
 }
 
 export function forgetSource(id: string) {
   cache.delete(id);
+}
+
+/** Fetch a source the caller is known to own, as an AdapterSource (POST validation). */
+export async function fetchNewSource(source: AdapterSource, now: Date, timeZone = "UTC"): Promise<SourceItem[]> {
+  const adapter = ADAPTERS[source.kind];
+  if (!adapter) throw new SourceError(`${source.kind} sources are not supported yet`);
+  return adapter.fetchItems(source, { now, timeZone });
+}
+
+/**
+ * Test one source (POST /api/sources/[id]/test): refetch it, record the outcome, return its items.
+ * The caller MUST have checked with the user client that `userId` owns `sourceId`.
+ */
+export async function testSource(
+  admin: SupabaseClient,
+  userId: string,
+  sourceId: string,
+  now: Date,
+): Promise<{ summary: SourceSummary; items: SourceItem[] } | null> {
+  const { data: row, error } = await admin
+    .from("sources")
+    .select(`${SOURCE_COLUMNS}, secret_encrypted`)
+    .eq("id", sourceId)
+    .eq("user_id", userId)
+    .maybeSingle<SecretRow>();
+  if (error) throw new Error(`sources read failed: ${error.message}`);
+  if (!row) return null;
+
+  let items: SourceItem[] = [];
+  let message: string | null = null;
+  try {
+    // Only the count matters here, so a UTC guess for all-day deadlines is fine; do not cache it.
+    items = (await fetchSource(row, { now, timeZone: "UTC" }, { fresh: true, store: false })).items;
+  } catch (e) {
+    message = errorMessage(e);
+  }
+  const patch = message
+    ? { status: "error" as const, error: message }
+    : { status: "ok" as const, error: null, last_synced_at: now.toISOString() };
+  const { error: writeError } = await admin.from("sources").update(patch).eq("id", row.id).eq("user_id", userId);
+  if (writeError) console.error("[sources] status update failed", writeError.message);
+  return { summary: toSummary({ ...row, ...patch }), items };
 }
 
 /**
