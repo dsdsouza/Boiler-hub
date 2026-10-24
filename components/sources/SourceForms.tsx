@@ -79,7 +79,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               setDone(null);
             }}
           >
-            <option value="other">Coursework or other calendar feed</option>
+            <option value="other">Other calendar feed</option>
             <option value="brightspace">Brightspace (D2L)</option>
             <option value="apple">Apple Calendar (iCloud)</option>
           </Select>
@@ -127,7 +127,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               checked={isCoursework}
               disabled={busy}
               onChange={(e) => setCoursework(e.target.checked)}
-              className="size-5 cursor-pointer accent-(--color-brass)"
+              className="size-5 shrink-0 cursor-pointer accent-(--color-brass)"
             />
             Coursework feed: all-day entries are deadlines
           </label>}
