@@ -27,8 +27,9 @@ export function timeAgo(iso: string, now: Date = new Date()) {
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins} min ago`;
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} h ago`;
-  return `${Math.round(hours / 24)} d ago`;
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
 }
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

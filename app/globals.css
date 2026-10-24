@@ -194,6 +194,16 @@ input[type="range"] {
   animation: none;
 }
 [data-still] .bp-glow { opacity: var(--glow-hi, 0); }
+/* Off-screen boilers: hold every loop where it is, so nothing jumps when it scrolls back in. */
+[data-paused] .bp-wave-r,
+[data-paused] .bp-wave-l,
+[data-paused] .bp-bob,
+[data-paused] .bp-flame,
+[data-paused] .bp-glow,
+[data-paused] .bp-flutter,
+[data-paused] .bp-fire {
+  animation-play-state: paused;
+}
 [data-still] .bp-level,
 [data-still] .bp-lift { transition: none; }
 
@@ -203,4 +213,35 @@ input[type="range"] {
   }
   .bp-glow { opacity: var(--glow-hi, 0); }
   .bp-level, .bp-lift { transition: none; }
+}
+
+/* Collapsible headers laid out with flex lose the browser's disclosure marker; draw our own. */
+summary.bp-summary {
+  list-style: none;
+}
+summary.bp-summary::-webkit-details-marker {
+  display: none;
+}
+summary.bp-summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1.1em;
+  flex: none;
+  color: var(--brass-ink);
+  transition: transform 150ms ease;
+}
+details[open] > summary.bp-summary::before {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  summary.bp-summary::before {
+    transition: none;
+  }
+}
+
+/* Phones: the fixed bottom tab bar (MobileTabBar, ~65px) must never cover a focused control. */
+@media (max-width: 639px) {
+  html {
+    scroll-padding-bottom: 88px;
+  }
 }

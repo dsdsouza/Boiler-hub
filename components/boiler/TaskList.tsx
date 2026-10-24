@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Contribution, LoadItem, Size } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { NewTask, TaskMeta } from "./boilerState";
 import { SIZE_POINTS } from "@/lib/pressure/config";
+import { isStaleOverdue } from "@/lib/pressure/compute";
 import { sourceBadge } from "@/lib/sources/hints";
 import { dueText, formatPoints } from "./format";
 
@@ -26,7 +27,7 @@ function dueFor(choice: DueChoice, now = new Date()) {
 }
 
 const field =
-  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-[15px] text-fg placeholder:text-muted";
+  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 
 export function TaskList({
   items,
@@ -34,6 +35,7 @@ export function TaskList({
   onToggle,
   onAdd,
   onSize,
+  onRemove,
   onClearOverdue,
   meta = {},
   sourcesHref,
@@ -46,6 +48,8 @@ export function TaskList({
   onAdd: (task: NewTask) => void;
   /** Change a task's size. Team assignments keep the size their lead set. */
   onSize?: (id: string, size: Size) => void;
+  /** Remove a manual task. */
+  onRemove?: (id: string) => void;
   /** Clear overdue source items without a vent. */
   onClearOverdue?: () => void;
   /** Source extras (badge label, link) keyed by task id. */
@@ -58,6 +62,35 @@ export function TaskList({
   const [title, setTitle] = useState("");
   const [size, setSize] = useState<Size>("M");
   const [due, setDue] = useState<DueChoice>("tomorrow");
+  // Completing a task re-sorts it to the end. Focus moves to the task that took its place (or the
+  // next field) instead of following it, so the next Tab continues through the open tasks.
+  const toggles = useRef(new Map<string, HTMLButtonElement>());
+  const titleInput = useRef<HTMLInputElement>(null);
+  const [focusNext, setFocusNext] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusNext) return;
+    (focusNext === "__new" ? titleInput.current : toggles.current.get(focusNext))?.focus();
+    setFocusNext(null);
+  }, [focusNext]);
+  // The size select changes on every arrow key; send only the last choice.
+  const sizeTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const [sizeDraft, setSizeDraft] = useState<Record<string, Size>>({});
+  const changeSize = (id: string, size: Size) => {
+    setSizeDraft((d) => ({ ...d, [id]: size }));
+    clearTimeout(sizeTimers.current.get(id));
+    sizeTimers.current.set(
+      id,
+      setTimeout(() => {
+        sizeTimers.current.delete(id);
+        onSize?.(id, size);
+        setSizeDraft((d) => {
+          const next = { ...d };
+          delete next[id];
+          return next;
+        });
+      }, 600),
+    );
+  };
   const now = new Date();
   const points = new Map(contributions.map((c) => [c.itemId, c.points]));
   const tasks = items
@@ -100,11 +133,26 @@ export function TaskList({
           const pts = points.get(t.id);
           const m = meta[t.id];
           const sizeEditable = !!onSize && t.source !== "team";
+          // Overdue more than 14 days: off the gauge, kept here until dealt with.
+          const stale = !done && isStaleOverdue(t.due, now);
+          const removable = stale && t.source === "manual" && !!onRemove;
           return (
             <li key={t.id} className="flex items-center gap-3.5 border-t border-line py-2.5">
               <button
                 type="button"
-                onClick={() => onToggle(t.id, !done)}
+                ref={(el) => {
+                  if (el) toggles.current.set(t.id, el);
+                  else toggles.current.delete(t.id);
+                }}
+                onClick={(e) => {
+                  // Only when the click took focus there (keyboard, or a mouse on a focused button).
+                  if (!done && document.activeElement === e.currentTarget) {
+                    const open = tasks.filter((x) => !x.doneAt);
+                    const i = open.findIndex((x) => x.id === t.id);
+                    setFocusNext(open[i + 1]?.id ?? open[i - 1]?.id ?? "__new");
+                  }
+                  onToggle(t.id, !done);
+                }}
                 aria-pressed={done}
                 aria-label={`${done ? "Mark not done" : "Complete"}: ${t.title}`}
                 className={`flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 ${
@@ -134,16 +182,32 @@ export function TaskList({
                     <span className="sr-only">Source: </span>
                     {sourceBadge(t.source, m?.label)}
                   </span>
-                  <span>{done ? "Done · steam vented" : capitalize(dueText(t.due ?? now.toISOString(), now))}</span>
+                  {stale ? (
+                    <span className="font-semibold text-hot-ink">
+                      {t.source === "manual" ? "Stale — mark done or remove" : "Stale — mark done"}
+                    </span>
+                  ) : (
+                    <span>{done ? "Done · steam vented" : capitalize(dueText(t.due ?? now.toISOString(), now))}</span>
+                  )}
+                  {removable && (
+                    <button
+                      type="button"
+                      onClick={() => onRemove!(t.id)}
+                      aria-label={`Remove: ${t.title}`}
+                      className="inline-flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-body underline hover:text-fg"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
               {!compact &&
                 (sizeEditable ? (
                   <select
                     aria-label={`Size: ${t.title}`}
-                    value={t.size}
-                    onChange={(e) => onSize!(t.id, e.target.value as Size)}
-                    className="min-h-11 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-xs font-bold text-body hover:border-brass"
+                    value={sizeDraft[t.id] ?? t.size}
+                    onChange={(e) => changeSize(t.id, e.target.value as Size)}
+                    className="min-h-11 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-base font-bold text-body hover:border-brass"
                   >
                     {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
                       <option key={s} value={s}>
@@ -171,7 +235,7 @@ export function TaskList({
           <label htmlFor="nt" className="text-[13px] font-medium text-body">
             New task
           </label>
-          <input id="nt" type="text" required maxLength={120} placeholder="e.g. Draft lab report" value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
+          <input id="nt" ref={titleInput} type="text" required maxLength={120} placeholder="e.g. Draft lab report" value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-none">
           <label htmlFor="ns" className="text-[13px] font-medium text-body">

@@ -107,6 +107,20 @@ describe("computePressure", () => {
     expect(r.counts).toMatchObject({ tasksDue: 1, overdue: 1 });
   });
 
+  it("overdue tasks stop adding pressure after 14 days, and leave the counts", () => {
+    expect(computePressure([task("13d late", "L", -13)], NOW).raw).toBe(24);
+    const stale = computePressure([task("15d late", "L", -15)], NOW);
+    expect(stale.raw).toBe(0);
+    expect(stale.contributions).toEqual([]);
+    expect(stale.counts.overdue).toBe(0);
+  });
+
+  it("a task due right now says so", () => {
+    const r = computePressure([{ ...task("now", "S", 0), due: NOW.toISOString() }], NOW);
+    expect(r.contributions[0]?.reason).toBe("S task, due now");
+    expect(r.raw).toBe(6); // same 3× cap as overdue
+  });
+
   it("writes human reasons and sorts contributions by size", () => {
     const review = event(0, 10, 2, "review", { weight: "heavy", attendees: 9 });
     const r = computePressure([event(0, 12, 0.5, "chat"), review, task("Essay", "M", 2)], NOW);
