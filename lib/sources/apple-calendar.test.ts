@@ -80,6 +80,6 @@ describe("iCloud event ingestion (synthetic Apple-format fixture)", () => {
       expect.objectContaining({ protocol: "https:", hostname: "p123-caldav.icloud.com" }),
       expect.objectContaining({ redirect: "manual", cache: "no-store" }),
     );
-    expect(items).toEqual(classify());
+    expect(items).toEqual(classify().map((item) => ({ ...item, course: "Apple Calendar" })));
   });
 });

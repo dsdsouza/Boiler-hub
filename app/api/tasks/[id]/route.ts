@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { toTask } from "@/lib/google/sync";
+import { TASK_COLUMNS as COLUMNS, toTask } from "@/lib/google/sync";
 import { SIZES, UUID_RE, badRequest, oneOf, readJson, requireUser, serverError, syncSelf } from "@/app/api/me/_lib/http";
-import { parseDue, parseTitle } from "../validate";
-
-const COLUMNS = "id, title, due_at, size, done_at, source, assignment_id";
+import { parseCourse, parseDue, parseTitle } from "../validate";
 
 // DELETE: removes one of the caller's manual tasks (e.g. a stale one). Team assignments and
 // source items cannot be removed, only marked done. Resyncs, returns { boiler }.
@@ -26,7 +24,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   }
 }
 
-// Body: { title?, due_at?, size?, done? }. done: true sets done_at = now, false clears it.
+// Body: { title?, due_at?, size?, course?, done? }. course null or "" clears it. done: true sets done_at = now, false clears it.
 // Team-assigned tasks can only be completed or reopened. Resyncs, returns { task, boiler }.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
@@ -56,6 +54,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.size !== undefined) {
     if (!oneOf(SIZES, body.size)) return badRequest("size must be S, M or L");
     patch.size = body.size;
+  }
+  if (body.course !== undefined) {
+    const course = parseCourse(body.course);
+    if (course === false) return badRequest("course must be up to 60 characters, or null");
+    patch.course = course ?? null;
   }
   if (existing.source === "team" && Object.keys(patch).length > 0) {
     return NextResponse.json({ error: "Team assignments can only be completed or reopened" }, { status: 403 });
