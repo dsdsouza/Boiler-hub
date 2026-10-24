@@ -1,3 +1,20 @@
+## Signed-in exploration follow-up — October 24, 2026
+
+The next round ran 16 public browser workers through 64 walks and 6,400 selected actions without a finding. A separate signed-in round used all 32 existing synthetic accounts across Chromium, Firefox, WebKit and mobile Chromium: 32 walks, 1,280 actions, all passing. Those walks created/completed/resized only their own temporary tasks, changed/restored their own status, and explored navigation, team filters, assignment drafts, onboarding and source help. Cleanup removed the temporary tasks and restored profile values. There were no Google grants, external source imports, team posts or role changes.
+
+Source exploration and controlled slow/failing-response checks then reproduced these additional defects in the actual application components:
+
+| Finding | Repair |
+| --- | --- |
+| A late task or refresh response replaced a newer personal status with an older whole-boiler snapshot. Concurrent owner writes could finish in a different order. | Owner mutations and refresh share an ordered queue. Each server response becomes the confirmed base, with newer optimistic actions replayed over it. Recovery removes the failed action while preserving later intent. Onboarding status writes use the same queue. |
+| Visibility radios remained active during the API save, allowing overlapping privacy changes. | The picker blocks another change for the entire request and refresh, rolls back on failure and permits a retry. |
+| A task shown optimistically before creation completed could be completed or resized using its temporary local ID. | Pending API tasks announce Saving and disable row actions until their real identity arrives. Demo tasks remain interactive. |
+| Status notes immediately claimed Saved, including on failed requests, and could lose an unsaved draft during rollback. | Saved follows a successful acknowledgement. Failures retain the draft for retry, and a newer draft typed during a save stays unsaved. Both My Boiler and onboarding return the actual save outcome to the picker. |
+| Creating or joining a team cleared a newer name/code typed during the earlier request. | Team forms clear only the submitted draft and ignore repeat submissions while busy. |
+| A valid unbroken 80-character team name escaped the Engine Room heading and the create confirmation on a phone. | The heading and confirmation wrap, and their flex panels can shrink within the viewport. |
+
+Six checks in the first focused browser batch reproduced application failures (the owner-response defect has task and refresh triggers). A corrected immediate assertion separately confirmed the premature Saved message; its first check had waited for the toast to disappear and then matched an unrelated alert. Component regressions render real source in a disposable copy with fictional responses; no QA route is shipped. Live signed-in roaming and controlled failure checks are distinct evidence. Details, commands, private-history handling and cleanup limits are in [QA automation](qa-automation.md).
+
 ## Local exploration follow-up — October 24, 2026
 
 The local explorer discovers visible controls and tries seeded combinations of input, navigation, resizing and mutations, checking product invariants after each action. The initial 16 walks selected 960 actions with eight parallel workers. Agent exploration and focused browser checks confirmed these defects before their repairs:

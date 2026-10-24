@@ -59,11 +59,11 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
       </Link>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <div className={`text-[13px] tracking-[0.16em] ${MONO}`} style={{ color: C.brassLight }}>
             ENGINE ROOM · {room.team.type === "class" ? "CLASS" : "WORK"}
           </div>
-          <h1 className={`m-0 text-[48px] leading-none tracking-[0.02em] sm:text-[60px] ${DISPLAY}`}>{room.team.name}</h1>
+          <h1 className={`m-0 break-words text-[48px] leading-none tracking-[0.02em] sm:text-[60px] ${DISPLAY}`}>{room.team.name}</h1>
           <p className="m-0 text-[15px]" style={{ color: C.muted }}>
             You are {isLead ? `the ${l.lead}` : `a ${l.member}`} · {plural(room.memberCount, l.member.toLowerCase(), l.members)}
             {room.inviteCode && (

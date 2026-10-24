@@ -163,7 +163,7 @@ export function MyBoilerView({
           </div>
 
           <div className="hidden lg:block lg:w-full">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
+            <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus} />
           </div>
         </section>
 
@@ -186,6 +186,7 @@ export function MyBoilerView({
           </Card>
 
           <TaskList
+            pendingTaskIds={boiler.source === "api" ? new Set(data.items.filter((i) => i.id.startsWith("local-")).map((i) => i.id)) : undefined}
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}
@@ -208,7 +209,7 @@ export function MyBoilerView({
           />
 
           <div className="rounded-[14px] border border-line bg-surface px-5 py-6 shadow-(--shadow) lg:hidden">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
+            <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus} />
           </div>
         </div>
       </div>

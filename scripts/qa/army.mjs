@@ -16,6 +16,7 @@ pnpm qa:army --workers 4 --repeat 3      Repeat every browser case three times
 pnpm qa:army --url https://boilerhub.work --accounts
 pnpm qa:ui                              Interactive browser test dashboard
 pnpm qa:explore --workers 8              Discover action sequences and check invariants
+pnpm qa:explore --url https://boilerhub.work --accounts --workers 16 --walks 2
 
 Options: --workers 1..16 (default 2), --repeat 1..100 (default 1),
          --quick, --url ORIGIN, --accounts, --ui, --explore,
@@ -55,14 +56,14 @@ export function parseOptions(argv) {
   }
   if (options.accounts && options.url !== TRUSTED_ACCOUNT_ORIGIN) throw new Error('Account checks require --url https://boilerhub.work so test sessions reach only the verified app.');
   if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public/demo tests.');
-  if (options.explore && options.accounts) throw new Error('Exploration uses synthetic demo data. Run authenticated checks separately.');
   return options;
 }
 
 export function browserArgs(options, runDir, authenticated = false) {
-  const args = ['exec', 'playwright', 'test', `--workers=${authenticated ? Math.min(options.workers, 4) : options.workers}`,
+  const args = ['exec', 'playwright', 'test', `--workers=${authenticated && !options.explore ? Math.min(options.workers, 4) : options.workers}`,
     `--repeat-each=${options.repeat}`, `--global-timeout=${20 * 60_000 * options.repeat}`, '--retries=0', '--fail-on-flaky-tests', '--forbid-only'];
-  if (authenticated) args.push('--config=playwright.auth.config.ts', '--reporter=list,./scripts/qa/army-reporter.mjs');
+  if (authenticated) args.push(options.explore ? '--config=playwright.signed-explore.config.ts' : '--config=playwright.auth.config.ts',
+    `--reporter=list,./scripts/qa/${options.explore ? 'signed-reporter' : 'army-reporter'}.mjs`);
   else {
     if (options.explore) args.push('--config=playwright.explore.config.ts');
     if (!options.ui) args.push('--reporter=list,html,./scripts/qa/army-reporter.mjs');
@@ -119,7 +120,7 @@ export async function main(argv) {
   if (options.help) { console.log(HELP); return 0; }
   if (options.plan) {
     console.log(JSON.stringify({ ...options, target: options.url ?? 'local production build on a free port',
-      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(options.accounts ? ['private QA sessions', '32 test accounts'] : [])] }, null, 2));
+      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts'] : [])] }, null, 2));
     return 0;
   }
   const target = options.url ?? `http://localhost:${await freePort()}`;
@@ -191,11 +192,21 @@ export async function main(argv) {
       entry.stats = await readJSON(resolve(runDir, 'public-summary.json'));
       if (!healthyStats(entry.stats)) entry.status = 'failed';
     } else run.stages.push({ name: 'Public and demo browsers', status: interrupted ? 'interrupted' : 'blocked' });
+    if (!options.quick && !interrupted) {
+      await stage('Component failure and race regressions', ['test:components', `--workers=${Math.min(options.workers, 8)}`,
+        `--repeat-each=${options.repeat}`, '--retries=0'], { QA_COMPONENT_RESULTS: resolve(runDir, 'component-results.json') });
+      const entry = run.stages.at(-1), result = await readJSON(resolve(runDir, 'component-results.json'));
+      const stats = result?.stats;
+      entry.stats = { total: stats ? stats.expected + stats.unexpected + stats.flaky + stats.skipped : 0,
+        passed: stats?.expected ?? 0, failed: stats?.unexpected ?? 0, flaky: stats?.flaky ?? 0, skipped: stats?.skipped ?? 0 };
+      if (!healthyStats(entry.stats)) entry.status = 'failed';
+    }
     if (options.accounts && !interrupted) {
       const authEnv = { QA_NAMESPACE: 'regression', QA_ACCOUNT_BANK: resolve(ROOT, '.qa/credentials-regression.json'),
-        QA_AUTH_WORKERS: String(Math.min(options.workers, 4)), QA_ARMY_PRIVATE: '1', QA_ARMY_RESULT_FILE: resolve(runDir, 'accounts-summary.json') };
+        QA_AUTH_WORKERS: String(Math.min(options.workers, 4)), QA_ARMY_PRIVATE: '1', QA_ARMY_RESULT_FILE: resolve(runDir, 'accounts-summary.json'),
+        QA_SIGNED_HISTORY_FILE: resolve(ROOT, '.qa', `signed-history-${runDir.split('/').at(-1)}.json`) };
       if (await stage('Private QA sessions', ['qa:session', '--all'], authEnv, true)) {
-        await stage('Live test accounts', browserArgs(options, runDir, true), authEnv, true);
+        await stage(options.explore ? 'Signed-in exploratory walks' : 'Live test accounts', browserArgs(options, runDir, true), authEnv, true);
         const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'accounts-summary.json'));
         if (!healthyStats(entry.stats)) entry.status = 'failed';
       } else run.stages.push({ name: 'Live test accounts', status: 'blocked' });
