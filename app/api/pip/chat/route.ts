@@ -52,7 +52,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply, asOf: context.asOf }, { headers });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
-    console.warn("[pip] chat failed", pipFailure(stage, failure));
+    const diagnostic = pipFailure(stage, failure);
+    console.warn("[pip] chat failed", diagnostic);
+    if (stage === "gemini" && (diagnostic.status === 503 || diagnostic.kind === "timeout")) {
+      return error("Gemini is temporarily busy. Please try again in a moment. Your assignments are unchanged.", 503, { "Retry-After": "30" });
+    }
     return error("Pip couldn’t answer right now. Your assignments are unchanged. Please try again.", 503);
   }
 }
