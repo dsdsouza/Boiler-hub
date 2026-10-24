@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { LinkPending } from "./LinkPending";
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
-    <Link href="/" className="flex min-h-11 items-center gap-2.5 text-fg no-underline hover:text-fg">
+    <Link href="/" className="flex min-h-11 shrink-0 items-center gap-2.5 text-fg no-underline hover:text-fg">
       <svg width={size} height={size} viewBox="0 0 34 34" aria-hidden="true">
         <circle cx="17" cy="17" r="14" fill="none" stroke="#D1A85A" strokeWidth="3" />
         <line x1="17" y1="17" x2="25" y2="10" stroke="#F0913A" strokeWidth="3" strokeLinecap="round" />
@@ -22,64 +24,60 @@ const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "how", href: "/how", label: "How it works" },
 ];
 
-const MARKETING_NAV: { key: NavKey; href: string; label: string }[] = [
-  { key: "how", href: "/how", label: "How it works" },
-  { key: "demo", href: "/demo", label: "Demo" },
-];
-
-function NavLink({ href, label, current }: { href: string; label: string; current: boolean }) {
+function NavLink({ href, label, current, prefetch }: { href: string; label: string; current: boolean; prefetch?: boolean }) {
   return (
     <Link
       href={href}
+      prefetch={prefetch}
+      aria-label={label}
       aria-current={current ? "page" : undefined}
-      className={`bp-control inline-flex min-h-11 items-center rounded-t-lg border-b-2 px-3.5 text-[15px] no-underline ${
-        current ? "border-brass bg-surface font-semibold text-fg hover:text-fg" : "border-transparent font-medium text-body hover:bg-surface hover:text-fg"
+      className={`bp-control relative inline-flex min-h-11 items-center whitespace-nowrap rounded-t-lg border-b-2 px-3.5 text-[15px] font-medium no-underline ${
+        current ? "border-brass bg-surface text-fg hover:text-fg" : "border-transparent text-body hover:bg-surface hover:text-fg"
       }`}
     >
       {label}
+      <LinkPending label={label} />
     </Link>
   );
 }
 
 /**
- * `app` is the signed-in shell (My Boiler / Teams / Sources / How, avatar);
- * `marketing` is the landing and demo shell (How / Demo, sign-in).
+ * All sessions share the same navigation, dimensions and palette.
+ * `app` uses <MobileTabBar> on phones; `marketing` keeps links in the header.
  * On phones the app nav moves to <MobileTabBar>, unless mobileNavigation is "header".
  */
 export function SiteHeader({
   variant,
   current,
   account,
-  maxWidth = "max-w-[1240px]",
   mobileNavigation = "bottom",
 }: {
   variant: "app" | "marketing";
   current?: NavKey;
   /** Right-most slot: avatar or sign-in link. */
   account?: React.ReactNode;
-  maxWidth?: string;
   /** Keep app links in the header on public pages, including phones and tablets. */
   mobileNavigation?: "header" | "bottom";
 }) {
-  const nav = variant === "app" ? APP_NAV : MARKETING_NAV;
+  const nav = APP_NAV;
   const headerNavigation = mobileNavigation === "header";
   const desktopVisibility = headerNavigation ? "hidden lg:flex" : variant === "app" ? "hidden sm:flex" : "hidden md:flex";
   return (
-    <header className={`border-b border-line ${variant === "app" ? "bg-bg-2" : ""}`}>
-      <div className={`mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-8 ${maxWidth}`}>
-        <div className="flex flex-wrap items-center gap-5">
+    <header className="border-b border-line bg-bg-2">
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-1 gap-y-3 px-4 py-2.5 sm:gap-3 sm:px-8">
+        <div className="flex min-w-0 flex-wrap items-center gap-5">
           <Logo />
           <nav aria-label="Main" className={`${desktopVisibility} flex-wrap gap-1`}>
             {nav.map((n) => (
-              <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} />
+              <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} prefetch={variant === "app" ? true : undefined} />
             ))}
           </nav>
         </div>
-        {account && <div className="flex items-center gap-2">{account}</div>}
+        {account && <div className="flex h-11 shrink-0 items-center gap-2"><Suspense fallback={null}>{account}</Suspense></div>}
         {(variant === "marketing" || headerNavigation) && (
           <nav aria-label="Main" className={`w-full gap-1 border-t border-line pt-1 ${headerNavigation ? "grid grid-cols-2 sm:flex sm:flex-wrap lg:hidden" : "flex flex-wrap md:hidden"}`}>
             {nav.map((n) => (
-              <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} />
+              <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} prefetch={variant === "app" ? true : undefined} />
             ))}
           </nav>
         )}
@@ -184,6 +182,8 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
         <Link
           key={t.key}
           href={t.href}
+          prefetch={true}
+          aria-label={t.label}
           aria-current={current === t.key ? "page" : undefined}
           className={`bp-control relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold no-underline ${
             current === t.key ? "text-brass-ink after:absolute after:top-0 after:h-0.5 after:w-8 after:rounded-full after:bg-brass hover:text-brass-ink" : "text-muted hover:text-fg"
@@ -193,6 +193,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
             {t.icon}
           </svg>
           {t.label}
+          <LinkPending label={t.label} />
         </Link>
       ))}
     </nav>

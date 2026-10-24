@@ -26,10 +26,10 @@ Two workers are the default for this laptop. `--workers` supports 1 to 16, and `
 To run locally controlled browsers against the deployed app, including all 32 existing synthetic accounts:
 
 ```sh
-pnpm qa:army --url https://boilerhub.work --accounts
+pnpm qa:army --url https://boilerplate.zhomander.workers.dev --accounts
 ```
 
-This mode uses the private `.qa/credentials-regression.json` bank and `.env.qa.local` already provisioned on this computer. It refreshes sessions through the existing account helper and caps account workers at four. Account checks are restricted to the verified app origin to avoid sending session cookies to another host. They use the live Supabase project, and opening a boiler performs its normal snapshot sync. Account failure contents, browser states, traces, videos and screenshots are excluded from the generated report. No new accounts or calendar grants are created.
+This mode uses the private `.qa/credentials-regression.json` bank and `.env.qa.local` already provisioned on this computer. It refreshes sessions through the existing account helper and caps account workers at four. Account checks accept only the exact verified Cloudflare origin and the retained `boilerhub.work` origin, preventing session cookies from reaching other Workers or preview hosts. They use the live Supabase project, and opening a boiler performs its normal snapshot sync. Account failure contents, browser states, traces, videos and screenshots are excluded from the generated report. No new accounts or calendar grants are created.
 
 This replaces the browser execution, parallel runs, repetition and reporting parts of TesterArmy. The scenarios are scripted: discovering new journeys still requires exploration and adding cases. `tests/e2e` holds the browser scenarios, and the historical cloud suite remains in `tests/testerarmy/suite.json`. Ordinary local runs don't contact TesterArmy or require an AI API key.
 
@@ -66,7 +66,7 @@ There are 48 public/demo scenarios across six configurations: Chromium, Firefox,
 The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
 ```sh
-PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm test:e2e
+PLAYWRIGHT_BASE_URL=https://boilerplate.zhomander.workers.dev pnpm test:e2e
 ```
 
 The demo is synthetic and resets on reload. Public checks never complete Google OAuth or create real tasks. Browser traces, screenshots and video are saved only for failures and ignored by Git.
@@ -99,9 +99,9 @@ Credentials are saved only in `.qa/credentials-regression.json` (directory 0700,
 The public app currently offers Google sign-in. These password identities are for controlled test sessions through Supabase Auth, without introducing a new public login endpoint. To use one:
 
 ```sh
-PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm qa:session class-lead-01
-PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_STORAGE_STATE=.qa/auth/class-lead-01.json pnpm test:e2e:auth
-pnpm exec playwright open --load-storage=.qa/auth/class-lead-01.json https://boilerhub.work/boiler
+PLAYWRIGHT_BASE_URL=https://boilerplate.zhomander.workers.dev pnpm qa:session class-lead-01
+PLAYWRIGHT_BASE_URL=https://boilerplate.zhomander.workers.dev QA_STORAGE_STATE=.qa/auth/class-lead-01.json pnpm test:e2e:auth
+pnpm exec playwright open --load-storage=.qa/auth/class-lead-01.json https://boilerplate.zhomander.workers.dev/boiler
 ```
 
 Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `outsider`; the plan lists all 32. Session generation verifies the authenticated user ID and saves real Supabase SSR cookies privately. Run it with the same target host used by the browser. The separate authenticated smoke test checks each user's team membership and visible teammate IDs, then opens their boiler and teams; opening a boiler performs the app's normal sync. It has no traces/video/screenshots enabled by default.
@@ -109,8 +109,8 @@ Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `out
 To regenerate and test every account together:
 
 ```sh
-PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm qa:session --all
-PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json QA_AUTH_WORKERS=4 pnpm test:e2e:auth
+PLAYWRIGHT_BASE_URL=https://boilerplate.zhomander.workers.dev pnpm qa:session --all
+PLAYWRIGHT_BASE_URL=https://boilerplate.zhomander.workers.dev QA_ACCOUNT_BANK=.qa/credentials-regression.json QA_AUTH_WORKERS=4 pnpm test:e2e:auth
 ```
 
 The current 32-account bank and browser states were provisioned and verified in the live project, and copied into the primary local checkout's ignored `.qa` directory. The local `.env.qa.local` contains only the public project URL/anon key for future session refreshes. The temporary admin-key copy was removed after provisioning.
@@ -126,7 +126,7 @@ GitHub must also enforce this check in repository settings. After the first succ
 
 Focused regression command: `pnpm test:e2e:regressions`. Full local check: `pnpm qa:check` (start with `pnpm build` and `PLAYWRIGHT_PRODUCTION=1` for production-browser testing).
 
-`Authenticated QA` is a separate manual workflow that checks trusted main against the live deployment using the 32 synthetic accounts. The encrypted repository secrets contain only the synthetic credential bank and the public project key; no admin key is used. All account and privacy assertions are blocking, with no defect quarantine. Authenticated traces, screenshots, sessions and password files are never uploaded, and the workflow removes `.qa` on completion. This live integration run is separate from the credential-free PR gate so fork code never receives account credentials.
+`Authenticated QA` is a separate manual workflow that checks trusted main against the live Cloudflare deployment using the 32 synthetic accounts. The encrypted repository secrets contain only the synthetic credential bank and the public project key; no admin key is used. All account and privacy assertions are blocking, with no defect quarantine. Authenticated traces, screenshots, sessions and password files are never uploaded, and the workflow removes `.qa` on completion. This live integration run is separate from the credential-free PR gate so fork code never receives account credentials.
 
 ## TesterArmy
 

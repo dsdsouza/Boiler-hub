@@ -5,7 +5,7 @@ import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 export default function TeamsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="app" current="teams" account={<AccountMenu />} maxWidth="max-w-[1320px]" />
+      <SiteHeader variant="app" current="teams" account={<AccountMenu />} />
       {children}
       <MobileTabBar current="teams" />
     </div>
