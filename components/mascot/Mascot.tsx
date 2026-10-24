@@ -1,7 +1,9 @@
 import { useId } from "react";
 import type { Zone } from "@/lib/types";
 import { ZONE_FILL, zoneOf } from "@/components/ui/zones";
+import { Accessory } from "./Accessory";
 import type { Reaction } from "./voice";
+import type { AccessoryId } from "./wardrobe";
 import "./mascot.css";
 
 // Pip, the BoilerHub companion: a glass boiler with a gauge eye, brass rim,
@@ -58,10 +60,12 @@ export interface MascotProps {
   empty?: boolean;
   /** Accessible name. Omit to keep Pip decorative (aria-hidden). */
   label?: string;
+  /** Cosmetic from the wardrobe. Purely visual. */
+  accessory?: AccessoryId;
   className?: string;
 }
 
-export function Mascot({ score, size = 120, reaction = "idle", empty, label, className = "" }: MascotProps) {
+export function Mascot({ score, size = 120, reaction = "idle", empty, label, accessory = "none", className = "" }: MascotProps) {
   const zone = zoneOf(score);
   const color = ZONE_FILL[zone];
   const detail = size >= 56;
@@ -233,6 +237,8 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, cla
         {detail && zone === "hot" && !attentive && (
           <path className="mp-drip" d="M88 50 q3.2 5 0 7.4 q-3.2 -2.4 0 -7.4z" fill="#7FB3D5" />
         )}
+
+        <Accessory id={accessory} detail={detail} />
       </g>
     </svg>
   );
