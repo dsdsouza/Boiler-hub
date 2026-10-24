@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PLAYWRIGHT_BASE_URL: https://boilerhub.work
+      PLAYWRIGHT_BASE_URL: https://boilerplate.zhomander.workers.dev
       QA_EXPECTED_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
       QA_ACCOUNT_BANK: .qa/credentials-regression.json
       QA_NAMESPACE: regression
