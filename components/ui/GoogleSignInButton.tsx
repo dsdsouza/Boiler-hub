@@ -1,8 +1,8 @@
 import { LinkButton } from "./Button";
 
-export function GoogleSignInButton({ href, className = "" }: { href: string; className?: string }) {
+export function GoogleSignInButton({ href, className = "", size = "lg" }: { href: string; className?: string; size?: "md" | "lg" }) {
   return (
-    <LinkButton plain href={href} variant="ghost" size="lg" className={`border-rivet font-semibold text-fg ${className}`}>
+    <LinkButton plain href={href} variant="ghost" size={size} className={`border-rivet font-semibold text-fg ${className}`}>
       <GoogleMark />
       Sign in with Google
     </LinkButton>

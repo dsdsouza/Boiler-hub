@@ -25,12 +25,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className="min-h-screen">
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
-        mobileNavigation={viewer ? "header" : undefined}
+        mobileNavigation="header"
         account={viewer ? (
           <AccountControls viewer={viewer} />
         ) : (
           <span className="hidden sm:inline-flex">
-            <GoogleSignInButton href={signin} />
+            <GoogleSignInButton href={signin} size="md" />
           </span>
         )}
       />

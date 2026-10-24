@@ -79,8 +79,10 @@ export default async function HelpPage() {
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
         current="how"
-        mobileNavigation={viewer ? "header" : undefined}
-        account={viewer ? <AccountControls viewer={viewer} /> : <GoogleSignInButton href="/auth/signin?next=%2Fhow" />}
+        mobileNavigation="header"
+        account={viewer ? <AccountControls viewer={viewer} /> : (
+          <span className="hidden sm:inline-flex"><GoogleSignInButton href="/auth/signin?next=%2Fhow" size="md" /></span>
+        )}
       />
       {/* Match the landing page's streamed-content hydration boundary. */}
       <Suspense fallback={null}>
