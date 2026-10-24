@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
@@ -11,6 +12,7 @@ import { CalendarSubscription } from "@/components/sources/CalendarSubscription"
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
+import { ClassSchedule } from "./ClassSchedule";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
 import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
@@ -49,8 +51,8 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
 
 /**
  * The full My Boiler screen body (MyBoiler.dc.html / Phone.dc.html).
- * Desktop: gauge plate on the left, forecast / breakdown / tasks on the right.
- * Phone: hero row, forecast, tasks, breakdown, status, in that order.
+ * Desktop: gauge plate on the left, forecast / schedule / breakdown / tasks on the right.
+ * Phone: hero row, forecast, schedule, tasks, breakdown, status, in that order.
  */
 export function MyBoilerView({
   boiler,
@@ -70,8 +72,15 @@ export function MyBoilerView({
 
   if (!data) {
     return (
-      <div role="status" className="py-24 text-center text-muted">
-        {error ? <span className="text-redline-ink">{error}</span> : "Lighting the boiler…"}
+      <div className="flex flex-col items-center gap-4 py-24 text-center text-muted">
+        {error ? (
+          <>
+            <p role="alert" className="m-0 text-redline-ink">{error}</p>
+            <Button aria-disabled={syncing} aria-busy={syncing} onClick={() => !syncing && void boiler.refresh()}>
+              {syncing ? "Retrying…" : "Try again"}
+            </Button>
+          </>
+        ) : <span role="status">Lighting the boiler…</span>}
       </div>
     );
   }
@@ -85,7 +94,9 @@ export function MyBoilerView({
         <div>
           <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
           <p className="mt-1.5 mb-0 text-[15px] text-muted">
-            {data.calendar !== "ok" ? "Tasks only" : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
+            {data.calendar !== "ok"
+              ? data.sources?.some((s) => s.kind === "ics" && s.status === "ok") ? "Calendar feeds and tasks" : "Tasks only"
+              : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
           </p>
         </div>
         <button
@@ -113,8 +124,8 @@ export function MyBoilerView({
 
       {/*
         DOM order is the reading order at each width, so Tab follows what is on screen:
-        phone: hero, forecast, tasks, breakdown, status; desktop: gauge plate (hero, status), then
-        forecast, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
+        phone: hero, forecast, schedule, tasks, breakdown, status; desktop: gauge plate (hero, status), then
+        forecast, schedule, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
         display:none keeps the hidden copy out of the Tab order and the accessibility tree.
       */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
@@ -164,6 +175,8 @@ export function MyBoilerView({
             </div>
           </Card>
 
+          <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
+
           <Breakdown
             className="hidden lg:block"
             contributions={result.contributions}
@@ -176,7 +189,7 @@ export function MyBoilerView({
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}
-            onAdd={(t) => void boiler.addTask(t)}
+            onAdd={(t) => boiler.addTask(t)}
             onSize={(id, size) => void boiler.setTaskSize(id, size)}
             onRemove={(id) => void boiler.removeTask(id)}
             onClearOverdue={() => void boiler.clearOverdue()}

@@ -456,7 +456,7 @@ function CharacterSheet({ still }: { still: boolean }) {
             <li>Guilt, shame, streaks or countdowns.</li>
             <li>Asks you to look after it, or acts hurt when you’re busy.</li>
             <li>Covers the gauge, tasks or buttons with a speech bubble.</li>
-            <li>Comments on how you feel. The gauge measures load, not wellbeing.</li>
+            <li>Comments on how you feel.</li>
           </ul>
         </Card>
       </div>

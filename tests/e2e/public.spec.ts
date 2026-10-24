@@ -8,7 +8,7 @@ test('public home offers a working demo and formula link', async ({ page }) => {
   await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await page.goto('/');
-  await page.getByRole('link', { name: 'See the formula and weights', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
   await expect(page).toHaveURL(/\/how$/);
   await expect(page.getByRole('main')).toContainText('8.5');
   await noOverflow(page);

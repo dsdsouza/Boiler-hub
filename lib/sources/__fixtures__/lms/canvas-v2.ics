@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Synthetic Coursicle Test//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Fictional Course Test
+BEGIN:VEVENT
+UID:sample-a@sample.invalid
+DTSTAMP:20261016T210000Z
+SEQUENCE:2
+SUMMARY:UPDATED Test Essay [TEST 101]
+DTSTART:20261023T160000Z
+DTEND:20261023T170000Z
+DESCRIPTION:Fictional assignment. Course: TEST 101 - Fictional Biology\nhttps://school.example/courses/910101/assignments/101
+URL:https://school.example/courses/910101/assignments/101
+LOCATION:TEST 101 - Fictional Biology
+CATEGORIES:TEST 101 - Fictional Biology
+END:VEVENT
+BEGIN:VEVENT
+UID:sample-c@sample.invalid
+DTSTAMP:20261016T210000Z
+SEQUENCE:2
+SUMMARY:Test Lab [TEST 202]
+DTSTART:20261022T160000Z
+DTEND:20261022T170000Z
+DESCRIPTION:Fictional assignment. Course: TEST 202 - Fictional Chemistry\nhttps://school.example/courses/910202/assignments/103
+URL:https://school.example/courses/910202/assignments/103
+LOCATION:TEST 202 - Fictional Chemistry
+CATEGORIES:TEST 202 - Fictional Chemistry
+END:VEVENT
+BEGIN:VEVENT
+UID:sample-d@sample.invalid
+DTSTAMP:20261016T210000Z
+SUMMARY:NEW Test Reading [TEST 202]
+DTSTART:20261024T160000Z
+DTEND:20261024T170000Z
+DESCRIPTION:Fictional addition. https://school.example/courses/910202/assignments/104
+LOCATION:TEST 202 - Fictional Chemistry
+END:VEVENT
+END:VCALENDAR

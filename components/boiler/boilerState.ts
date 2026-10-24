@@ -41,6 +41,7 @@ export interface TaskMeta {
   itemKey: string;
   label?: string;
   url?: string;
+  courseName?: string;
 }
 
 export interface NewTask {

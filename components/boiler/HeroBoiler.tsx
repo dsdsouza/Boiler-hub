@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Boiler } from "./Boiler";
-import { ZONE_DESC, ZONE_INK, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
+import { ZONE_INK, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
 
 /** Landing hero: an idling boiler with a "drag to add pressure" slider (Main.dc.html). */
 export function HeroBoiler() {
@@ -30,9 +30,8 @@ export function HeroBoiler() {
           value={score}
           aria-valuetext={`${score}, ${ZONE_LABEL[zone]}`}
           onChange={(e) => setScore(Number(e.target.value))}
-          className="m-0 h-7 w-full cursor-pointer"
+          className="m-0 h-11 w-full cursor-pointer"
         />
-        <div className="text-[13px] text-muted">{ZONE_DESC[zone]}</div>
       </div>
     </div>
   );
