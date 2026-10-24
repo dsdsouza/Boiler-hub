@@ -4,6 +4,8 @@ import { MAX_CHAT_BODY, parseChatBody } from "@/lib/pip/contracts";
 import { assignmentContext } from "@/lib/pip/context";
 import { askGemini } from "@/lib/pip/gemini";
 import { pipFailure, type PipStage } from "@/lib/pip/failure";
+import { checkPipScope } from "@/lib/pip/scope";
+import { PIP_REFUSAL } from "@/lib/pip/policy";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -45,17 +47,26 @@ export async function POST(request: Request) {
     const { data: quota, error: quotaError } = await auth.supabase.rpc("pip_chat_take_quota");
     if (quotaError || !quota || typeof quota.allowed !== "boolean") return error("Pip chat is temporarily unavailable. Please try again later.", 503);
     if (!quota.allowed) return error("You’ve reached Pip’s chat limit. Please try again later.", 429, { "Retry-After": String(Math.max(1, Math.min(86400, Number(quota.retryAfter) || 60))) });
+    // One budget includes both scope checks, source loading, and answer generation.
+    const signal = AbortSignal.any([request.signal, AbortSignal.timeout(50_000)]);
+    stage = "scope";
+    const scope = await checkPipScope(chat.messages, signal);
+    if (!scope.allowed) {
+      return NextResponse.json({ reply: PIP_REFUSAL, asOf: new Date().toISOString() }, { headers });
+    }
     stage = "assignments";
-    const context = await assignmentContext(auth.supabase, auth.user.id, chat.timeZone);
+    const context = await assignmentContext(auth.supabase, auth.user.id, scope.timeZone ?? chat.timeZone);
     if (chat.study) context.study = chat.study;
     stage = "gemini";
-    const reply = await askGemini(chat.messages, context, request.signal);
+    const draft = await askGemini(chat.messages, context, signal);
+    stage = "review";
+    const reply = (await checkPipScope(chat.messages, signal, draft)).allowed ? draft : PIP_REFUSAL;
     return NextResponse.json({ reply, asOf: context.asOf }, { headers });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
     const diagnostic = pipFailure(stage, failure);
     console.warn("[pip] chat failed", diagnostic);
-    if (stage === "gemini" && (diagnostic.status === 503 || diagnostic.kind === "timeout")) {
+    if ((stage === "gemini" || stage === "scope" || stage === "review") && (diagnostic.status === 503 || diagnostic.kind === "timeout")) {
       return error("Gemini is temporarily busy. Please try again in a moment. Your assignments are unchanged.", 503, { "Retry-After": "30" });
     }
     return error("Pip couldn’t answer right now. Your assignments are unchanged. Please try again.", 503);
