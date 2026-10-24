@@ -51,5 +51,7 @@ function guard(request: NextRequest, signedIn: boolean, response: NextResponse) 
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // API handlers verify the live user themselves. Running session refresh here
+  // as well repeats JWT verification and cookie work on every data request.
+  matcher: ["/((?!api(?:/|$)|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };
