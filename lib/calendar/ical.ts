@@ -32,8 +32,8 @@ const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\
 /** Dated tasks become transparent one-minute deadline markers, with stable IDs across refreshes. */
 export function deadlineCalendar(tasks: CalendarDeadline[], now = new Date()): string {
   const lines = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Boiler Hub//Deadlines//EN", "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH", "X-WR-CALNAME:Boiler Hub deadlines", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Boilerplate//Deadlines//EN", "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH", "X-WR-CALNAME:Boilerplate deadlines", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H",
   ];
   for (const task of tasks) {
     const due = new Date(task.dueAt);
@@ -41,7 +41,7 @@ export function deadlineCalendar(tasks: CalendarDeadline[], now = new Date()): s
     lines.push(
       "BEGIN:VEVENT", `UID:${escapeText(task.id)}@deadlines.boilerhub.work`, `DTSTAMP:${stamp(now)}`,
       `DTSTART:${stamp(due)}`, `DTEND:${stamp(new Date(due.getTime() + 60_000))}`,
-      `SUMMARY:${escapeText(task.title)}`, "DESCRIPTION:Edit or complete this deadline in Boiler Hub.",
+      `SUMMARY:${escapeText(task.title)}`, "DESCRIPTION:Edit or complete this deadline in Boilerplate.",
       "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT",
     );
   }

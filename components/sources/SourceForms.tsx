@@ -198,7 +198,7 @@ function BrightspaceHelp() {
 function AppleCalendarHelp() {
   return (
     <div className="flex flex-col gap-2 text-sm text-body">
-      <p className="m-0">Connect one iCloud calendar at a time. Boiler Hub reads it when you sync; it cannot edit your events.</p>
+      <p className="m-0">Connect one iCloud calendar at a time. Boilerplate reads it when you sync; it cannot edit your events.</p>
       <details className="text-sm">
         <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">Get your iCloud calendar link</summary>
         <p className="mt-0 mb-2"><strong>iPhone or iPad:</strong> open Calendar → Calendars, tap the info button beside an iCloud calendar, then turn on Public Calendar. Tap Share Link → Copy.</p>
@@ -206,7 +206,7 @@ function AppleCalendarHelp() {
         <p className="mt-0 mb-2">Paste the webcal:// link below. Calendars stored only on your device need to be moved to iCloud first. For Google or Outlook calendars shown in Apple Calendar, use their original provider.</p>
         <a href="https://support.apple.com/guide/calendar/share-calendars-icl32362/mac" target="_blank" rel="noreferrer" className="underline underline-offset-2">Apple’s calendar sharing guide</a>
       </details>
-      <p className="m-0 text-sm text-muted">Public Calendar lets anyone with the link read that calendar. Removing it from Boiler Hub stops our reads; turn off Public Calendar in Apple Calendar to revoke the link for everyone. Your Apple Account password is never needed.</p>
+      <p className="m-0 text-sm text-muted">Public Calendar lets anyone with the link read that calendar. Removing it from Boilerplate stops our reads; turn off Public Calendar in Apple Calendar to revoke the link for everyone. Your Apple Account password is never needed.</p>
     </div>
   );
 }

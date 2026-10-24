@@ -40,9 +40,9 @@ async function find() {
       const heading = document.createElement("h2"); heading.id = `result-${index}`; heading.textContent = item.label || `${item.provider === "Other" ? "Calendar" : item.provider} subscription ${index}`;
       const host = document.createElement("p"); host.textContent = `${item.provider === "Other" ? "Calendar feed" : item.provider} · ${new URL(item.url).hostname}`;
       const actions = document.createElement("div"); actions.className = "actions";
-      actions.append(button("Review in Boiler Hub", async () => { await chrome.tabs.create({ url: makeHandoffUrl(item.url) }); }, true));
+      actions.append(button("Review in Boilerplate", async () => { await chrome.tabs.create({ url: makeHandoffUrl(item.url) }); }, true));
       actions.append(button("Copy link", async () => {
-        try { await navigator.clipboard.writeText(item.url); status.textContent = "Link copied. Paste it into Sources in Boiler Hub."; }
+        try { await navigator.clipboard.writeText(item.url); status.textContent = "Link copied. Paste it into Sources in Boilerplate."; }
         catch {
           status.textContent = "Copy this subscription link, then paste it into Sources.";
           let input = section.querySelector("input");

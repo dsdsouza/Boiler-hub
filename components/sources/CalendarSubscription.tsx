@@ -97,7 +97,7 @@ export function CalendarSubscription() {
   return (
     <Card as="section" aria-labelledby={`${id}-title`} className="px-5 py-6 sm:px-7">
       <CardTitle id={`${id}-title`} className="mb-1">Deadlines in Apple Calendar</CardTitle>
-      <p className="mt-0 mb-4 max-w-[70ch] text-sm text-body">Subscribe to your dated tasks and team assignments. Apple Calendar checks for updates on its refresh schedule; edit or complete deadlines in Boiler Hub. Imported calendar and GitHub items stay with their original source.</p>
+      <p className="mt-0 mb-4 max-w-[70ch] text-sm text-body">Subscribe to your dated tasks and team assignments. Apple Calendar checks for updates on its refresh schedule; edit or complete deadlines in Boilerplate. Imported calendar and GitHub items stay with their original source.</p>
       <div className="flex flex-wrap items-center gap-3">
         {links ? (
           <>
