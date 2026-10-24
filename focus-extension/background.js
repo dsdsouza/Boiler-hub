@@ -6,6 +6,7 @@ import {
   shouldBlock,
   validateSession,
 } from "./rules.mjs";
+import { enableReminders, reminderStatus, synchronizeReminders, testNotification } from "./notifications.js";
 
 let queue = Promise.resolve();
 const enqueue = (operation) => {
@@ -50,7 +51,8 @@ async function synchronize() {
         ),
     );
   }
-  return { connected: true, enforced: block, session };
+  const reminders = await synchronizeReminders(validateSession(session) ? session : null).catch(() => ({ remindersSupported: true, remindersEnabled: false, reminderError: "Allow Chrome notifications to hear from Pip." }));
+  return { connected: true, enforced: block, session, ...reminders };
 }
 
 async function handle(message, sender) {
@@ -82,6 +84,13 @@ async function handle(message, sender) {
       await chrome.storage.local.set({
         session: { ...session, outcome: "cancelled" },
       });
+  } else if (message.type === "notifications") {
+    if (!isApp(sender.url) || typeof message.enabled !== "boolean") throw new Error("Use Boilerplate to choose notification settings");
+    await chrome.storage.local.set({ appUrl: new URL("/boiler", sender.url).href });
+    await enableReminders(message.enabled);
+  } else if (message.type === "test-notification") {
+    if (!isApp(sender.url)) throw new Error("Use Boilerplate to test reminders");
+    await testNotification();
   } else if (message.type !== "read") throw new Error("Unknown command");
   return synchronize();
 }
@@ -99,13 +108,24 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
         .get("session")
         .catch(() => ({}));
       reply({
-        status: { connected: true, enforced: rules.length > 0, session },
+        status: { connected: true, enforced: rules.length > 0, session, ...await reminderStatus().catch(() => ({})) },
         error:
-          "Could not update focus. Reload the extension or disable it to unblock.",
+          ["notifications", "test-notification"].includes(message.type) ? "Allow Chrome notifications in your extension and laptop settings, then try again." : "Could not update focus. Reload the extension or disable it to unblock.",
       });
     });
   return true;
 });
+async function openPip() {
+  const { appUrl } = await chrome.storage.local.get("appUrl");
+  if (!isApp(appUrl)) return;
+  const url = new URL(appUrl); url.searchParams.set("pip", "check-in");
+  const tabs = await chrome.tabs.query({});
+  const existing = tabs.find((tab) => tab.url?.startsWith(url.origin + "/boiler"));
+  if (existing?.id) { await chrome.tabs.update(existing.id, { active: true, url: url.href }); if (existing.windowId) await chrome.windows.update(existing.windowId, { focused: true }); }
+  else await chrome.tabs.create({ url: url.href });
+}
+chrome.notifications.onClicked.addListener((id) => { if (id.startsWith("pip-")) void openPip(); });
+chrome.notifications.onButtonClicked.addListener((id) => { if (id.startsWith("pip-")) void openPip(); });
 chrome.alarms.onAlarm.addListener(() => {
   void enqueue(synchronize);
 });

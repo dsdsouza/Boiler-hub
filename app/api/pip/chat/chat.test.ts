@@ -11,6 +11,8 @@ import { POST } from "./route";
 import { MAX_CHAT_BODY } from "@/lib/pip/contracts";
 import { PIP_REFUSAL } from "@/lib/pip/policy";
 import { PIP_STREAM_TYPE, readPipReply } from "@/lib/pip/stream";
+import type { StudyProposal } from "@/lib/pip/planning";
+const proposal: StudyProposal = { taskId: "current-task", title: "Current assignment", goal: "Read the assignment brief", startAt: 1792886400000, endAt: 1792887900000, tentative: true };
 const payload = { messages: [{ role: "user", content: "What is due?" }], timeZone: "UTC", userId: "victim" };
 const request = (body: unknown = payload, origin = "https://boilerhub.work") => new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 beforeEach(() => {
@@ -67,6 +69,40 @@ describe("authenticated, read-only Pip chat", () => {
     expect(text).toContain('"type":"error"');
     expect(text).not.toMatch(/Your draft|private review|"type":"delta"/);
     expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "review", kind: "unexpected" });
+  });
+  it.each([true, false])("reviews study cards together with the reply before sending JSON (allowed=%s)", async (allowed) => {
+    mocks.gemini.mockImplementation(async (_messages, _context, _signal, capture) => { capture(proposal); return "Here is a proposed study block."; });
+    mocks.scope.mockResolvedValueOnce({ allowed: true, timeZone: null }).mockResolvedValueOnce({ allowed, timeZone: null });
+    const body = await (await POST(request())).json();
+    expect(mocks.scope.mock.calls[1][2]).toBe(JSON.stringify({ reply: "Here is a proposed study block.", proposal }));
+    if (allowed) expect(body.proposal).toEqual(proposal);
+    else {
+      expect(body.reply).toBe(PIP_REFUSAL);
+      expect(body.proposal).toBeUndefined();
+      expect(JSON.stringify(body)).not.toContain(proposal.goal);
+    }
+  });
+  it.each([true, false])("sends no raw study-card frame before review completes (allowed=%s)", async (allowed) => {
+    mocks.stream.mockImplementation(async function* () { yield { proposal }; yield "A proposed study block."; });
+    let finishReview!: (value: { allowed: boolean; timeZone: null }) => void;
+    mocks.scope.mockResolvedValueOnce({ allowed: true, timeZone: null }).mockImplementationOnce(() => new Promise((resolve) => { finishReview = resolve; }));
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    const reader = response.body!.getReader();
+    let received = false;
+    const first = reader.read().then((part) => { received = true; return part; });
+    await vi.waitFor(() => expect(mocks.scope).toHaveBeenCalledTimes(2));
+    expect(received).toBe(false);
+    expect(mocks.scope.mock.calls[1][2]).toBe(JSON.stringify({ reply: "A proposed study block.", proposal }));
+    finishReview({ allowed, timeZone: null });
+    const decoder = new TextDecoder();
+    let text = decoder.decode((await first).value);
+    while (true) { const part = await reader.read(); if (part.done) break; text += decoder.decode(part.value); }
+    if (allowed) expect(text).toContain('"type":"proposal"');
+    else {
+      expect(text).toContain(PIP_REFUSAL);
+      expect(text).not.toMatch(/"type":"proposal"|Read the assignment brief|A proposed study block/);
+    }
   });
   it("uses the verified identity and server-loaded assignments, ignoring a submitted user id", async () => {
     const response = await POST(request());

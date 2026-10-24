@@ -14,7 +14,7 @@ const primaryStyle = { backgroundColor: C.brass, color: C.onFill, boxShadow: "in
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section
-      className="plate flex flex-1 basis-[300px] flex-col gap-4 rounded-[14px] px-6 py-6"
+      className="plate flex min-w-0 flex-1 basis-[300px] flex-col gap-4 rounded-[14px] px-6 py-6"
       style={{ backgroundColor: C.surface, border: `1px solid ${C.rivet}` }}
     >
       <h2 className={`m-0 text-[28px] tracking-[0.03em] ${DISPLAY}`}>{title}</h2>
@@ -33,11 +33,13 @@ export function CreateTeamForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || !name.trim()) return;
+    const draft = name;
     setBusy(true);
     setMsg(null);
     try {
       const { team } = await api<{ team: { name: string; inviteCode: string } }>("/api/teams", "POST", { name, type });
-      setName("");
+      setName((current) => current === draft ? "" : current);
       setMsg({ ok: true, text: `Created ${team.name}. Share invite code ${team.inviteCode}.` });
       startTransition(() => router.refresh());
     } catch (err) {
@@ -92,7 +94,7 @@ export function CreateTeamForm() {
           {busy ? "Creating…" : "Create team"}
         </button>
         {msg && (
-          <p role={msg.ok ? "status" : "alert"} className="m-0 text-sm" style={{ color: msg.ok ? "#7FB3D5" : "#F25C45" }}>
+          <p role={msg.ok ? "status" : "alert"} className="m-0 break-words text-sm" style={{ color: msg.ok ? "#7FB3D5" : "#F25C45" }}>
             {msg.text}
           </p>
         )}
@@ -110,11 +112,13 @@ export function JoinTeamForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || code.length !== 6) return;
+    const draft = code;
     setBusy(true);
     setMsg(null);
     try {
       await api<{ teamId: string }>("/api/teams/join", "POST", { code });
-      setCode("");
+      setCode((current) => current === draft ? "" : current);
       setMsg({ ok: true, text: "Joined. Your boiler is hidden on this team until you choose otherwise below." });
       startTransition(() => router.refresh());
     } catch (err) {

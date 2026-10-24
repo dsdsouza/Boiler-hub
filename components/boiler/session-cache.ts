@@ -6,16 +6,23 @@ export class OwnerCache<T> {
   private revision = 0;
   private pending: { revision: number; promise: Promise<T | null> } | null = null;
   private listeners = new Set<() => void>();
+  private coordinators = new Map<string, { clear(): void }>();
 
   constructor(private maxAgeMs = 30_000, private now = () => Date.now()) {}
 
   read(owner: string): T | null {
     return this.owner === owner ? this.value : null;
   }
+  isOwner(owner: string) { return this.owner === owner; }
 
   subscribe(listener: () => void) {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
+  }
+
+  coordinator<Q extends { clear(): void }>(owner: string, create: () => Q): Q {
+    if (!this.coordinators.has(owner)) this.coordinators.set(owner, create());
+    return this.coordinators.get(owner) as Q;
   }
 
   private notify() { this.listeners.forEach(listener => listener()); }
@@ -26,6 +33,7 @@ export class OwnerCache<T> {
     this.at = 0;
     this.revision++;
     this.pending = null;
+    this.coordinators.forEach(coordinator => coordinator.clear());
     this.notify();
   }
 
