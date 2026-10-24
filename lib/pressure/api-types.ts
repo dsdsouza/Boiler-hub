@@ -22,6 +22,8 @@ export interface Task {
   url?: string;
   /** Course label from the feed, only visible to its owner. */
   courseName?: string;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /** A connected source as the owner sees it. Never includes the secret. */
@@ -49,6 +51,8 @@ export interface OwnerEvent {
   isRecurring: boolean;
   /** Focus time or out of office: vents pressure, not taggable. */
   release: boolean;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /**

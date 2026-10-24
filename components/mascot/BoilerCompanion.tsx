@@ -12,10 +12,9 @@ import { PipWardrobe } from "./PipWardrobe";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
-// Pip's strip on My Boiler. Composed beside MyBoilerView by the page, so the
-// boiler components stay untouched; actions jump to their existing headings.
+// What Pip says on My Boiler. Composed beside MyBoilerView by the page; actions jump to its
+// existing headings. No avatar here: the big Pip hero on the page is the one speaking.
 
-const CELEBRATE_MS = 1600;
 const VENT_MESSAGE_MS = 8000;
 
 /** Breakdown renders one copy per breakpoint; focus the visible copy. */
@@ -33,7 +32,6 @@ function jumpTo(target: CompanionTarget) {
 export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; vent: VentEvent }) {
   const [hidden, setHidden] = useState(false);
   const [recentVent, setRecentVent] = useState<number | null>(null);
-  const [celebrating, setCelebrating] = useState(false);
   const [dressing, setDressing] = useState(false);
   const wardrobeButton = useRef<HTMLButtonElement>(null);
   const accessory = usePipAccessory();
@@ -43,13 +41,8 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   useEffect(() => {
     if (!vent.key) return;
     setRecentVent(vent.amount);
-    setCelebrating(true);
-    const a = setTimeout(() => setCelebrating(false), CELEBRATE_MS);
-    const b = setTimeout(() => setRecentVent(null), VENT_MESSAGE_MS);
-    return () => {
-      clearTimeout(a);
-      clearTimeout(b);
-    };
+    const t = setTimeout(() => setRecentVent(null), VENT_MESSAGE_MS);
+    return () => clearTimeout(t);
   }, [vent.key, vent.amount]);
 
   if (!data) return null;
@@ -91,10 +84,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   }
 
   return (
-    <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-3 sm:gap-4 sm:pl-4">
-      <div className="flex-none pt-0.5">
-        <Mascot score={result.score} size={56} reaction={celebrating ? "celebrate" : message.reaction} accessory={accessory} />
-      </div>
+    <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-4 sm:pl-5">
       <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
         <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
           {MASCOT_NAME} <span className="text-muted">· {ZONE_LABEL[result.zone]} {result.score}</span>
