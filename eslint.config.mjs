@@ -23,6 +23,7 @@ const eslintConfig = [
       "test-results/**",
       "blob-report/**",
       "all-blob-reports/**",
+      "qa-runs/**",
     ],
   },
 ];
