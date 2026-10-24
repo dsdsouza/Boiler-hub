@@ -52,7 +52,7 @@ export function companionMessage(input: CompanionInput): CompanionMessage | null
     return {
       key: "clear",
       reaction: "wave",
-      headline: "Your next 7 days look clear.",
+      headline: "No counted work right now.",
       body: "Nothing on your calendar or task list is adding pressure right now.",
     };
   }

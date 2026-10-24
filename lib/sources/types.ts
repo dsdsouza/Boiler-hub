@@ -39,6 +39,8 @@ export interface SourceItem extends LoadItem {
   url?: string;
   /** Course name supplied by an LMS feed. Fetched live, never stored. */
   courseName?: string;
+  /** Completion reported by the source itself, rather than the owner's local mark. */
+  completedInSource?: boolean;
 }
 
 export interface FetchContext {

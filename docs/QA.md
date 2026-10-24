@@ -1,3 +1,21 @@
+## Remaining-work calculation and clearing — October 24, 2026
+
+Reproduced a false zero: ten medium assignments due in five days scored 61 alone, but twenty recently completed medium assignments reduced the old result to 0. Completion now removes only the completed task's load. Focus and out-of-office blocks cannot cancel pending assignments. Tasks use a fourteen-day deadline horizon; older overdue work retains a reduced positive backlog weight.
+
+Fresh source syncs no longer automatically complete overdue work. Legacy cleared feed assignments are returned for owner review, retaining size overrides, and can be individually restored while still supplied by the feed. Bulk completion now requires review and validates source ownership, open status and an actual overdue date before writing. Source-reported completions, such as merged GitHub PRs, explain that they must be reopened in the source.
+
+Computer-use checks used the real My Boiler and task-list components with fictional assignments at 1440, 390 and 320 CSS pixels:
+
+- Completing one pending task changed 61 to 57; undo restored it. Twenty other completions did not cancel remaining work.
+- Restoring a legacy cleared overdue task changed 61 to 69. Cancel preserved it; a simulated save failure kept it open and reviewable; retry returned to 61 with all ten future assignments still open.
+- Completing all ten counted pending tasks produced a legitimate 0; restoring all ten returned to 61. A later project stayed visible with an explicit outside-window label.
+- Fixed keyboard focus during pending, failed and successful bulk saves. Busy controls prevent repeat actions; failure returns focus to Review and success to New task.
+- No horizontal page overflow at the tested widths. The formula page's fourteen-day window and completion rules were also checked at 320 pixels. Axe reported zero violations on desktop and narrow-screen checks, with color-contrast checks incomplete (18 and 12 nodes respectively); browser console showed no errors.
+
+Regression coverage includes first-sync backlog preservation, completion credit removal, older overdue work, next-week preparation, legacy-mark recovery, bulk validation and event factors/time zones surviving the server → owner view → optimistic recompute. No schema changes. No live assignments were completed, cleared, restored or removed during this pass. This verifies fictional cases and mocked service responses; it does not establish which clearing action was used on the user's live assignments.
+
+[Model defaults and rationale](pressure-model.md) records the retained 2/4/8 task sizes and K=8.5 scale. Final validation in an isolated copy of this change passed: **190 tests in 26 files, TypeScript, ESLint and a production build**. The UI source detector returned no findings. Temporary QA routes were removed before the build. The live domain requires deployment of staging.
+
 # QA status
 
 ## LMS import follow-up — October 24, 2026
