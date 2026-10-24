@@ -65,7 +65,7 @@ function TeamCard({ team }: { team: MyTeam }) {
         <Link
           href={`/teams/${team.id}`}
           className={`inline-flex min-h-11 items-center rounded-lg px-4 text-xl tracking-[0.05em] no-underline ${DISPLAY}`}
-          style={{ backgroundColor: C.brass, color: C.bg, boxShadow: "inset 0 -3px 0 #8C6A35" }}
+          style={{ backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" }}
         >
           Engine Room →
         </Link>

@@ -65,6 +65,7 @@ export function mayaBoiler(now: Date = new Date()): MyBoilerData {
     status: maya.status as Status,
     statusNote: maya.statusNote ?? "",
     syncedAt: new Date(now.getTime() - 4 * 60_000).toISOString(),
+    calendar: "ok",
   };
 }
 

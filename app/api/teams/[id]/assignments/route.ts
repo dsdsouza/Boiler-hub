@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createAssignment, loadAssignmentTargets } from "@/lib/data/teams";
 import { computeTargets, parseAssignmentInput, toPreview } from "../../_lib/assignment";
 import { fail, getCaller, readJson, requireTeamRole, serverError } from "../../_lib/http";
-import { syncUser } from "../../_lib/pressure";
+import { syncUser } from "@/lib/google/sync";
 
 // POST /api/teams/[id]/assignments { title, due, size }
 // Creates the assignment, one `team` task per non-lead member (hidden ones included),

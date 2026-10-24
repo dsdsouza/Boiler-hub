@@ -1,5 +1,5 @@
 import type { AssignmentPreview, Size, Zone } from "@/lib/types";
-import { applyTaskToRaw, zoneFor } from "./pressure";
+import { applyTaskToRaw, zoneFor } from "@/lib/pressure";
 
 // Pure assignment logic shared by the preview and post routes (and the summary by the UI).
 

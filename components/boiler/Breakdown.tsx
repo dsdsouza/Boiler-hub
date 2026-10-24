@@ -3,8 +3,8 @@
 import { useState } from "react";
 import type { Contribution, LoadItem, Weight } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { WEIGHT_LABEL } from "./localPressure";
-import { formatPoints } from "./format";
+import { DEFAULT_WEIGHT } from "@/lib/pressure/config";
+import { WEIGHT_LABEL, formatPoints } from "./format";
 
 const WEIGHTS: Weight[] = ["light", "normal", "heavy"];
 const COLLAPSED = 6;
@@ -67,7 +67,7 @@ function BreakdownRow({
   const release = c.points < 0;
   const tunable = item?.kind === "event" && !item.release;
   const recurring = tunable && !!item?.isRecurring && !!item.seriesKey;
-  const current = item?.weight ?? "normal";
+  const current = item?.weight ?? DEFAULT_WEIGHT;
   const color = release ? "var(--cool-ink)" : "var(--brass-ink)";
 
   return (

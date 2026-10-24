@@ -3,24 +3,24 @@ import { zoneOf } from "@/components/ui/zones";
 import * as S from "./boilerState";
 import { mayaBoiler, demoTeams } from "./fixture";
 import { boilerVisuals, fireFromForecast, needleAngle, steamParams } from "./geometry";
-import { applyTaskToRaw, rawFromScore, scoreFromRaw, taskUrgency } from "./localPressure";
-import { countsLine, forecastCaption, formatPoints, weekday } from "./format";
+import { WEIGHTS, applyTaskToRaw, rawFromScore, scoreFromRaw, taskPoints } from "@/lib/pressure";
+import { countsLine, dueText, forecastCaption, formatPoints, weekday } from "./format";
 
 const NOW = new Date("2026-10-24T12:00:00");
 
-describe("localPressure", () => {
-  it("maps raw to score and back", () => {
+describe("lib/pressure as used by the UI", () => {
+  it("maps raw to score and back, including the fixture's raw values", () => {
     expect(scoreFromRaw(0)).toBe(0);
-    expect(scoreFromRaw(33.68)).toBe(74);
+    expect(scoreFromRaw(mayaBoiler(NOW).result.raw)).toBe(74);
     expect(scoreFromRaw(1e6)).toBe(100);
     expect(scoreFromRaw(rawFromScore(62))).toBe(62);
     expect(Number.isFinite(rawFromScore(100))).toBe(true);
   });
 
-  it("caps urgency at 3 and treats overdue as 3", () => {
-    expect(taskUrgency("2026-10-24T13:00:00", NOW)).toBe(3);
-    expect(taskUrgency("2026-10-20T12:00:00", NOW)).toBe(3);
-    expect(taskUrgency("2026-10-26T12:00:00", NOW)).toBeCloseTo(0.5);
+  it("caps task urgency at 3 and treats overdue as 3", () => {
+    expect(taskPoints({ due: "2026-10-24T13:00:00", size: "S" }, NOW)).toBe(6);
+    expect(taskPoints({ due: "2026-10-20T12:00:00", size: "S" }, NOW)).toBe(6);
+    expect(taskPoints({ due: "2026-10-26T12:00:00", size: "S" }, NOW)).toBeCloseTo(1);
   });
 
   it("applyTaskToRaw only ever raises pressure", () => {
@@ -69,9 +69,10 @@ describe("boilerState", () => {
   });
 
   it("retagging an event scales its points and rewrites the reason", () => {
+    const before = base().result.contributions.find((x) => x.itemId === "evt-design-review")!.points;
     const d = S.setEventWeight(base(), "evt-design-review", "light", false);
     const c = d.result.contributions.find((x) => x.itemId === "evt-design-review")!;
-    expect(c.points).toBeCloseTo((7.2 * 0.5) / 1.6, 2);
+    expect(c.points).toBeCloseTo((before * WEIGHTS.light) / WEIGHTS.heavy, 2);
     expect(c.reason).toContain("Light");
     expect(d.items.find((i) => i.id === "evt-design-review")!.weight).toBe("light");
     expect(d.result.score).toBeLessThan(74);
@@ -120,6 +121,9 @@ describe("format", () => {
   it("formats points, weekdays and counts", () => {
     expect(formatPoints(7.2)).toBe("+7.2");
     expect(formatPoints(-1.62)).toBe("−1.6");
+    expect(dueText("2026-10-24T17:00:00", NOW)).toBe("due today");
+    expect(dueText("2026-10-25T09:00:00", NOW)).toBe("due tomorrow");
+    expect(dueText("2026-10-23T09:00:00", NOW)).toBe("overdue");
     expect(weekday("2026-10-24")).toBe("Sat");
     expect(countsLine({ meetings: 14, meetingHours: 16.5, tasksDue: 4, overdue: 1 })).toBe("14 meetings · 16.5 h · 4 due · 1 overdue");
     expect(countsLine({ meetings: 25, meetingHours: 25, tasksDue: 0, overdue: 0 }, "class")).toBe("25 classes · 25 h · 0 due");

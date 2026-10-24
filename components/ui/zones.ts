@@ -1,9 +1,9 @@
 import type { Status, Zone } from "@/lib/types";
+import { ZONE_MIN } from "@/lib/pressure/config";
+import { zoneFor } from "@/lib/pressure/compute";
 
-// Zone and status metadata shared by every screen. Thresholds match the PRD.
-export function zoneOf(score: number): Zone {
-  return score < 40 ? "cool" : score < 70 ? "working" : score < 90 ? "hot" : "redline";
-}
+// Zone and status metadata shared by every screen. Thresholds come from lib/pressure/config.ts.
+export const zoneOf: (score: number) => Zone = zoneFor;
 
 export const ZONES: Zone[] = ["cool", "working", "hot", "redline"];
 
@@ -14,12 +14,12 @@ export const ZONE_LABEL: Record<Zone, string> = {
   redline: "Redline",
 };
 
-export const ZONE_RANGE: Record<Zone, string> = {
-  cool: "0–39",
-  working: "40–69",
-  hot: "70–89",
-  redline: "90–100",
-};
+export const ZONE_RANGE = Object.fromEntries(
+  ZONES.map((z, i) => {
+    const next = ZONES[i + 1];
+    return [z, `${ZONE_MIN[z]}–${next ? ZONE_MIN[next] - 1 : 100}`];
+  }),
+) as Record<Zone, string>;
 
 export const ZONE_BEHAVIOR: Record<Zone, string> = {
   cool: "Calm, light steam",

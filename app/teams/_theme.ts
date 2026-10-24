@@ -1,35 +1,31 @@
-import type { Counts, Status, Visibility, Zone } from "@/lib/types";
+import type { Counts, Visibility } from "@/lib/types";
+import { ZONE_INK_VAR } from "@/components/ui/zones";
 
-// Local palette from docs/design/README.md.
-// TODO(merge): switch to components/ui tokens once the ui track lands them.
+// Teams styling on top of the ui track's tokens (app/globals.css, components/ui/zones.ts), so the
+// Engine Room follows the light/dark theme like every other page. Only teams-specific labels live here.
+export { STATUS_META, ZONE_LABEL } from "@/components/ui/zones";
+
+/** CSS variables from app/globals.css. */
 export const C = {
-  bg: "#15120E",
-  surface: "#1F1A14",
-  surface2: "#2A231B",
-  line: "#3A3027",
-  rivet: "#6B5A44",
-  muted: "#B3A48C",
-  text2: "#D9CCB5",
-  text: "#F1E7D3",
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface-2)",
+  line: "var(--line)",
+  rivet: "var(--rivet)",
+  muted: "var(--muted)",
+  text2: "var(--text-2)",
+  text: "var(--text)",
+  field: "var(--field)",
+  /** Brass fill: constant across themes. */
   brass: "#D1A85A",
-  brassLight: "#E3BE74",
+  /** Brass for text and outlines, tuned per theme. */
+  brassLight: "var(--brass-ink)",
+  /** Text on brass or zone fills (soot in both themes). */
+  onFill: "#15120E",
 } as const;
 
-export const ZONE_COLOR: Record<Zone, string> = {
-  cool: "#7FB3D5",
-  working: "#D1A85A",
-  hot: "#F0913A",
-  redline: "#F25C45",
-};
-
-export const ZONE_LABEL: Record<Zone, string> = { cool: "Cool", working: "Working", hot: "Hot", redline: "Redline" };
-
-export const STATUS_META: Record<Status, { label: string; color: string }> = {
-  open: { label: "Open for work", color: "#7FB3D5" },
-  heads_down: { label: "Heads down", color: "#D1A85A" },
-  running_hot: { label: "Running hot", color: "#F25C45" },
-  away: { label: "Away", color: "#B3A48C" },
-};
+/** Zone color for text, borders and small marks, tuned per theme. */
+export const ZONE_COLOR = ZONE_INK_VAR;
 
 export const VISIBILITY_META: Record<Visibility, { label: string; explain: string }> = {
   hidden: { label: "Hidden", explain: "Nobody on this team sees your boiler." },
@@ -63,5 +59,6 @@ export function initials(name: string): string {
     .join("");
 }
 
-export const MONO = "font-[family-name:var(--font-mono)]";
-export const DISPLAY = "font-[family-name:var(--font-display)] font-normal";
+/** The ui track's font utilities (app/globals.css @theme). */
+export const MONO = "font-mono";
+export const DISPLAY = "font-display font-normal";

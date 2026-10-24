@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TeamBoiler } from "@/lib/data/teams";
-import { C, DISPLAY, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, countsLine, initials } from "../_theme";
-import { PlaceholderGauge } from "../_placeholder";
+import { Boiler } from "@/components/boiler/Boiler";
+import { ZoneBadge } from "@/components/ui/ZoneBadge";
+import { C, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, countsLine, initials } from "../_theme";
 import { api } from "./api";
 
 export interface TileOverlay {
@@ -99,8 +100,8 @@ export function BoilerTile({
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <PlaceholderGauge score={boiler.synced || overlay ? show : 0} zone={zone} width={150} />
+      <div className="mx-auto w-full max-w-[150px]">
+        <Boiler score={boiler.synced || overlay ? show : 0} zone={zone} size="sm" width="fluid" status={boiler.status} />
       </div>
 
       {boiler.synced || overlay ? (
@@ -108,9 +109,7 @@ export function BoilerTile({
           <span className={`text-[30px] font-bold leading-none ${MONO}`} style={{ color }}>
             {show}
           </span>
-          <span className={`rounded px-2 py-px text-lg tracking-[0.08em] ${DISPLAY}`} style={{ color: C.bg, backgroundColor: color }}>
-            {ZONE_LABEL[zone].toUpperCase()}
-          </span>
+          <ZoneBadge zone={zone} size="sm" />
           {overlay && overlay.after !== boiler.score && (
             <span className={`text-xs ${MONO}`} style={{ color: C.muted }}>
               was {boiler.score}

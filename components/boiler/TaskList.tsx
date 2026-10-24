@@ -5,8 +5,8 @@ import type { Contribution, LoadItem, Size } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { NewTask } from "./boilerState";
-import { dueText, SIZE_POINTS } from "./localPressure";
-import { formatPoints } from "./format";
+import { SIZE_POINTS } from "@/lib/pressure/config";
+import { dueText, formatPoints } from "./format";
 
 type DueChoice = "today" | "tomorrow" | "3d" | "7d";
 const DUE_LABEL: Record<DueChoice, string> = { today: "Today", tomorrow: "Tomorrow", "3d": "In 3 days", "7d": "In a week" };
