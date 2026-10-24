@@ -19,6 +19,7 @@ import { StatusPicker } from "./StatusPicker";
 import { TaskList } from "./TaskList";
 import { timeAgo } from "./format";
 import { fireFromForecast } from "./geometry";
+import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import type { MyBoiler } from "./useMyBoiler";
 
 function useTick(ms: number) {
@@ -96,7 +97,7 @@ export function MyBoilerView({
           <p className="mt-1.5 mb-0 text-[15px] text-muted">
             {data.calendar !== "ok"
               ? data.sources?.some((s) => s.kind === "ics" && s.status === "ok") ? "Calendar feeds and tasks" : "Tasks only"
-              : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
+              : sourceLabel} · meetings {WINDOW_DAYS} days · deadlines {TASK_LOOKAHEAD_DAYS} days · synced {timeAgo(data.syncedAt)}
           </p>
         </div>
         <button
@@ -173,6 +174,7 @@ export function MyBoilerView({
             <div className="hidden sm:block">
               <ForecastStrip days={result.forecast} />
             </div>
+            <p className="mt-3 mb-0 text-[13px] text-muted">Assumes future tasks are finished by their due dates. Already overdue work stays counted.</p>
           </Card>
 
           <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
@@ -192,7 +194,7 @@ export function MyBoilerView({
             onAdd={(t) => boiler.addTask(t)}
             onSize={(id, size) => void boiler.setTaskSize(id, size)}
             onRemove={(id) => void boiler.removeTask(id)}
-            onClearOverdue={() => void boiler.clearOverdue()}
+            onClearOverdue={() => boiler.clearOverdue()}
             meta={data.taskMeta}
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />

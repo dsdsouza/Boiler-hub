@@ -88,9 +88,9 @@ describe("GitHub adapter (mocked API)", () => {
       expect(i.itemKey).toMatch(/^[0-9a-f]{64}$/);
       expect(i.id).toBe(`${SRC}:${i.itemKey}`);
     }
-    // Completed items vent.
+    // Completed items add no further load or negative credit.
     const done = items.filter((i) => i.doneAt);
-    expect(computePressure(done, NOW).raw).toBeLessThan(0);
+    expect(computePressure(done, NOW).raw).toBe(0);
   });
 
   it("an issue closed in the window wins over an open copy, keeping one key", () => {

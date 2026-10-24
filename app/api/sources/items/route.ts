@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { silentDoneAt } from "@/lib/sources/state";
 import type { ItemStateRow } from "@/lib/sources/types";
 import { SIZES, UUID_RE, badRequest, oneOf, readJson, requireUser, serverError, syncSelf } from "@/app/api/me/_lib/http";
 import { ITEM_KEY_RE, notFound } from "../_lib";
@@ -18,7 +17,7 @@ function isRef(v: unknown): v is Ref {
 
 // PATCH, one of:
 //   { sourceId, itemKey, done?: boolean, size?: 'S' | 'M' | 'L' | null }   mark done/undone, set or clear the size
-//   { items: [{ sourceId, itemKey }], clear: true }                         "Mark all overdue done": done, no vent
+//   { items: [{ sourceId, itemKey }], clear: true }                         mark selected overdue tasks done; reviewable and reversible
 // Writes source_item_state with the user client (RLS: own rows on own sources), resyncs, returns { boiler }.
 export async function PATCH(request: Request) {
   const auth = await requireUser();
@@ -34,7 +33,7 @@ export async function PATCH(request: Request) {
     if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > MAX_BULK || !body.items.every(isRef)) {
       return badRequest(`items must be 1 to ${MAX_BULK} { sourceId, itemKey } pairs`);
     }
-    const done_at = silentDoneAt(now);
+    const done_at = updated_at;
     rows = (body.items as Ref[]).map((r) => ({ user_id: auth.user.id, source_id: r.sourceId, item_key: r.itemKey, done_at, updated_at }));
   } else {
     if (!isRef(body)) return badRequest("sourceId and itemKey are required");
@@ -68,6 +67,19 @@ export async function PATCH(request: Request) {
   const { data: owned, error: ownError } = await auth.supabase.from("sources").select("id").in("id", sourceIds);
   if (ownError) return serverError("PATCH /api/sources/items sources", ownError);
   if ((owned ?? []).length !== sourceIds.length) return notFound();
+
+  if (body.clear === true) {
+    try {
+      const current = await syncSelf(auth.user);
+      const tasks = new Map(current.tasks.map((task) => [task.id, task]));
+      if (rows.some((row) => {
+        const task = tasks.get(`${row.source_id}:${row.item_key}`);
+        return !task || !!task.doneAt || !task.dueAt || !Number.isFinite(Date.parse(task.dueAt)) || Date.parse(task.dueAt) >= now.getTime();
+      })) return badRequest("Only open overdue assignments can be cleared. Refresh and review your selection");
+    } catch (e) {
+      return serverError("PATCH /api/sources/items validate overdue", e);
+    }
+  }
 
   const { error } = await auth.supabase.from("source_item_state").upsert(rows, { onConflict: "user_id,source_id,item_key" });
   if (error) return serverError("PATCH /api/sources/items", error);

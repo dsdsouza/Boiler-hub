@@ -44,13 +44,17 @@ describe("source items in the My Boiler view model", () => {
     expect(sourceItemBody(d.taskMeta![`${SRC}:${KEY}`]!, { done: true })).toEqual({ sourceId: SRC, itemKey: KEY, done: true });
   });
 
-  it("finds and clears overdue source tasks without a vent", () => {
+  it("keeps cleared source tasks reviewable and restores their load when reopened", () => {
     const d = toMyBoilerData(res);
     const overdue = S.overdueSourceTasks(d, NOW);
     expect(overdue.map((i) => i.title)).toEqual(["Problem Set 5 - Due"]);
-    const cleared = S.clearTasks(d, new Set(overdue.map((i) => i.id)));
-    expect(cleared.items.some((i) => i.title === "Problem Set 5 - Due")).toBe(false);
-    expect(cleared.result.raw).toBe(4);
+    const cleared = S.clearTasks(d, new Set(overdue.map((i) => i.id)), NOW);
+    expect(cleared.items.find((i) => i.id === overdue[0]!.id)?.doneAt).toBe(NOW.toISOString());
+    expect(cleared.result.raw).toBe(5);
+    const restored = S.setTaskDone(cleared, overdue[0]!.id, false, NOW).data;
+    expect(restored.result.raw).toBeGreaterThan(cleared.result.raw);
+    expect(restored.result.counts.overdue).toBe(1);
+    expect(restored.taskMeta).toEqual(d.taskMeta);
     expect(clearItemsBody([d.taskMeta![overdue[0]!.id]!])).toEqual({ items: [{ sourceId: SRC, itemKey: LATE }], clear: true });
   });
 

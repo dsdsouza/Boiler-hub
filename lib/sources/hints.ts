@@ -2,6 +2,16 @@
 
 import { LMS_LABELS, lmsProvider } from "./lms";
 
+/** iCloud's published calendar links; match the hostname, never a token or query string. */
+export function isAppleCalendarUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw.trim().replace(/^webcals?:\/\//i, "https://"));
+    return /^p\d+-caldav\.icloud\.com$/i.test(url.hostname) && url.pathname.startsWith("/published/");
+  } catch {
+    return false;
+  }
+}
+
 /** Recognized LMS feeds treat all-day entries as deadlines. */
 export function isCourseworkUrl(raw: string): boolean {
   return lmsProvider(raw) !== undefined;
@@ -9,6 +19,7 @@ export function isCourseworkUrl(raw: string): boolean {
 
 /** A default label for a pasted feed URL. */
 export function defaultFeedLabel(raw: string): string {
+  if (isAppleCalendarUrl(raw)) return "Apple Calendar";
   const provider = lmsProvider(raw);
   if (provider) return LMS_LABELS[provider];
   try {
