@@ -103,6 +103,10 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
       try {
         const fresh = await remote();
         if (fresh) commit(toMyBoilerData(fresh));
+        else if (userId) {
+          const current = session.read(userId);
+          if (current) commit(local(current));
+        }
         window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
         setError(null);
         return true;
@@ -113,7 +117,7 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
         return false;
       }
     },
-    [source, load, commit],
+    [source, load, commit, session, userId],
   );
 
   const addTask = useCallback(
