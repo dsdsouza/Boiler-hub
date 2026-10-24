@@ -1,6 +1,6 @@
 import type { AssignmentPreview, Size, Zone } from "@/lib/types";
 import { applyTaskToRaw, zoneFor } from "@/lib/pressure";
-import { parseDue } from "@/app/api/tasks/validate";
+import { parseISODate } from "@/lib/iso-date";
 
 // Pure assignment logic shared by the preview and post routes (and the summary by the UI).
 
@@ -83,8 +83,8 @@ export function parseAssignmentInput(
   if (typeof b.size !== "string" || !SIZES.includes(b.size as Size)) {
     return { ok: false, error: "Size must be S, M or L" };
   }
-  const due = parseDue(b.due);
-  if (typeof due !== "string") return { ok: false, error: "Due must be an ISO date-time with a timezone" };
+  const due = parseISODate(b.due);
+  if (due === false) return { ok: false, error: "Due must be an ISO date-time with a timezone" };
   const dueMs = Date.parse(due);
   if (dueMs < now.getTime()) return { ok: false, error: "Due date is in the past" };
   return { ok: true, value: { title, due: new Date(dueMs).toISOString(), size: b.size as Size } };

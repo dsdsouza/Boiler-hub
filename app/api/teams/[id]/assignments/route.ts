@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const admin = createAdminClient();
     const targets = await loadAssignmentTargets(admin, teamId);
     const results = computeTargets(targets, parsed.value, now);
-    const { assignmentId, duplicate } = await createAssignment(
+    const posted = await createAssignment(
       admin,
       teamId,
       caller.user.id,
@@ -45,10 +45,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       now,
       clientKey,
     );
+    const { assignmentId, duplicate } = posted;
     if (duplicate) return NextResponse.json({ assignmentId, duplicate: true, result: null });
 
     return NextResponse.json(
-      { assignmentId, duplicate: false, result: toPreview(targets, results) },
+      { assignmentId, duplicate: false, result: toPreview(posted.targets, posted.results) },
       { status: 201 },
     );
   } catch (e) {
