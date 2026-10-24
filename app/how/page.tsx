@@ -178,19 +178,8 @@ export default async function HelpPage() {
 
         <section aria-labelledby="privacy" className="flex flex-col gap-5">
           <h2 id="privacy" className={h2}>
-            Our privacy promise
+            Choose who sees your boiler
           </h2>
-          <Card plate emphasis className="px-6 py-7 sm:px-8">
-            <p className="m-0 font-display text-[28px] leading-tight tracking-[0.02em] sm:text-[34px]">
-              We never store what is on your calendar. Teams see a number, a zone and your status, only if you choose. You can hide from any team at any
-              time.
-            </p>
-          </Card>
-          <p className="m-0 leading-relaxed text-body">
-            Events are read live from Google each time you sync and are never saved. Only your score, zone, category counts (such as “9 meetings, 3
-            deadlines”) and forecast are stored. The breakdown of which events add pressure is visible to you alone. Choose who sees your boiler, per
-            team:
-          </p>
           <VisibilityList />
         </section>
       </main>
