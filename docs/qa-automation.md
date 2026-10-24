@@ -14,9 +14,9 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 27 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (162 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads.
+There are 28 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (168 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo, formula and privacy pages, including failed Next.js chunks/styles and runtime exceptions.
 
-The default command starts its own local server on port 3100. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
+The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
 ```sh
 PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm test:e2e
@@ -61,7 +61,7 @@ Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `out
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 162 regular browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. The `known-issues` job is deliberately nonblocking and uploads red assertions as evidence. A green overall workflow does not mean these defects are fixed.
+`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 168 regular browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. The `known-issues` job is deliberately nonblocking and uploads red assertions as evidence. A green overall workflow does not mean these defects are fixed.
 
 Vitest uses `it.fails` for the database/date/recovery defects below. Its summary reports them as **expected fail**, separate from passed tests; an unexpected pass makes that contract fail so the quarantine must be removed when the product is fixed. Browser defects use `@known-issue` and are excluded from the regular gate. Run them explicitly with:
 
@@ -85,6 +85,7 @@ The manual `TesterArmy cloud regression` workflow is ready to queue a saved grou
 | QA-004 | Add an L task in the demo, complete it, then change its size to S. The size changes but its release remains −4 instead of recalculating to −1. | Browser assertion; `setTaskSize` waits for a server response for done tasks, while fixture mode has none. Live behavior after a server response is not claimed broken. |
 | QA-005 | `parseDue('1')` becomes January 2001 and `parseDue('01/02/2030')` is accepted with a locale-ambiguous interpretation despite the API promising an ISO date-time. | Two expected-failure date contract tests. Wrong-date risk, not a demonstrated security exploit. |
 | QA-006 | When recipient tasks save but the following snapshot write fails, retrying the same assignment draft finds the duplicate and returns without repairing scores. | Fault-injection contract test calls the real `createAssignment` helper twice. No production outage is claimed; this demonstrates the recovery path. |
+| QA-007 | During a live rollout, a homepage load referenced seven missing CSS/JavaScript assets. The slider reached 69 while the gauge remained at 62 because the client code did not load. | Live run: 161/162 passed, one failed. The trace contains seven HTTP 404 responses; the same case passed 3/3 immediately afterward. This was an observed transient deployment asset mismatch; its infrastructure cause is unconfirmed. Sanitized evidence is in `tests/evidence/deployment-assets-20261024.json`. |
 
 Two earlier cloud findings were not substantiated: the completion report compared nonlinear displayed score points with raw pressure points, and the recurring-event report treated a rolling seven-day forecast change as a series leak. Neither is counted as a confirmed defect here. A reduced-motion development hydration warning was also observed; the stylesheet includes a reduced-motion fallback, so it is a diagnostic observation rather than a claimed animation failure.
 
@@ -93,3 +94,5 @@ Still unverified without real project access: live account creation, Google OAut
 ## Execution record
 
 On 2026-10-24, against main baseline `c635a3c`: the production build, type check and lint passed; Vitest reported 178 passed and five expected failures; all 162 regular browser cases passed with zero retries, skips or flaky cases. The three browser defects above were reproduced separately with failing assertions and saved screenshots/traces. Thirty-two SQL identities were created in the ephemeral database; no live Supabase users were provisioned. The repository had no Supabase credentials, no accessible connected Supabase project, and no TesterArmy webhook secret.
+
+After pushing `d0e5145`, the live deployment run passed 161/162 cases and exposed QA-007. The failed gauge boundary passed three sequential rechecks after the rollout. An additional asset-health scenario was then added and passed across all six configurations against the production build, bringing the regular suite to 168 cases. Treat the rollout failure as a real captured deployment problem, not an additional successful run.
