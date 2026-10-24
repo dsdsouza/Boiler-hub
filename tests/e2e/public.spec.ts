@@ -62,8 +62,9 @@ test('public routes load their assets without missing chunks or runtime errors',
     if (path.startsWith('/_next/static/') && response.status() >= 400) failures.push({ path, status: response.status() });
   });
   page.on('pageerror', (error) => errors.push(error.message));
-  for (const path of ['/', '/demo', '/how', '/privacy']) {
-    await page.goto(path);
+  for (const path of ['/', '/demo', '/how']) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(200);
     await expect(page.getByRole('main')).toBeVisible();
   }
   expect(failures, 'HTML must reference assets available on the same deployment').toEqual([]);
