@@ -1,0 +1,50 @@
+{
+  "finding": "QA-007",
+  "observedAtUTC": "2026-10-24",
+  "rolloutCommit": "d0e514510b81392a8b3aaa96bb260929914b2912",
+  "target": "https://boilerhub.work/",
+  "configuration": "mobile-chromium 390x844",
+  "browserAssertions": {
+    "slider": 69,
+    "gauge": 62
+  },
+  "failedAssets": [
+    {
+      "url": "https://boilerhub.work/_next/static/css/0d0deafbb330a5e3.css",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/2318-2754a25473743664.js",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/app/page-a92830a463214770.js",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/7464-962fecfdc28caa02.js",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/app/layout-30626fd224f596f8.js",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/50bd6b7f-a81829f9555d006d.js",
+      "status": 404
+    },
+    {
+      "url": "https://boilerhub.work/_next/static/chunks/5061-eee0918b7c9acf0a.js",
+      "status": 404
+    }
+  ],
+  "liveSuite": {
+    "passed": 161,
+    "failed": 1
+  },
+  "subsequentSequentialRechecks": {
+    "passed": 3,
+    "failed": 0
+  },
+  "rootCause": "Unconfirmed; observed during deployment, recovered afterward. No infrastructure change made."
+}

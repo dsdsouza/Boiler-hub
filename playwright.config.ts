@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const external = process.env.PLAYWRIGHT_BASE_URL;
-const baseURL = external || 'http://127.0.0.1:3100';
+const port = Number(process.env.PLAYWRIGHT_PORT || 3100);
+if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PLAYWRIGHT_PORT must be an integer from 1024 to 65535');
+const baseURL = external || `http://localhost:${port}`;
 const ci = Boolean(process.env.CI);
 
 export default defineConfig({
@@ -33,8 +35,8 @@ export default defineConfig({
   ],
   webServer: external ? undefined : {
     command: process.env.PLAYWRIGHT_PRODUCTION === '1'
-      ? 'pnpm start --hostname 127.0.0.1 --port 3100'
-      : 'pnpm dev --hostname 127.0.0.1 --port 3100',
+      ? `pnpm start --hostname localhost --port ${port}`
+      : `pnpm dev --hostname localhost --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

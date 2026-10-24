@@ -16,14 +16,15 @@ beforeAll(async () => {
     create table auth.users (id uuid primary key, instance_id uuid, aud text, role text,
       email text unique, raw_user_meta_data jsonb default '{}'::jsonb);
     create function auth.uid() returns uuid language sql stable as $$
-      select (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
+      select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
     $$;
     grant usage on schema auth, public to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
     alter default privileges in schema public grant all on tables to authenticated, service_role;
     alter default privileges in schema public grant all on sequences to authenticated, service_role;
   `);
-  for (const file of ['0001_init.sql', '0002_sources.sql', '0003_assignment_client_key.sql']) {
+  for (const file of ['0001_init.sql', '0002_sources.sql', '0003_assignment_client_key.sql', '0004_calendar_subscriptions.sql']) {
     await db.exec(await sqlFile(`supabase/migrations/${file}`));
   }
   for (const user of bank.users) {
@@ -90,7 +91,12 @@ describe('32 real SQL identities against the shipped RLS policies', () => {
     });
   }
   it('runs the existing five-person SQL visibility contract with rollback', async () => {
-    await db.exec(await sqlFile('supabase/tests/teams_visibility.sql'));
+    try { await db.exec(await sqlFile('supabase/tests/teams_visibility.sql')); }
+    finally { await db.exec('rollback'); }
+  });
+  it('runs the calendar-subscription token isolation SQL contract', async () => {
+    try { await db.exec(await sqlFile('supabase/tests/calendar_subscriptions.sql')); }
+    finally { await db.exec('rollback'); }
   });
   it('does not expose encrypted source secrets to a signed-in owner', async () => {
     await asUser(bank.users[0].id, async () => {
