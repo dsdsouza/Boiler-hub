@@ -62,10 +62,11 @@ test('public routes load their assets without missing chunks or runtime errors',
     if ((path.startsWith('/_next/static/') || path.startsWith('/fonts/')) && response.status() >= 400) failures.push({ path, status: response.status() });
   });
   page.on('pageerror', (error) => errors.push(error.message));
-  for (const path of ['/', '/demo', '/how']) {
+  for (const path of ['/', '/demo', '/how', '/calendar-helper']) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
     const fontsLoaded = await page.evaluate(async () => {
       const faces = await Promise.all([
         document.fonts.load('400 16px "Bebas Neue"'),
