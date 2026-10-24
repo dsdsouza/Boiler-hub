@@ -9,7 +9,7 @@ export function DemoContent() {
   return (
     <>
       <section id="engine-room" aria-label="Engine Room" className="scroll-mt-4">
-        <DemoEngineRoom personal={boiler.data} />
+        <DemoEngineRoom personal={boiler.data} onAssign={boiler.addDemoAssignment} />
       </section>
       <section id="maya" aria-label="Maya’s boiler" className="scroll-mt-4 border-t border-line pt-12">
         <DemoMyBoiler boiler={boiler} />
