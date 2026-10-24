@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Size, Zone } from "@/lib/types";
 import { BoilerTile } from "@/components/boiler/BoilerTile";
 import { demoTeams, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
+import { safeHiddenCount } from "@/app/api/teams/_lib/assignment";
 import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/lib/pressure";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -58,6 +59,8 @@ export function DemoEngineRoom() {
   const [teamIdx, setTeamIdx] = useState(1);
   const [filter, setFilter] = useState<Zone | "all">("all");
   const team = teams[teamIdx]!;
+  // Same k-anonymity rule as real teams: no hidden count below two.
+  const hiddenShown = safeHiddenCount(team.hiddenCount);
   const n = nouns(team.team.type);
 
   const [title, setTitle] = useState(DEFAULT_TITLE[team.team.type]);
@@ -142,16 +145,16 @@ export function DemoEngineRoom() {
           <div className="font-mono text-[13px] tracking-[0.16em] text-brass-ink">ENGINE ROOM · {team.team.type === "class" ? "CLASS" : "WORK TEAM"}</div>
           <h1 className="m-0 font-display text-[48px] leading-none font-normal tracking-[0.02em] sm:text-[60px]">{team.team.name}</h1>
           <p className="m-0 text-[15px] text-muted">
-            You are the {n.lead} · {team.boilers.length + team.hiddenCount} {n.members}
+            You are the {n.lead} · {team.boilers.length + hiddenShown} {n.members}
           </p>
         </div>
-        {team.hiddenCount > 0 && (
+        {hiddenShown > 0 && (
           <span className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-dashed border-rivet px-3.5 text-sm text-body">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M3 3l18 18" />
               <path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 5 10 7a14 14 0 0 1-3 3.8M6.6 6.6C4.4 8 2.9 10.2 2 12c1 2 5 7 10 7a9.6 9.6 0 0 0 4.4-1" />
             </svg>
-            {team.hiddenCount} hidden {team.hiddenCount === 1 ? n.member : n.members}
+            {hiddenShown} hidden {hiddenShown === 1 ? n.member : n.members}
           </span>
         )}
       </div>
@@ -250,9 +253,9 @@ export function DemoEngineRoom() {
                           </div>
                         );
                       })}
-                    {team.hiddenCount > 0 && (
+                    {hiddenShown > 0 && (
                       <div className="border-t border-surface-2 pt-[9px] text-[13px] text-muted">
-                        + {team.hiddenCount} hidden {team.hiddenCount === 1 ? n.member : n.members} ·{" "}
+                        + {hiddenShown} hidden {hiddenShown === 1 ? n.member : n.members} ·{" "}
                         {hiddenIntoRed ? `${hiddenIntoRed} would cross into Redline` : "no Redline crossing"}
                       </div>
                     )}
@@ -261,7 +264,7 @@ export function DemoEngineRoom() {
               </div>
 
               <Button variant="primary" className="min-h-[52px] text-2xl" disabled={!now || !title.trim()} onClick={post}>
-                Post to {team.boilers.length + team.hiddenCount} {n.members}
+                Post to {team.boilers.length + hiddenShown} {n.members}
               </Button>
               <p className="m-0 text-xs text-muted">The preview adds this task to each stored snapshot. No calendars are re-read.</p>
             </div>
