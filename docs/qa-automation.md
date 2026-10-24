@@ -14,7 +14,7 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 28 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (168 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo, formula and privacy pages, including failed Next.js chunks/styles and runtime exceptions.
+There are 28 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (168 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
 
 The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
@@ -57,7 +57,17 @@ PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_STORAGE_STATE=.qa/auth/class-lead-
 pnpm exec playwright open --load-storage=.qa/auth/class-lead-01.json https://boilerhub.work/boiler
 ```
 
-Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `outsider`; the plan lists all 32. Session generation verifies the authenticated user ID and saves real Supabase SSR cookies privately. Run it with the same target host used by the browser. The separate authenticated smoke test reads the user's teams and opens their boiler; opening a boiler performs the app's normal sync. It has no traces/video/screenshots enabled by default. Authenticated provisioning and smoke tests have **not** been run unless the execution record explicitly says so.
+Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `outsider`; the plan lists all 32. Session generation verifies the authenticated user ID and saves real Supabase SSR cookies privately. Run it with the same target host used by the browser. The separate authenticated smoke test checks each user's team membership and visible teammate IDs, then opens their boiler and teams; opening a boiler performs the app's normal sync. It has no traces/video/screenshots enabled by default.
+
+To regenerate and test every account together:
+
+```sh
+PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm qa:session --all
+PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json QA_AUTH_WORKERS=4 pnpm test:e2e:auth
+PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json pnpm test:e2e:auth:known --project=class-member-03
+```
+
+The current 32-account bank and browser states were provisioned and verified in the live project, and copied into the primary local checkout's ignored `.qa` directory. The local `.env.qa.local` contains only the public project URL/anon key for future session refreshes. The temporary admin-key copy was removed after provisioning.
 
 ## GitHub Actions
 
@@ -68,6 +78,8 @@ The final **QA gate** job runs even when a dependency fails or is skipped, and s
 GitHub must also enforce this check in repository settings. After the first successful staging run, a repository administrator can run `pnpm qa:protect-main` while authenticated through `gh`. The script verifies admin permission, finds the successful Actions check, pins its GitHub App, and requires an up-to-date PR plus **QA gate**, including for administrators. Force pushes and branch deletion are disabled. A workflow file alone cannot prevent merging; verify the server-side protection separately. The script intentionally changes only this repository's `main` branch.
 
 Focused regression command: `pnpm test:e2e:regressions`. Full local check: `pnpm qa:check` (start with `pnpm build` and `PLAYWRIGHT_PRODUCTION=1` for production-browser testing).
+
+`Authenticated QA` is a separate manual workflow that checks trusted main against the live deployment using the 32 synthetic accounts. The encrypted repository secrets contain only the synthetic credential bank and the public project key; no admin key is used. All account and privacy assertions are blocking, with no defect quarantine. Authenticated traces, screenshots, sessions and password files are never uploaded, and the workflow removes `.qa` on completion. This live integration run is separate from the credential-free PR gate so fork code never receives account credentials.
 
 ## TesterArmy
 
@@ -92,7 +104,7 @@ Migrations 0005 and 0006 must be applied through the Supabase SQL editor before 
 
 Two earlier cloud findings were not substantiated: the completion report compared nonlinear displayed score points with raw pressure points, and the recurring-event report treated a rolling seven-day forecast change as a series leak. Neither is counted as a confirmed defect here. A reduced-motion development hydration warning was also observed; the stylesheet includes a reduced-motion fallback, so it is a diagnostic observation rather than a claimed animation failure.
 
-Still outside this automated gate: fresh Google OAuth consent/revocation, real recurring-event isolation, provisioned live QA account flows, a real Brightspace school feed and the cloud webhook. The existing signed-in session was previously checked for Google refresh, source validation and mobile layout; those checks do not substitute for these unverified flows. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control.
+Still outside this automated gate: fresh Google OAuth consent/revocation, real recurring-event isolation, a real Brightspace school feed and the cloud webhook. The existing signed-in session was previously checked for Google refresh, source validation and mobile layout; those checks do not substitute for these unverified flows. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control.
 
 ## Execution record
 
@@ -106,3 +118,5 @@ After the regression fixes, the production build, type check and lint passed. Vi
 Migrations **0005 and 0006 were applied through the Supabase SQL editor** to the project verified against the live app's sign-in destination. A read-only transaction checked the hidden-count contract for every existing membership in the live database. The atomic posting function is installed, executable by `service_role`, and inaccessible to `authenticated`; no user data was inserted or changed by that verification. Failure injection and rollback recovery were exercised only in ephemeral PostgreSQL.
 
 Repository administration is separate from pushing code. The available GitHub CLI accounts lack admin permission, and the signed-in browser shows “You don't have access to repository options.” The owner setup command above is provided so required-check enforcement can be completed without changing credentials. Do not treat the workflow's presence as proof that branch protection is enabled.
+
+A concurrent staging update added live QA-account verification and Apple Calendar setup. These changes were preserved in the integration; the final combined checks and signed-in privacy assertions are recorded below.

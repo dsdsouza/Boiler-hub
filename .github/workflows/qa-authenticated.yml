@@ -1,0 +1,48 @@
+name: Authenticated QA
+
+# Credentials are available only to an explicitly dispatched run of trusted main.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-authenticated
+  cancel-in-progress: false
+
+jobs:
+  accounts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_BASE_URL: https://boilerhub.work
+      QA_EXPECTED_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
+      QA_ACCOUNT_BANK: .qa/credentials-regression.json
+      QA_NAMESPACE: regression
+      QA_AUTH_WORKERS: '4'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Prepare private QA sessions
+        env:
+          QA_ACCOUNT_BANK_JSON: ${{ secrets.QA_ACCOUNT_BANK_JSON }}
+          QA_SUPABASE_ANON_KEY: ${{ secrets.QA_SUPABASE_ANON_KEY }}
+        run: |
+          node scripts/qa/ci-accounts.mjs
+          pnpm qa:session --all
+      - name: Verify all 32 accounts and privacy contracts
+        run: pnpm test:e2e:auth
+      - name: Remove private browser sessions
+        if: always()
+        run: node -e "require('node:fs').rmSync('.qa', { recursive:true, force:true })"
