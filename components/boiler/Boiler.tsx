@@ -1,14 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import type { Status, Zone } from "@/lib/types";
-import { useSound } from "@/components/ui/Providers";
 import { STATUS_META, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
 import { Gauge } from "./Gauge";
 import { BODY_PATH, TANK_PATH, VIEW, boilerVisuals, clampScore, wavePath } from "./geometry";
 import { Steam } from "./Steam";
-import { playWhistle } from "./Whistle";
 
 export interface BoilerProps {
   score: number;
@@ -25,7 +23,7 @@ export interface BoilerProps {
   fire?: number;
   /** Increment to fire a vent burst (a task was completed). */
   vent?: number;
-  /** Whistle (visual, plus sound if enabled in the header) when the score crosses 90. Default: lg only. */
+  /** Visual whistle burst when the score crosses 90. Default: lg only. */
   whistle?: boolean;
   /** Accessible name, e.g. "Pip". Default "Boiler". */
   name?: string;
@@ -38,6 +36,15 @@ export interface BoilerProps {
 
 const WIDTH = { sm: 150, lg: 290 } as const;
 const BODY_RIVETS = [112, 134, 156, 178, 200, 222];
+
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+function subscribeMotionPreference(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+const reducedMotionSnapshot = () => window.matchMedia(REDUCED_MOTION).matches;
+const serverMotionSnapshot = () => true;
 
 export function Boiler({
   score,
@@ -57,7 +64,7 @@ export function Boiler({
   const s = Math.round(clampScore(score));
   const zone = zoneProp ?? zoneOf(s);
   const v = boilerVisuals(s, zone);
-  const reduced = useReducedMotion();
+  const reduced = useSyncExternalStore(subscribeMotionPreference, reducedMotionSnapshot, serverMotionSnapshot);
   const still = !animate || !!reduced;
   // Off-screen (reported by Steam's IntersectionObserver): CSS loops pause in place and the shake stops.
   const [onScreen, setOnScreen] = useState(true);
@@ -66,7 +73,6 @@ export function Boiler({
   // Shake amplitude in CSS px per viewBox unit; fluid boilers assume ~240px.
   const px = w === "fluid" ? 1 : w / VIEW.w;
   const clipId = "bt" + useId().replace(/[^a-zA-Z0-9]/g, "");
-  const { soundOn } = useSound();
 
   // Whistle when the score crosses 90 on the way up.
   const prev = useRef(s);
@@ -78,11 +84,8 @@ export function Boiler({
     if (!whistle || !(was < 90 && s >= 90)) return;
     setWhistleKey((k) => k + 1);
     setWhistling(true);
-    if (soundOn) playWhistle();
     const t = setTimeout(() => setWhistling(false), 1500);
     return () => clearTimeout(t);
-    // soundOn is read at crossing time only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s, whistle]);
 
   const fireLevel = Math.max(0, Math.min(1, fire ?? v.fire));

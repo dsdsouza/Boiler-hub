@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MyBoilerData } from "@/components/boiler/boilerState";
 import type { VentEvent } from "@/components/boiler/useMyBoiler";
 import { Card } from "@/components/ui/Card";
-import { readStorage, writeStorage } from "@/components/ui/theme";
+import { readStorage, writeStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { companionMessage, type CompanionTarget } from "./companionMessage";
 import { Mascot } from "./Mascot";
@@ -17,11 +17,11 @@ import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
 const VENT_MESSAGE_MS = 8000;
 
-/** Heading ids rendered by MyBoilerView (forecast card) and Breakdown. */
-const TARGET_ID: Record<CompanionTarget, string> = { forecast: "fc", breakdown: "why" };
+/** Breakdown renders one copy per breakpoint; focus the visible copy. */
+const TARGET_SELECTOR: Record<CompanionTarget, string> = { forecast: "#fc", breakdown: '[data-boiler-section="breakdown"] h2' };
 
 function jumpTo(target: CompanionTarget) {
-  const el = document.getElementById(TARGET_ID[target]);
+  const el = Array.from(document.querySelectorAll<HTMLElement>(TARGET_SELECTOR[target])).find((heading) => heading.getClientRects().length > 0);
   if (!el) return;
   if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -33,6 +33,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   const [hidden, setHidden] = useState(false);
   const [recentVent, setRecentVent] = useState<number | null>(null);
   const [dressing, setDressing] = useState(false);
+  const wardrobeButton = useRef<HTMLButtonElement>(null);
   const accessory = usePipAccessory();
 
   useEffect(() => setHidden(readStorage(PIP_HIDDEN_KEY) === "1"), []);
@@ -60,6 +61,11 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   const setHide = (h: boolean) => {
     setHidden(h);
     writeStorage(PIP_HIDDEN_KEY, h ? "1" : "0");
+  };
+
+  const closeWardrobe = () => {
+    setDressing(false);
+    wardrobeButton.current?.focus();
   };
 
   if (hidden) {
@@ -99,6 +105,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           )}
           <button
             type="button"
+            ref={wardrobeButton}
             onClick={() => setDressing((d) => !d)}
             aria-expanded={dressing}
             className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
@@ -107,8 +114,16 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           </button>
         </div>
         {dressing && (
-          <div className="mt-1 max-w-[360px] border-t border-line pt-3">
-            <PipWardrobe score={result.score} onDone={() => setDressing(false)} autoFocus />
+          <div
+            className="mt-1 max-w-[360px] border-t border-line pt-3"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                closeWardrobe();
+              }
+            }}
+          >
+            <PipWardrobe score={result.score} onDone={closeWardrobe} autoFocus />
           </div>
         )}
       </div>

@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { SoundToggle, ThemeToggle } from "./Toggles";
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5 text-fg no-underline hover:text-fg">
+    <Link href="/" className="flex min-h-11 items-center gap-2.5 text-fg no-underline hover:text-fg">
       <svg width={size} height={size} viewBox="0 0 34 34" aria-hidden="true">
         <circle cx="17" cy="17" r="14" fill="none" stroke="#D1A85A" strokeWidth="3" />
         <line x1="17" y1="17" x2="25" y2="10" stroke="#F0913A" strokeWidth="3" strokeLinecap="round" />
@@ -43,7 +42,7 @@ function NavLink({ href, label, current }: { href: string; label: string; curren
 }
 
 /**
- * `app` is the signed-in shell (My Boiler / Teams / How, sound toggle, avatar);
+ * `app` is the signed-in shell (My Boiler / Teams / Sources / How, avatar);
  * `marketing` is the landing and demo shell (How / Demo, sign-in).
  * On phones the app nav moves to <MobileTabBar>.
  */
@@ -71,16 +70,14 @@ export function SiteHeader({
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex">
-            <SoundToggle />
-          </span>
-          <span className="sm:hidden">
-            <SoundToggle compact />
-          </span>
-          <ThemeToggle />
-          {account}
-        </div>
+        {account && <div className="flex items-center gap-2">{account}</div>}
+        {variant === "marketing" && (
+          <nav aria-label="Main" className="flex w-full flex-wrap gap-1 border-t border-line pt-1 md:hidden">
+            {nav.map((n) => (
+              <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} />
+            ))}
+          </nav>
+        )}
       </div>
     </header>
   );
@@ -152,6 +149,16 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
       ),
     },
     {
+      key: "sources",
+      href: "/settings/sources",
+      label: "Sources",
+      icon: (
+        <>
+          <path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7" />
+        </>
+      ),
+    },
+    {
       key: "how",
       href: "/how",
       label: "How",
@@ -166,7 +173,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
   return (
     <nav
       aria-label="App"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line bg-bg-2 pb-[max(env(safe-area-inset-bottom),8px)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-bg-2 pb-[max(env(safe-area-inset-bottom),8px)] sm:hidden"
     >
       {tabs.map((t) => (
         <Link

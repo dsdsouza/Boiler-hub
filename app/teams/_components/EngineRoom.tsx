@@ -54,7 +54,7 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
 
   return (
     <main className="mx-auto flex max-w-[1320px] flex-col gap-[22px] px-4 pb-16 pt-7 sm:px-8">
-      <Link href="/teams" className="text-sm" style={{ color: C.brassLight }}>
+      <Link href="/teams" className="inline-flex min-h-11 items-center self-start text-sm" style={{ color: C.brassLight }}>
         ← My Teams
       </Link>
 
@@ -91,7 +91,7 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
       </div>
 
       <details className="rounded-xl px-4 py-3" style={{ backgroundColor: C.surface, border: `1px solid ${C.line}` }}>
-        <summary className="min-h-8 cursor-pointer text-sm font-semibold" style={{ color: C.text2 }}>
+        <summary className="min-h-11 cursor-pointer content-center text-sm font-semibold" style={{ color: C.text2 }}>
           Your visibility on this team
         </summary>
         <div className="pt-3">
@@ -176,7 +176,8 @@ function JumpToAssignment() {
       type="button"
       onClick={() => {
         const panel = document.getElementById("new-assignment")?.closest("aside");
-        panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        panel?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
         const target = panel?.querySelector<HTMLElement>("#a-title") ?? panel?.querySelector<HTMLElement>("button");
         target?.focus({ preventScroll: true });
       }}

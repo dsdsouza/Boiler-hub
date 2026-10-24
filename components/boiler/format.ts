@@ -42,12 +42,17 @@ export function weekday(ymd: string, long = false) {
   return (long ? WEEKDAY_LONG : WEEKDAY)[day]!;
 }
 
-/** Team-safe category counts: "14 meetings · 16.5 h · 4 due · 1 overdue". */
-export function countsLine(c: Counts, type: "class" | "work" = "work") {
+/** Team-safe category counts, shared by badges and plain-text summaries. */
+export function countParts(c: Counts, type: "class" | "work" = "work") {
   const noun = type === "class" ? (c.meetings === 1 ? "class" : "classes") : c.meetings === 1 ? "meeting" : "meetings";
   const parts = [`${c.meetings} ${noun}`, `${c.meetingHours} h`, `${c.tasksDue} due`];
   if (c.overdue) parts.push(`${c.overdue} overdue`);
-  return parts.join(" · ");
+  return parts;
+}
+
+/** Team-safe category counts: "14 meetings · 16.5 h · 4 due · 1 overdue". */
+export function countsLine(c: Counts, type: "class" | "work" = "work") {
+  return countParts(c, type).join(" · ");
 }
 
 export function forecastCaption(days: ForecastDay[]) {
