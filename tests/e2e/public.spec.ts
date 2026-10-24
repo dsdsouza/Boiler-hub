@@ -25,6 +25,10 @@ for (const [value, zone] of [[0, 'Cool'], [39, 'Cool'], [40, 'Working'], [69, 'W
     await expect(slider).toHaveValue('0');
     for (let i = 0; i < value; i++) await slider.press('ArrowRight');
     await expect(slider).toHaveValue(String(value));
+    await expect(page.locator('.bp-pressure-control')).toHaveAttribute('data-zone', zone.toLowerCase());
+    await expect(page.locator('output[for="pressure"]')).toContainText(`${value}%`);
+    const colors = { Cool: 'rgb(127, 179, 213)', Working: 'rgb(209, 168, 90)', Hot: 'rgb(240, 145, 58)', Redline: 'rgb(242, 92, 69)' };
+    await expect(page.locator('.bp-pressure-fill')).toHaveCSS('background-color', colors[zone]);
     await expect(page.getByRole('img', { name: new RegExp(`^Boiler at pressure ${value}, ${zone}`) })).toBeVisible();
   });
 }
