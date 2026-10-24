@@ -131,3 +131,25 @@ test('a confirmed subscription recovers from a failed request without creating e
   await expect(page.getByRole('group', { name: 'Subscribe to your deadlines?', exact: true })).toHaveCount(0);
   expect(posts).toBe(2);
 });
+
+
+test('signed-in home keeps app navigation at the top across screen sizes', async ({ page }) => {
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const header = page.getByRole('banner');
+    const nav = header.getByRole('navigation', { name: 'Main', exact: true });
+    await expect(nav).toHaveCount(1);
+    for (const [name, href] of [['My Boiler', '/boiler'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['How it works', '/how']]) {
+      const link = nav.getByRole('link', { name, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', href);
+    }
+    await expect(header.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Sign in with Google', exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.getByRole('banner').getByRole('link', { name: 'Teams', exact: true }).click();
+  await expect(page).toHaveURL(/\/teams$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});

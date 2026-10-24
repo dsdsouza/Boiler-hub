@@ -27,6 +27,10 @@ describe("landing session", () => {
     expect(html).toContain('/auth/signin?next=%2Fsettings%2Fsources');
     expect(html).not.toContain("Sign out");
     expect(html).not.toContain("Open My Boiler");
+    const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
+    expect(header).toContain('href="/demo"');
+    expect(header).not.toContain('href="/teams"');
+    expect(header).not.toContain('href="/settings/sources"');
   });
 
   it("shows the verified account and boiler link instead of Google sign-in", async () => {
@@ -39,6 +43,11 @@ describe("landing session", () => {
     expect(html).toContain('href="/boiler"');
     expect(html).toContain("Open My Boiler");
     expect(html).not.toContain("Sign in with Google");
+    const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
+    for (const href of ["/boiler", "/teams", "/settings/sources", "/how"]) {
+      expect(header).toContain(`href="${href}"`);
+    }
+    expect(header).not.toContain('href="/demo"');
     expect(getUser).toHaveBeenCalledTimes(1);
   });
 
