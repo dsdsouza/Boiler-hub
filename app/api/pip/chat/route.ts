@@ -4,7 +4,9 @@ import { MAX_CHAT_BODY, parseChatBody } from "@/lib/pip/contracts";
 import { assignmentContext } from "@/lib/pip/context";
 import { askGemini, streamGemini } from "@/lib/pip/gemini";
 import { pipFailure, type PipStage } from "@/lib/pip/failure";
-import { PIP_STREAM_TYPE } from "@/lib/pip/stream";
+import { checkPipScope } from "@/lib/pip/scope";
+import { PIP_REFUSAL } from "@/lib/pip/policy";
+import { MAX_PIP_REPLY, PIP_STREAM_TYPE } from "@/lib/pip/stream";
 import { pipStreamResponse } from "@/lib/pip/stream-response";
 import type { StudyProposal } from "@/lib/pip/planning";
 
@@ -16,7 +18,7 @@ const error = (message: string, status: number, extra?: Record<string, string>) 
 function failureMessage(stage: PipStage, failure: unknown) {
   const diagnostic = pipFailure(stage, failure);
   console.warn("[pip] chat failed", diagnostic);
-  const busy = stage === "gemini" && (diagnostic.status === 503 || diagnostic.kind === "timeout");
+  const busy = (stage === "gemini" || stage === "scope" || stage === "review") && (diagnostic.status === 503 || diagnostic.kind === "timeout");
   return { busy, message: busy ? "Gemini is temporarily busy. Please try again in a moment. Your assignments are unchanged." : "Pip couldn’t answer right now. Your assignments are unchanged. Please try again." };
 }
 
@@ -55,19 +57,43 @@ export async function POST(request: Request) {
     const { data: quota, error: quotaError } = await auth.supabase.rpc("pip_chat_take_quota");
     if (quotaError || !quota || typeof quota.allowed !== "boolean") return error("Pip chat is temporarily unavailable. Please try again later.", 503);
     if (!quota.allowed) return error("You’ve reached Pip’s chat limit. Please try again later.", 429, { "Retry-After": String(Math.max(1, Math.min(86400, Number(quota.retryAfter) || 60))) });
+    // One budget includes both scope checks, source loading, and answer generation.
+    const signal = AbortSignal.any([request.signal, AbortSignal.timeout(50_000)]);
+    stage = "scope";
+    const scope = await checkPipScope(chat.messages, signal);
+    if (!scope.allowed) {
+      return NextResponse.json({ reply: PIP_REFUSAL, asOf: new Date().toISOString() }, { headers });
+    }
     stage = "assignments";
-    const context = await assignmentContext(auth.supabase, auth.user.id, chat.timeZone);
+    const context = await assignmentContext(auth.supabase, auth.user.id, scope.timeZone ?? chat.timeZone);
     if (chat.study) context.study = chat.study;
     stage = "gemini";
     if (request.headers.get("accept")?.includes(PIP_STREAM_TYPE)) {
-      return pipStreamResponse((signal) => streamGemini(chat.messages, context, signal), {
-        signal: request.signal, asOf: context.asOf,
-        onError: (failure) => failureMessage("gemini", failure).message,
+      return pipStreamResponse(async function* (streamSignal) {
+        // Never display provider deltas before reviewing the entire bounded reply.
+        let draft = "";
+        let proposal: StudyProposal | undefined;
+        for await (const part of streamGemini(chat.messages, context, streamSignal)) {
+          if (typeof part !== "string") { proposal = part.proposal; continue; }
+          draft += part;
+          if (draft.length > MAX_PIP_REPLY) throw new Error("Oversized model reply");
+        }
+        if (!draft.trim()) throw new Error("Empty model reply");
+        stage = "review";
+        const approved = (await checkPipScope(chat.messages, streamSignal, proposal ? JSON.stringify({ reply: draft, proposal }) : draft)).allowed;
+        if (approved && proposal) yield { proposal };
+        yield approved ? draft : PIP_REFUSAL;
+      }, {
+        signal, asOf: context.asOf,
+        onError: (failure) => failureMessage(stage, failure).message,
       });
     }
     let proposal: StudyProposal | undefined;
-    const reply = await askGemini(chat.messages, context, request.signal, (value) => { proposal = value; });
-    return NextResponse.json({ reply, asOf: context.asOf, ...(proposal ? { proposal } : {}) }, { headers: { ...headers, Vary: "Accept" } });
+    const draft = await askGemini(chat.messages, context, signal, (value) => { proposal = value; });
+    stage = "review";
+    const approved = (await checkPipScope(chat.messages, signal, proposal ? JSON.stringify({ reply: draft, proposal }) : draft)).allowed;
+    const reply = approved ? draft : PIP_REFUSAL;
+    return NextResponse.json({ reply, asOf: context.asOf, ...(approved && proposal ? { proposal } : {}) }, { headers: { ...headers, Vary: "Accept" } });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
     const failureInfo = failureMessage(stage, failure);

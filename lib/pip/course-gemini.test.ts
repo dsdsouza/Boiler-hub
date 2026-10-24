@@ -79,6 +79,8 @@ it("routes source questions through non-stored Gemini Interactions with verified
   expect(body.store).toBe(false);
   expect(body.generation_config.thinking_level).toBe("low");
   expect(body.system_instruction).toContain("untrusted data");
+  expect(body.system_instruction).toContain("even ungraded practice");
+  expect(body.system_instruction).toContain("never quote solutions");
 });
 
 it("rejects invented citations and never silently substitutes a demo answer", async () => {
