@@ -21,7 +21,9 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const signin = `/auth/signin?next=${encodeURIComponent(next)}`;
   const failed = params.error === "signin" || params.error === "auth";
 
-  return (
+  // Keep the page wrapper and header in the same hydration boundary as its
+  // streamed Flight children, so a replay cannot claim the wrapper twice.
+  return <Suspense fallback={null}>
     <div className="min-h-screen">
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
@@ -35,8 +37,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         )}
       />
 
-      {/* Isolate streamed Flight children from the bundled React hydration replay bug. */}
-      <Suspense fallback={null}>
       <main>
         {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
@@ -120,9 +120,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
-      </Suspense>
     </div>
-  );
+  </Suspense>;
 }
 
 function Step({ title, text, icon, color }: { title: string; text: string; icon: React.ReactNode; color: string }) {
