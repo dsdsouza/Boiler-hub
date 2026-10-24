@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
@@ -32,6 +33,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         )}
       />
 
+      {/* Isolate streamed Flight children from the bundled React hydration replay bug. */}
+      <Suspense fallback={null}>
       <main>
         {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
@@ -117,6 +120,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
+      </Suspense>
     </div>
   );
 }

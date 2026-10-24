@@ -44,8 +44,8 @@ function recompute(data: MyBoilerData, items: LoadItem[], now: Date): MyBoilerDa
   return { ...data, items, result: computePressure(items, now, { timeZone: data.timeZone ?? "UTC" }) };
 }
 
-export function addTask(data: MyBoilerData, task: NewTask, id: string, now: Date): MyBoilerData {
-  const item: LoadItem = { id, kind: "task", source: "manual", title: task.title, due: task.due || undefined, size: task.size, doneAt: null };
+export function addTask(data: MyBoilerData, task: NewTask, id: string, now: Date, source: "manual" | "team" = "manual"): MyBoilerData {
+  const item: LoadItem = { id, kind: "task", source, title: task.title, due: task.due || undefined, size: task.size, doneAt: null };
   return recompute(data, [...data.items, item], now);
 }
 

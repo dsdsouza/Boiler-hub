@@ -85,13 +85,13 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
 
   return (
     <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-4 sm:pl-5">
-      <div className="grid min-w-0 flex-1 gap-x-6 gap-y-1.5 py-0.5 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-1.5 py-0.5 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
           {MASCOT_NAME} <span className="text-muted">· {ZONE_LABEL[result.zone]} {result.score}</span>
         </div>
         <div>
           <p className="m-0 text-base leading-snug font-semibold text-fg">{message.headline}</p>
-          <p className="m-0 mt-0.5 text-sm leading-normal text-body">{message.body}</p>
+          <p className="m-0 mt-0.5 break-words text-sm leading-normal text-body">{message.body}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:items-center">
           {message.action && (
