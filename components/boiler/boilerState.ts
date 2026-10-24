@@ -36,7 +36,7 @@ export interface TaskMeta {
 
 export interface NewTask {
   title: string;
-  due: string;
+  due: string | null;
   size: Size;
 }
 
@@ -45,7 +45,7 @@ function recompute(data: MyBoilerData, items: LoadItem[], now: Date): MyBoilerDa
 }
 
 export function addTask(data: MyBoilerData, task: NewTask, id: string, now: Date): MyBoilerData {
-  const item: LoadItem = { id, kind: "task", source: "manual", title: task.title, due: task.due, size: task.size, doneAt: null };
+  const item: LoadItem = { id, kind: "task", source: "manual", title: task.title, due: task.due ?? undefined, size: task.size, doneAt: null };
   return recompute(data, [...data.items, item], now);
 }
 

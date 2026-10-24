@@ -92,34 +92,3 @@ jobs:
           name: browser-report
           path: playwright-report
           retention-days: 14
-
-  known-issues:
-    # Explicitly visible as a nonblocking job; these assertions remain red until the defects are fixed.
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://qa-project.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon-placeholder
-      PLAYWRIGHT_PRODUCTION: '1'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.25.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm build
-      - run: pnpm test:e2e:known --project=desktop-chromium --reporter=list,html
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: known-issue-evidence
-          path: |
-            playwright-report
-            test-results
-          retention-days: 14

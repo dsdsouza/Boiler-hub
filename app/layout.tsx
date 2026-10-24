@@ -3,6 +3,7 @@ import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import { PipDock } from "@/components/mascot/PipDock";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import "./globals.css";
+import { deploymentRecovery } from "@/lib/deployment-recovery";
 
 const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas", display: "swap" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -29,6 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${bebas.variable} ${inter.variable} ${jetbrains.variable}`}>
+      <head><script dangerouslySetInnerHTML={{ __html: deploymentRecovery }} /></head>
       <body className="antialiased">
         {children}
         <SiteFooter />

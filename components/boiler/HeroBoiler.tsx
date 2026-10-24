@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Boiler } from "./Boiler";
 import { ZONE_INK, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
+
+const subscribe = () => () => {};
 
 /** Landing hero: an idling boiler with a "drag to add pressure" slider (Main.dc.html). */
 export function HeroBoiler() {
   const [score, setScore] = useState(62);
+  const interactive = useSyncExternalStore(subscribe, () => true, () => false);
   const zone = zoneOf(score);
   return (
     <div className="flex flex-col items-center gap-5 rounded-[14px] border border-line bg-surface px-5 pt-9 pb-7 shadow-(--shadow) plate sm:px-8">
@@ -28,6 +31,7 @@ export function HeroBoiler() {
           min={0}
           max={100}
           value={score}
+          disabled={!interactive}
           aria-valuetext={`${score}, ${ZONE_LABEL[zone]}`}
           onChange={(e) => setScore(Number(e.target.value))}
           className="m-0 h-11 w-full cursor-pointer"
