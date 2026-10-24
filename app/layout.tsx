@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
+import { PipDock } from "@/components/mascot/PipDock";
 import { Providers } from "@/components/ui/Providers";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { THEME_INIT_SCRIPT } from "@/components/ui/theme";
@@ -41,6 +42,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <SiteFooter />
+          <PipDock />
         </Providers>
       </body>
     </html>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OnboardingPip } from "@/components/mascot/OnboardingPip";
 import { AccountMenu } from "@/components/ui/Account";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { OnboardingClient } from "./OnboardingClient";
@@ -14,6 +15,7 @@ export default function OnboardingPage() {
           <h1 className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">Light your boiler</h1>
           <p className="mt-2 mb-0 text-[15px] text-muted">A few quick steps, then you are on your gauge.</p>
         </div>
+        <OnboardingPip />
         <OnboardingClient />
       </main>
     </div>
