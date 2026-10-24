@@ -1,0 +1,88 @@
+/*
+  Pip's motion. Scoped by the mp- prefix so it never touches the boiler's bp-
+  classes. Everything stops under prefers-reduced-motion or a [data-still]
+  ancestor, and the resting pose stays readable without animation.
+*/
+
+@keyframes mp-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.12); }
+}
+@keyframes mp-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  70% { transform: rotate(-16deg); }
+  80% { transform: rotate(6deg); }
+  90% { transform: rotate(-12deg); }
+}
+@keyframes mp-water-r {
+  from { transform: translateX(0); }
+  to { transform: translateX(80px); }
+}
+@keyframes mp-water-l {
+  from { transform: translateX(0); }
+  to { transform: translateX(-80px); }
+}
+@keyframes mp-steam {
+  0% { transform: translate(0, 4px) scale(0.55); opacity: 0; }
+  25% { opacity: var(--o, 0.8); }
+  100% { transform: translate(var(--dx, 0px), -20px) scale(1.35); opacity: 0; }
+}
+@keyframes mp-bubble {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 0.75; }
+  100% { transform: translateY(-46px); opacity: 0; }
+}
+@keyframes mp-hop {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-7px); }
+  60% { transform: translateY(0); }
+  75% { transform: translateY(-2px); }
+}
+@keyframes mp-burst {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -18px)) scale(1.5); opacity: 0; }
+}
+@keyframes mp-drip {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+@keyframes mp-pop {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.mp-blink { transform-box: fill-box; transform-origin: center; animation: mp-blink 5.5s ease-in-out infinite; }
+.mp-wave { transform-box: view-box; transform-origin: 93px 80px; animation: mp-wave 3.2s ease-in-out infinite; }
+.mp-water-r { animation: mp-water-r var(--dur, 4s) linear infinite; }
+.mp-water-l { animation: mp-water-l var(--dur, 6s) linear infinite; }
+.mp-steam { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-steam var(--dur, 3s) ease-out infinite; animation-delay: var(--delay, 0s); }
+.mp-bubble { opacity: 0; animation: mp-bubble var(--dur, 2.4s) ease-in infinite; animation-delay: var(--delay, 0s); }
+.mp-hop { animation: mp-hop 0.7s ease-out 2; }
+.mp-burst { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-burst 1.1s ease-out 1 forwards; animation-delay: var(--delay, 0s); }
+.mp-drip { animation: mp-drip 2.4s ease-in-out infinite; }
+.mp-level { transition: transform 900ms cubic-bezier(0.34, 1.3, 0.64, 1); }
+.mp-pop { animation: mp-pop 260ms ease-out both; }
+
+[data-still] .mp-blink,
+[data-still] .mp-wave,
+[data-still] .mp-water-r,
+[data-still] .mp-water-l,
+[data-still] .mp-bubble,
+[data-still] .mp-hop,
+[data-still] .mp-drip,
+[data-still] .mp-pop {
+  animation: none;
+}
+[data-still] .mp-steam { animation: none; opacity: var(--o, 0.8); }
+[data-still] .mp-burst { animation: none; opacity: 0; }
+[data-still] .mp-level { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-blink, .mp-wave, .mp-water-r, .mp-water-l, .mp-bubble, .mp-hop, .mp-drip, .mp-pop {
+    animation: none;
+  }
+  .mp-steam { animation: none; opacity: var(--o, 0.8); }
+  .mp-burst { animation: none; opacity: 0; }
+  .mp-level { transition: none; }
+}
