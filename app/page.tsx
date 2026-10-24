@@ -2,7 +2,7 @@ import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { AccountControls, getViewer } from "@/components/ui/Account";
-import { ZONES, ZONE_BEHAVIOR, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
+import { ZONES, ZONE_DESCRIPTION, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
 import { HeroBoiler } from "@/components/boiler/HeroBoiler";
 
@@ -109,7 +109,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                   <h3 className={`m-0 font-display text-[30px] font-normal tracking-[0.05em] ${ZONE_INK[z]}`}>
                     {ZONE_LABEL[z]} · {ZONE_RANGE[z]}
                   </h3>
-                  <div className="text-center text-sm text-muted">{ZONE_BEHAVIOR[z]}</div>
+                  <div className="text-center text-sm text-muted">{ZONE_DESCRIPTION[z]}</div>
                 </div>
               ))}
             </div>
