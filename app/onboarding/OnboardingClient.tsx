@@ -6,13 +6,12 @@ import type { BoilerResponse } from "@/lib/pressure/api-types";
 import { Boiler } from "@/components/boiler/Boiler";
 import { CalendarUnavailableBanner, ReconnectBanner } from "@/components/boiler/ReconnectBanner";
 import { StatusPicker } from "@/components/boiler/StatusPicker";
-import { countsLine } from "@/components/boiler/format";
+import { CountBadges } from "@/components/boiler/CountBadges";
 import { statusBody } from "@/components/boiler/fromApi";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
-import { WINDOW_DAYS } from "@/lib/pressure/config";
 import { CalendarFeedForm, GitHubTokenForm } from "@/components/sources/SourceForms";
 import type { AddedSource } from "@/components/sources/api";
 import { FirstReadingPip } from "@/components/mascot/OnboardingPip";
@@ -102,8 +101,7 @@ export function OnboardingClient() {
         )}
         {boiler && connected && (
           <p className="m-0 text-body">
-            <strong className="text-cool-ink">Connected.</strong> We read your next {WINDOW_DAYS} days ({boiler.events.length}{" "}
-            {boiler.events.length === 1 ? "event" : "events"}) to compute a score. Event details are never stored.
+            <strong className="text-cool-ink">Connected.</strong>
           </p>
         )}
         {boiler?.calendar === "reconnect" && <ReconnectBanner next="/onboarding" />}
@@ -114,11 +112,11 @@ export function OnboardingClient() {
         {!boiler ? (
           <p className="m-0 text-muted">Waiting for the calendar…</p>
         ) : (
-          <div className="flex flex-wrap items-center gap-5">
-            <div className="w-[120px] flex-none">
+          <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
+            <div className="w-full sm:row-span-2">
               <Boiler score={boiler.result.score} zone={boiler.result.zone} size="sm" width="fluid" />
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="flex items-center gap-3">
                 <span className={`font-mono text-[44px] leading-none font-bold ${ZONE_INK[boiler.result.zone]}`}>
                   <span className="sr-only">Pressure </span>
@@ -126,11 +124,12 @@ export function OnboardingClient() {
                 </span>
                 <ZoneBadge zone={boiler.result.zone} />
               </div>
-              <p className="m-0 text-sm text-muted">{countsLine(boiler.result.counts)}</p>
-              <p className="m-0 text-sm text-muted">
-                {connected ? "Saved. Teams only see this if you choose." : "Tasks only, not shared until your calendar is connected."}
-              </p>
-              {connected && <FirstReadingPip score={boiler.result.score} zone={boiler.result.zone} />}
+              <CountBadges counts={boiler.result.counts} />
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              {connected ? <FirstReadingPip score={boiler.result.score} zone={boiler.result.zone} /> : (
+                <p className="m-0 text-sm text-muted">Tasks only, not shared until your calendar is connected.</p>
+              )}
             </div>
           </div>
         )}
@@ -139,7 +138,7 @@ export function OnboardingClient() {
       <Step n={3} title="Your status">
         {status ? (
           <>
-            <StatusPicker status={status.status} note={status.note} onChange={(s, n) => void changeStatus(s, n)} />
+            <StatusPicker status={status.status} note={status.note} labelledBy="step-3" onChange={(s, n) => void changeStatus(s, n)} />
             {statusError && (
               <p role="alert" className="mt-2 mb-0 text-sm text-redline-ink">
                 {statusError}

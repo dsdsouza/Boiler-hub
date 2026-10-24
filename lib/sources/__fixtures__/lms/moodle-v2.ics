@@ -1,0 +1,42 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Synthetic LMS Test//EN
+METHOD:PUBLISH
+X-WR-CALNAME:Fictional moodle Test
+BEGIN:VEVENT
+UID:coursicle-moodle-0@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261029T160000Z
+DTEND:20261029T170000Z
+SUMMARY:Moodle UPDATED Lab Report A
+DESCRIPTION:Fictional moodle assignment.\nCourse: TEST MOO BIO 101\nhttps://school.example/course/view.php?id=981101
+URL:https://school.example/course/view.php?id=981101
+LOCATION:TEST MOO BIO 101
+CATEGORIES:TEST MOO BIO 101
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-moodle-2@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261027T160000Z
+DTEND:20261027T170000Z
+SUMMARY:Moodle Essay Draft
+DESCRIPTION:Fictional moodle assignment.\nCourse: TEST MOO HIST 202\nhttps://school.example/course/view.php?id=981202
+URL:https://school.example/course/view.php?id=981202
+LOCATION:TEST MOO HIST 202
+CATEGORIES:TEST MOO HIST 202
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-moodle-3@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261028T160000Z
+DTEND:20261028T170000Z
+SUMMARY:Moodle New Reading
+DESCRIPTION:Fictional moodle assignment.\nCourse: TEST MOO HIST 202\nhttps://school.example/course/view.php?id=981202
+URL:https://school.example/course/view.php?id=981202
+LOCATION:TEST MOO HIST 202
+CATEGORIES:TEST MOO HIST 202
+END:VEVENT
+END:VCALENDAR

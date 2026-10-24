@@ -37,6 +37,12 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
         )}
       </Card>
 
+      <Card as="section" id="class-schedule" aria-labelledby="add-brightspace" className="scroll-mt-6 px-5 py-6 sm:px-7">
+        <CardTitle id="add-brightspace" className="mb-1">Import your class schedule</CardTitle>
+        <p className="mt-0 mb-4 text-sm text-muted">Bring classes and deadlines from Brightspace into My Boiler. Your schedule is visible only to you.</p>
+        <CalendarFeedForm initialProvider="brightspace" showProvider={false} idPrefix="brightspace" onAdded={(r) => upsert(r.source)} />
+      </Card>
+
       <Card as="section" aria-labelledby="add-feed" className="px-5 py-6 sm:px-7">
         <CardTitle id="add-feed" className="mb-1">
           Add a calendar feed

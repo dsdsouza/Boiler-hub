@@ -11,10 +11,12 @@ export function StatusPicker({
   status,
   note,
   onChange,
+  labelledBy,
 }: {
   status: Status;
   note: string;
   onChange: (status: Status, note: string) => void;
+  labelledBy?: string;
 }) {
   // Unique per instance: My Boiler renders one picker per breakpoint.
   const uid = useId();
@@ -36,8 +38,8 @@ export function StatusPicker({
 
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <Eyebrow id={`${uid}-label`}>Your status</Eyebrow>
-      <div role="group" aria-labelledby={`${uid}-label`} className="grid grid-cols-2 gap-2">
+      {!labelledBy && <Eyebrow id={`${uid}-label`}>Your status</Eyebrow>}
+      <div role="group" aria-labelledby={labelledBy ?? `${uid}-label`} className="grid grid-cols-2 gap-2">
         {STATUSES.map((s) => {
           const on = s === status;
           return (

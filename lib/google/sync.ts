@@ -170,6 +170,7 @@ function sourceTask(item: SourceItem, label: string | undefined): Task {
     itemKey: item.itemKey,
     ...(label ? { sourceLabel: label } : {}),
     ...(item.url ? { url: item.url } : {}),
+    ...(item.courseName ? { courseName: item.courseName } : {}),
   };
 }
 

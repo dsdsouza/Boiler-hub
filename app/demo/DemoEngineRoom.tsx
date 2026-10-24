@@ -222,9 +222,9 @@ export function DemoEngineRoom() {
                 </div>
               </div>
 
-              <div role="status" className="flex flex-col gap-3 rounded-[10px] border border-line bg-bg p-4">
+              <div className="flex flex-col gap-3 rounded-[10px] border border-line bg-bg p-4">
                 <div className="text-xs font-semibold tracking-[0.12em] text-muted">PRESSURE PREVIEW</div>
-                <div className="font-display text-[30px] leading-[1.05] tracking-[0.02em]" style={{ color: summaryColor }}>
+                <div role="status" className="font-display text-[30px] leading-[1.05] tracking-[0.02em]" style={{ color: summaryColor }}>
                   {summary}
                 </div>
                 {previewing && (
