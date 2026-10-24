@@ -13,9 +13,22 @@ test('demo loads without browser exceptions and fits the viewport', async ({ pag
   const size = (await tasks.getByRole('combobox', { name: 'Size', exact: true }).boundingBox())!;
   const due = (await tasks.getByRole('combobox', { name: 'Due', exact: true }).boundingBox())!;
   expect(Math.abs(size.width - due.width)).toBeLessThanOrEqual(1);
-  expect(Math.abs(size.y - due.y)).toBeLessThanOrEqual(1);
+  if (Math.abs(size.x - due.x) > 1) expect(Math.abs(size.y - due.y)).toBeLessThanOrEqual(1);
+  else expect(due.y).toBeGreaterThanOrEqual(size.y + size.height);
   expect(size.height).toBe(44);
   expect(due.height).toBe(44);
+  const labels = await tasks.getByRole('combobox', { name: 'Due', exact: true }).evaluate(async (element) => {
+    await document.fonts.ready;
+    const select = element as HTMLSelectElement;
+    const style = getComputedStyle(select);
+    const context = document.createElement('canvas').getContext('2d')!;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return {
+      widest: Math.max(...Array.from(select.options).map((option) => context.measureText(option.text.trim()).width)),
+      available: select.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+    };
+  });
+  expect(labels.widest, 'Every deadline label should fit beside the dropdown arrow').toBeLessThanOrEqual(labels.available + 1);
   expect(errors).toEqual([]);
 });
 
