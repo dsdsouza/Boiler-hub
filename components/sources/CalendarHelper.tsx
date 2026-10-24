@@ -95,28 +95,6 @@ export function CalendarHelper({ signedIn }: { signedIn: boolean }) {
           </details>)}
         </div>
       </section>
-      <section aria-labelledby="helper-extension" className="border-t border-line pt-6">
-        <h2 id="helper-extension" className="mt-0 mb-3 font-display text-[30px] leading-none">Automatic link finder · optional</h2>
-        <p className="mt-0 mb-3 max-w-[65ch] text-sm leading-relaxed text-body">The Calendar Finder extension can look for subscription links on the school page you choose. It is a developer preview for desktop Chrome and Edge.</p>
-        <details>
-          <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-brass-ink">Extension preview and setup</summary>
-          <div className="pt-2">
-            <p className="mt-0 mb-4 max-w-[65ch] text-sm leading-relaxed text-muted">The scanner and import flow have been tested with sample school pages. Installation and live school accounts still need verification.</p>
-            <LinkButton plain href="/downloads/boiler-calendar-helper.zip" download variant="secondary">Download optional extension</LinkButton>
-            <ol className="my-5 max-w-[70ch] list-decimal space-y-3 pl-5 text-sm leading-relaxed text-body">
-              <li>Unzip the download. Open <code>chrome://extensions</code> or <code>edge://extensions</code>, turn on Developer mode, and choose <strong>Load unpacked</strong>. Select the <strong>boiler-calendar-helper</strong> folder.</li>
-              <li>Open your school calendar’s Subscribe, Calendar Feed or Export dialog, then open Calendar Finder from the extensions menu.</li>
-              <li>Choose <strong>Review in Boilerplate</strong> beside a result and check the link before connecting it. You can also copy the link into Sources.</li>
-            </ol>
-            <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-muted">Scanning happens in your browser when you open the extension or choose Scan this page. Passwords and hidden fields are skipped. You choose which link to bring into Boilerplate.</p>
-          </div>
-        </details>
-      </section>
-      <section aria-labelledby="helper-missing" className="border-t border-line pt-6">
-        <h2 id="helper-missing" className="mt-0 mb-3 font-display text-[30px] leading-none">Can’t find your calendar link?</h2>
-        <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-body">Look for Subscribe, Calendar Feed or Export in your school calendar. If your school has disabled feeds, ask its support team whether calendar subscriptions are available.</p>
-        <LinkButton href="/settings/sources" variant="ghost" className="mt-5">Paste a link in Sources</LinkButton>
-      </section>
     </div>
   );
 }

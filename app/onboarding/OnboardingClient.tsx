@@ -13,6 +13,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { CalendarFeedForm, GitHubTokenForm } from "@/components/sources/SourceForms";
+import { CalendarFinderSetup } from "@/components/sources/CalendarFinderSetup";
 import type { AddedSource } from "@/components/sources/api";
 import { FirstReadingPip } from "@/components/mascot/OnboardingPip";
 
@@ -29,7 +30,7 @@ async function call<T>(path: string, method: string, body?: unknown): Promise<T>
 
 const field = "min-h-11 w-full rounded-lg border border-line bg-field px-3 font-mono text-[17px] tracking-[0.2em] text-fg uppercase placeholder:text-muted";
 
-/** Onboarding (PRD): confirm calendar connected, first sync, pick status, optional sources and join code, then /boiler. */
+/** Find a school calendar link, confirm connection, sync, set status and optionally add sources or join a team. */
 export function OnboardingClient() {
   const [boiler, setBoiler] = useState<BoilerResponse | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -91,7 +92,11 @@ export function OnboardingClient() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Step n={1} title="Google Calendar">
+      <Step n={1} title="Find your calendar link">
+        <CalendarFinderSetup />
+      </Step>
+
+      <Step n={2} title="Google Calendar">
         {!boiler && !syncError && <p className="m-0 text-body" role="status">Checking your calendar connection…</p>}
         {syncError && (
           <div role="alert" className="flex flex-wrap items-center gap-3 text-redline-ink">
@@ -108,7 +113,7 @@ export function OnboardingClient() {
         {boiler?.calendar === "unavailable" && <CalendarUnavailableBanner />}
       </Step>
 
-      <Step n={2} title="First sync">
+      <Step n={3} title="First sync">
         {!boiler ? (
           <p className="m-0 text-muted">Waiting for the calendar…</p>
         ) : (
@@ -135,10 +140,10 @@ export function OnboardingClient() {
         )}
       </Step>
 
-      <Step n={3} title="Your status">
+      <Step n={4} title="Your status">
         {status ? (
           <>
-            <StatusPicker status={status.status} note={status.note} labelledBy="step-3" onChange={(s, n) => void changeStatus(s, n)} />
+            <StatusPicker status={status.status} note={status.note} labelledBy="step-4" onChange={(s, n) => void changeStatus(s, n)} />
             {statusError && (
               <p role="alert" className="mt-2 mb-0 text-sm text-redline-ink">
                 {statusError}
@@ -150,7 +155,7 @@ export function OnboardingClient() {
         )}
       </Step>
 
-      <Step n={4} title="Connect more calendars or GitHub (optional)">
+      <Step n={5} title="Connect more calendars or GitHub (optional)">
         <p className="mt-0 mb-3 text-sm text-body">
           Bring in events from Apple Calendar (iCloud), deadlines from Brightspace, Canvas or other feeds, and issues and reviews from GitHub, so you do not have to type
           them. Titles and dates are fetched live and never stored.
@@ -177,7 +182,7 @@ export function OnboardingClient() {
         <p className="mt-2 mb-0 text-[13px] text-muted">Skip this for now if you like: it is always under Sources.</p>
       </Step>
 
-      <Step n={5} title="Join a team (optional)">
+      <Step n={6} title="Join a team (optional)">
         <p className="mt-0 mb-3 text-sm text-body">
           Got an invite code from a teacher or lead? You join as <strong>Hidden</strong>: nobody sees your boiler until you choose who
           can in Teams.
