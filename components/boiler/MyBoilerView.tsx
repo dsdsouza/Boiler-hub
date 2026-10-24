@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
+import { BoilerCompanion } from "@/components/mascot/BoilerCompanion";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -16,6 +17,7 @@ import { ClassSchedule } from "./ClassSchedule";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
 import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
+import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
 import { timeAgo } from "./format";
 import { fireFromForecast } from "./geometry";
@@ -91,7 +93,7 @@ export function MyBoilerView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="bp-arrive flex flex-wrap items-end justify-between gap-4">
         <div>
           <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
           <p className="mt-1.5 mb-0 text-[15px] text-muted">
@@ -106,12 +108,14 @@ export function MyBoilerView({
           onClick={() => !syncing && void boiler.refresh()}
           aria-disabled={syncing}
           aria-busy={syncing}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass aria-disabled:cursor-wait aria-disabled:opacity-70"
+          className="bp-button inline-flex min-h-11 min-w-[120px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass aria-disabled:cursor-wait aria-disabled:opacity-70"
         >
           <RefreshIcon spinning={syncing} />
           {syncing ? "Syncing…" : "Refresh"}
         </button>
       </div>
+
+      <BoilerCompanion data={data} vent={vent} />
 
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
@@ -125,17 +129,17 @@ export function MyBoilerView({
 
       {/*
         DOM order is the reading order at each width, so Tab follows what is on screen:
-        phone: hero, forecast, schedule, tasks, breakdown, status; desktop: gauge plate (hero, status), then
-        forecast, schedule, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
+        phone: hero, counts, forecast, tasks, schedule, breakdown, status; desktop: gauge plate (hero, status), then
+        forecast, tasks, schedule, calendar subscription, breakdown. Status renders twice, one copy per breakpoint;
         display:none keeps the hidden copy out of the Tab order and the accessibility tree.
       */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         <section
           aria-label="Gauge and status"
-          className="contents lg:flex lg:min-w-0 lg:flex-[1_1_360px] lg:flex-col lg:items-center lg:gap-[22px] lg:rounded-[14px] lg:border lg:border-line lg:bg-surface lg:px-7 lg:py-8 lg:plate lg:shadow-(--shadow)"
+          className="contents lg:flex lg:min-w-0 lg:flex-[1_1_340px] lg:flex-col lg:items-center lg:gap-[22px] lg:rounded-[14px] lg:border lg:border-line lg:bg-surface lg:px-7 lg:py-8 lg:plate lg:shadow-(--shadow)"
         >
           <div className="flex items-center gap-4 sm:flex-col sm:gap-[22px]">
-            <div className="relative w-[150px] flex-none min-[400px]:w-[170px] sm:w-[290px]">
+            <div className="relative w-[150px] flex-none min-[400px]:w-[170px] sm:w-[250px]">
               <PipHero score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} accessory={accessory} />
               <VentLabel vent={vent} />
             </div>
@@ -154,13 +158,17 @@ export function MyBoilerView({
             </div>
           </div>
 
+          <div className="max-sm:-mt-2 lg:w-full">
+            <CountBadges counts={result.counts} />
+          </div>
+
           <div className="hidden lg:block lg:w-full">
             <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
           </div>
         </section>
 
         <div className="contents lg:flex lg:min-w-0 lg:flex-[999_1_560px] lg:flex-col lg:gap-6">
-          <Card as="section" aria-labelledby="fc" className="px-4 py-4 sm:px-7 sm:py-6">
+          <Card as="section" aria-labelledby="fc" className="bp-arrive bp-arrive-next px-4 py-4 sm:px-7 sm:py-6">
             <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2 sm:mb-4">
               <h2 id="fc" className="m-0 font-normal">
                 <Eyebrow className="text-xs sm:hidden">7-day forecast</Eyebrow>
@@ -177,16 +185,6 @@ export function MyBoilerView({
             <p className="mt-3 mb-0 text-[13px] text-muted">Assumes future tasks are finished by their due dates. Already overdue work stays counted.</p>
           </Card>
 
-          <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
-
-          <Breakdown
-            className="hidden lg:block"
-            contributions={result.contributions}
-            items={data.items}
-            overrides={data.eventOverrides}
-            onWeight={(id, w, series, clear) => void boiler.setEventWeight(id, w, series, clear)}
-          />
-
           <TaskList
             items={data.items}
             contributions={result.contributions}
@@ -199,10 +197,10 @@ export function MyBoilerView({
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
 
+          <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
           {boiler.source === "api" && <CalendarSubscription />}
 
           <Breakdown
-            className="lg:hidden"
             contributions={result.contributions}
             items={data.items}
             overrides={data.eventOverrides}
@@ -232,7 +230,7 @@ function VentLabel({ vent }: { vent: { key: number; amount: number } }) {
       <span role="status" className="sr-only">
         {shown ? `Task complete. Vented ${vent.amount.toFixed(1)} points.` : ""}
       </span>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {shown && (
           <motion.div
             key={shown}
