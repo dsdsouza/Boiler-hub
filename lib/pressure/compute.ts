@@ -2,17 +2,16 @@ import type { Contribution, Counts, ForecastDay, LoadItem, PressureResult, Size,
 import {
   ATTENDEE_CAP,
   ATTENDEE_STEP,
-  COMPLETED_RELEASE,
-  COMPLETED_RELEASE_HOURS,
   DEFAULT_RECURRING_WEIGHT,
   DEFAULT_WEIGHT,
-  FOCUS_RELEASE,
   K,
   NO_DUE_DAYS,
   ORGANIZER_FACTOR,
   OVERDUE_STALE_DAYS,
+  OVERDUE_BACKLOG_URGENCY,
   PROXIMITY_RATE,
   SIZE_POINTS,
+  TASK_LOOKAHEAD_DAYS,
   URGENCY_CAP,
   URGENCY_MIN_DAYS,
   WEIGHTS,
@@ -50,19 +49,20 @@ export function proximity(daysFromNow: number): number {
   return 1 / (1 + PROXIMITY_RATE * Math.max(daysFromNow, 0));
 }
 
-/** Overdue by more than OVERDUE_STALE_DAYS: no longer adds pressure, shown as stale. */
+/** Older overdue work needs review and remains part of the backlog. */
 export function isStaleOverdue(due: string | undefined, now: Date): boolean {
   return !!due && now.getTime() - Date.parse(due) > OVERDUE_STALE_DAYS * DAY_MS;
 }
 
 /**
- * 1 / max(days until due, 0.25), capped at 3; overdue = 3; overdue by more than OVERDUE_STALE_DAYS = 0.
+ * Reciprocal deadline urgency, capped at 3. Older backlog keeps a reduced positive weight.
  * A missing due date counts as NO_DUE_DAYS out.
  */
 export function urgency(due: string | undefined, now: Date): number {
   if (!due) return 1 / NO_DUE_DAYS;
-  if (isStaleOverdue(due, now)) return 0;
+  if (isStaleOverdue(due, now)) return OVERDUE_BACKLOG_URGENCY;
   const days = (Date.parse(due) - now.getTime()) / DAY_MS;
+  if (!Number.isFinite(days) || days > TASK_LOOKAHEAD_DAYS) return 0;
   if (days < 0) return URGENCY_CAP;
   return Math.min(1 / Math.max(days, URGENCY_MIN_DAYS), URGENCY_CAP);
 }
@@ -106,12 +106,7 @@ function scoreEvent(item: LoadItem, now: Date): Scored | null {
   if (hours <= 0) return null;
   const prox = proximity((start - t) / DAY_MS);
 
-  if (item.release) {
-    return {
-      points: -FOCUS_RELEASE * hours * prox,
-      reason: `${fmtHours(hours)} ${item.title}, vents pressure`,
-    };
-  }
+  if (item.release) return null;
 
   const weight = resolveWeight(item);
   const points =
@@ -129,25 +124,19 @@ function scoreTask(item: LoadItem, now: Date): Scored | null {
 
   if (item.doneAt) {
     const doneAt = Date.parse(item.doneAt);
-    // A task completed after `now` was still open at `now`.
-    if (doneAt <= t) {
-      const ageHours = (t - doneAt) / HOUR_MS;
-      if (ageHours >= COMPLETED_RELEASE_HOURS) return null;
-      const points = -COMPLETED_RELEASE * SIZE_POINTS[size] * (1 - ageHours / COMPLETED_RELEASE_HOURS);
-      return { points, reason: `Completed ${size} task, venting` };
-    }
+    // Completion removes this item's load; it cannot cancel another item's pressure.
+    if (doneAt <= t) return null;
   }
 
-  // Long overdue: off the gauge (and out of counts), though still on the owner's list.
-  if (isStaleOverdue(item.due, now)) return null;
+  if (item.due && (!Number.isFinite(Date.parse(item.due)) || Date.parse(item.due) > t + TASK_LOOKAHEAD_DAYS * DAY_MS)) return null;
   const points = taskPoints({ due: item.due, size }, now);
   if (!item.due) return { points, reason: `${size} task, no due date` };
   const days = (Date.parse(item.due) - t) / DAY_MS;
-  if (days < 0) return { points, reason: `${size} task, overdue`, overdue: true };
+  if (days < 0) return { points, reason: `${size} task, ${isStaleOverdue(item.due, now) ? "older overdue backlog" : "overdue"}`, overdue: true };
   return {
     points,
     reason: `${size} task, due ${fmtDays(days)}`,
-    dueSoon: days <= WINDOW_DAYS,
+    dueSoon: days <= TASK_LOOKAHEAD_DAYS,
   };
 }
 

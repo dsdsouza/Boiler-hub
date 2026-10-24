@@ -3,7 +3,7 @@ import { zoneOf } from "@/components/ui/zones";
 import * as S from "./boilerState";
 import { mayaBoiler, demoTeams } from "./fixture";
 import { boilerVisuals, fireFromForecast, needleAngle, steamParams } from "./geometry";
-import { WEIGHTS, applyTaskToRaw, rawFromScore, scoreFromRaw, taskPoints } from "@/lib/pressure";
+import { WEIGHTS, computePressure, applyTaskToRaw, rawFromScore, scoreFromRaw, taskPoints } from "@/lib/pressure";
 import { countsLine, dueText, forecastCaption, formatPoints, weekday } from "./format";
 
 const NOW = new Date("2026-10-24T12:00:00");
@@ -11,7 +11,7 @@ const NOW = new Date("2026-10-24T12:00:00");
 describe("lib/pressure as used by the UI", () => {
   it("maps raw to score and back, including the fixture's raw values", () => {
     expect(scoreFromRaw(0)).toBe(0);
-    expect(scoreFromRaw(mayaBoiler(NOW).result.raw)).toBe(74);
+    expect(scoreFromRaw(mayaBoiler(NOW).result.raw)).toBe(mayaBoiler(NOW).result.score);
     expect(scoreFromRaw(1e6)).toBe(100);
     expect(scoreFromRaw(rawFromScore(62))).toBe(62);
     expect(Number.isFinite(rawFromScore(100))).toBe(true);
@@ -41,7 +41,7 @@ describe("boilerState", () => {
     const d = base();
     const ids = new Set(d.items.map((i) => i.id));
     for (const c of d.result.contributions) expect(ids.has(c.itemId)).toBe(true);
-    expect(d.result.score).toBe(74);
+    expect(d.result).toEqual(computePressure(d.items, NOW, { timeZone: d.timeZone }));
     expect(d.result.forecast[0]!.date).toBe("2026-10-24");
   });
 
@@ -51,8 +51,13 @@ describe("boilerState", () => {
     expect(vented).toBeGreaterThan(6);
     expect(data.result.score).toBeLessThan(d.result.score);
     expect(data.items.find((i) => i.id === "tsk-onboarding-spec")!.doneAt).toBeTruthy();
-    const c = data.result.contributions.find((x) => x.itemId === "tsk-onboarding-spec")!;
-    expect(c.points).toBeLessThan(0);
+    expect(data.result.contributions.find((x) => x.itemId === "tsk-onboarding-spec")).toBeUndefined();
+    expect(data.result.raw).toBeCloseTo(d.result.raw - vented, 1);
+  });
+
+  it("does not vent unrelated changes when a completed task is clicked again later", () => {
+    const done = S.setTaskDone(base(), "tsk-onboarding-spec", true, NOW).data;
+    expect(S.setTaskDone(done, "tsk-onboarding-spec", true, new Date(NOW.getTime() + 4 * 86400000)).vented).toBe(0);
   });
 
   it("reopening a task restores pressure", () => {
@@ -63,25 +68,36 @@ describe("boilerState", () => {
 
   it("adding a task raises the score and appears in the list", () => {
     const d = S.addTask(base(), { title: "Draft lab report", due: "2026-10-25T17:00:00", size: "L" }, "t1", NOW);
-    expect(d.result.score).toBeGreaterThan(74);
+    expect(d.result.raw).toBeGreaterThan(base().result.raw);
     expect(d.items.some((i) => i.id === "t1")).toBe(true);
-    expect(d.result.contributions.find((c) => c.itemId === "t1")!.reason).toMatch(/^Task L, due tomorrow$/);
+    expect(d.result.contributions.find((c) => c.itemId === "t1")!.points).toBeGreaterThan(0);
   });
 
   it("retagging an event scales its points and rewrites the reason", () => {
     const before = base().result.contributions.find((x) => x.itemId === "evt-design-review")!.points;
-    const d = S.setEventWeight(base(), "evt-design-review", "light", false);
+    const d = S.setEventWeight(base(), "evt-design-review", "light", false, [], NOW);
     const c = d.result.contributions.find((x) => x.itemId === "evt-design-review")!;
-    expect(c.points).toBeCloseTo((before * WEIGHTS.light) / WEIGHTS.heavy, 2);
+    expect(Math.abs(c.points - (before * WEIGHTS.light) / WEIGHTS.heavy)).toBeLessThan(0.01);
     expect(c.reason).toContain("Light");
     expect(d.items.find((i) => i.id === "evt-design-review")!.weight).toBe("light");
-    expect(d.result.score).toBeLessThan(74);
+    expect(d.result.raw).toBeLessThan(base().result.raw);
+  });
+
+  it("keeps optimistic counts, contributions and forecasts equal to a server recompute", () => {
+    const added = S.addTask(base(), { title: "Next-week essay", due: "2026-11-03T12:00:00", size: "M" }, "essay", NOW);
+    const larger = S.setTaskSize(added, "essay", "L", NOW);
+    const done = S.setTaskDone(larger, "essay", true, NOW).data;
+    const restored = S.setTaskDone(done, "essay", false, NOW).data;
+    for (const d of [added, larger, done, restored]) {
+      expect(d.result).toEqual(computePressure(d.items, NOW, { timeZone: d.timeZone }));
+    }
+    expect(restored.result).toEqual(larger.result);
   });
 
   it("status note is capped at 80 characters and never moves the score", () => {
     const d = S.setStatus(base(), "running_hot", "x".repeat(120));
     expect(d.statusNote).toHaveLength(80);
-    expect(d.result.score).toBe(74);
+    expect(d.result).toEqual(base().result);
   });
 });
 

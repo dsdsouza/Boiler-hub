@@ -3,8 +3,10 @@ import type { Size, Weight, Zone } from "@/lib/types";
 // Every tunable number in the pressure engine. See docs/PRD.md "Pressure engine".
 // Imported by the UI (/how) and the teams track: do not hardcode these elsewhere.
 
-/** Load window: only the next N days count. */
+/** Event window and forecast length. */
 export const WINDOW_DAYS = 7;
+/** Deadlines need preparation time beyond the current calendar week. */
+export const TASK_LOOKAHEAD_DAYS = 14;
 
 /**
  * Event weight tag multipliers.
@@ -38,17 +40,18 @@ export const URGENCY_CAP = 3;
 export const NO_DUE_DAYS = 7;
 
 /**
- * Overdue aging, every task source: a task overdue by more than this many days stops adding
- * pressure. It stays on the owner's list as stale until it is marked done or removed.
+ * Older overdue work counts at a reduced weight until the owner confirms it is complete.
  */
 export const OVERDUE_STALE_DAYS = 14;
+export const OVERDUE_BACKLOG_URGENCY = 0.5;
 
-/** Completed task releases COMPLETED_RELEASE × size points, fading linearly to 0 over COMPLETED_RELEASE_HOURS. */
-export const COMPLETED_RELEASE = 0.5;
+/** Completion removes its own load; it never offsets other unfinished work. */
+export const COMPLETED_RELEASE = 0;
+/** How long completed manual tasks remain available in the normal task response. */
 export const COMPLETED_RELEASE_HOURS = 48;
 
-/** Focus time / OOO releases FOCUS_RELEASE × hours × proximity. */
-export const FOCUS_RELEASE = 0.5;
+/** Calendar focus/OOO entries are not evidence that assignments have been completed. */
+export const FOCUS_RELEASE = 0;
 
 /**
  * score = round(100 × (1 − e^(−max(R, 0) / K)))

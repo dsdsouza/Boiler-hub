@@ -1,6 +1,6 @@
 import ical, { type VEvent } from "node-ical";
 import type { Size } from "@/lib/types";
-import { WINDOW_DAYS } from "@/lib/pressure/config";
+import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import { sha256 } from "@/lib/google/normalize";
 import { safeFetchText } from "./fetch";
 import { calendarText, courseworkMetadata } from "./ics-metadata";
@@ -12,8 +12,7 @@ import { SourceError, sourceItemId, type AdapterSource, type SourceAdapter, type
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Deadlines overdue by up to this many days are listed. Past OVERDUE_STALE_DAYS (14) they no longer
- * add pressure and show as stale until marked done; a new feed's backlog is cleared on its first sync.
+ * Deadlines overdue by up to this many days are listed for the owner to review.
  */
 export const LOOKBACK_DAYS = 60;
 
@@ -59,7 +58,8 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
   const t = opts.now.getTime();
   const feedZone = validZone(cal.vcalendar?.["WR-TIMEZONE"]) ?? opts.timeZone;
   const from = new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
-  const to = new Date(t + (WINDOW_DAYS + 1) * DAY_MS);
+  // Include the preparation horizon at every day of the forecast.
+  const to = new Date(t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
   const provider = opts.feedUrl ? lmsProvider(opts.feedUrl) : undefined;
 
@@ -97,7 +97,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         const due = inst.isFullDay
           ? zonedTime(inst.start.getFullYear(), inst.start.getMonth() + 1, inst.start.getDate(), 23, 59, feedZone)
           : end;
-        if (due < t - LOOKBACK_DAYS * DAY_MS || due > t + WINDOW_DAYS * DAY_MS) continue;
+        if (due < t - LOOKBACK_DAYS * DAY_MS || due > t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS) * DAY_MS) continue;
         items.push({
           id,
           kind: "task",

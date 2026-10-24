@@ -108,6 +108,7 @@ export async function syncUser(
   }
 
   return {
+    timeZone: calendar.timeZone,
     result,
     tasks,
     events: eventItems.map((item) => ownerEvent(item, weights)),
@@ -171,6 +172,7 @@ function sourceTask(item: SourceItem, label: string | undefined): Task {
     ...(label ? { sourceLabel: label } : {}),
     ...(item.url ? { url: item.url } : {}),
     ...(item.courseName ? { courseName: item.courseName } : {}),
+    ...(item.completedInSource ? { completedInSource: true } : {}),
   };
 }
 
@@ -210,6 +212,8 @@ function ownerEvent(item: LoadItem, weights: ReadonlyMap<string, Weight>): Owner
     start: item.start!,
     end: item.end!,
     weight: resolveWeight(item),
+    ...(item.attendees !== undefined ? { attendees: item.attendees } : {}),
+    ...(item.isOrganizer !== undefined ? { isOrganizer: item.isOrganizer } : {}),
     override,
     seriesKey: item.seriesKey!,
     isRecurring: Boolean(item.isRecurring),

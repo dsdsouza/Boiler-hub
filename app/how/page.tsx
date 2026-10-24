@@ -10,16 +10,16 @@ import type { Size, Weight } from "@/lib/types";
 import {
   ATTENDEE_CAP,
   ATTENDEE_STEP,
-  COMPLETED_RELEASE,
-  COMPLETED_RELEASE_HOURS,
   DEFAULT_RECURRING_WEIGHT,
   DEFAULT_WEIGHT,
-  FOCUS_RELEASE,
   K,
   NO_DUE_DAYS,
   ORGANIZER_FACTOR,
+  OVERDUE_BACKLOG_URGENCY,
+  OVERDUE_STALE_DAYS,
   PROXIMITY_RATE,
   SIZE_POINTS,
+  TASK_LOOKAHEAD_DAYS,
   URGENCY_CAP,
   URGENCY_MIN_DAYS,
   WEIGHTS,
@@ -46,13 +46,15 @@ const WEIGHT_ROWS: [string, string][] = [
   ["You organize it", `× ${ORGANIZER_FACTOR}`],
   ["Task size points", (Object.keys(SIZE_POINTS) as Size[]).map((s) => `${s} ${SIZE_POINTS[s]}`).join(", ")],
   ["Proximity (d days from now)", `1 / (1 + ${PROXIMITY_RATE} × d)`],
-  ["Task urgency", `1 / max(days until due, ${URGENCY_MIN_DAYS}), capped at ${URGENCY_CAP}; overdue = ${URGENCY_CAP}`],
+  ["Task window", `Deadlines in the next ${TASK_LOOKAHEAD_DAYS} days, plus unfinished overdue work`],
+  ["Task urgency", `1 / max(days until due, ${URGENCY_MIN_DAYS}), capped at ${URGENCY_CAP}; recent overdue = ${URGENCY_CAP}`],
+  ["Older overdue backlog", `${OVERDUE_BACKLOG_URGENCY} × size points after ${OVERDUE_STALE_DAYS} days; still counted until complete`],
   ["Task with no due date", `Counted as due in ${NO_DUE_DAYS} days`],
   [
-    `Completed task (last ${COMPLETED_RELEASE_HOURS} h)`,
-    `Release of ${COMPLETED_RELEASE} × size points, fading to 0 over ${COMPLETED_RELEASE_HOURS} h`,
+    "Completed or cleared tasks",
+    "Removed from the score. No credit is subtracted from unfinished work.",
   ],
-  ["Focus time or out of office", `Release of ${FOCUS_RELEASE} × hours × proximity`],
+  ["Focus time or out of office", "Excluded. Calendar blocks do not complete assignments."],
   ["Scale constant K", String(K)],
 ];
 
@@ -73,10 +75,10 @@ export default function HowPage() {
       <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-28 sm:px-8 sm:pb-20">
         <header className="flex flex-col gap-4">
           <div className="font-mono text-[13px] tracking-[0.18em] text-brass-ink">HOW IT WORKS</div>
-          <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure is load over the next {WINDOW_DAYS} days.</h1>
+          <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure tracks the work still ahead.</h1>
           <p className="m-0 max-w-[680px] text-[17px] leading-relaxed text-body">
-            Every meeting and task in the coming week adds pressure. Finished tasks, focus time and days off vent it. The same inputs always give the
-            same score, and you can see exactly why your needle sits where it does.
+            Meetings over {WINDOW_DAYS} days and deadlines over {TASK_LOOKAHEAD_DAYS} days add pressure. Unfinished overdue work stays counted.
+            Completing a task removes its own load, while the rest of your work keeps its weight.
           </p>
         </header>
 
@@ -88,8 +90,7 @@ export default function HowPage() {
             <pre className="m-0 font-mono text-[13px] leading-loose text-fg sm:text-[15px]">
               <code>
                 {"R = Σ events (hours × weight × attendees × organizer × proximity)\n"}
-                {"  + Σ tasks  (size points × urgency)\n"}
-                {"  − Σ releases\n\n"}
+                {"  + Σ unfinished tasks (size points × urgency)\n\n"}
                 <span className="text-brass-ink">{`score = round(100 × (1 − e^(−max(R, 0) / ${K})))`}</span>
               </code>
             </pre>
