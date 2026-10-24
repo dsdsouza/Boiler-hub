@@ -97,6 +97,35 @@ test('a task save finishing after navigation reaches the returning boiler', asyn
   } finally { finish(); }
 });
 
+test('a status save finishing after navigation reaches the returning boiler', async ({ page, request }) => {
+  const payload = await ownerBoiler(request);
+  const label = payload.status.status === 'away' ? 'Open for work' : 'Away';
+  let reads = 0;
+  let saving = false;
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => { finish = resolve; });
+  await page.route('**/api/me/boiler', route => { reads++; return route.fulfill({ json: payload }); });
+  await page.route('**/api/me/status', async route => {
+    saving = true;
+    await pending;
+    await route.fulfill({ status: 204, body: '' });
+  });
+  try {
+    await page.goto('/boiler');
+    const status = page.getByRole('button', { name: label, exact: true });
+    await status.click();
+    await expect.poll(() => saving).toBe(true);
+    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.waitForURL(url => url.pathname === '/how');
+    await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
+    await page.waitForURL(url => url.pathname === '/boiler');
+    await expect.poll(() => reads).toBe(2);
+    await expect(status).toHaveAttribute('aria-pressed', 'false');
+    finish();
+    await expect(status).toHaveAttribute('aria-pressed', 'true');
+  } finally { finish(); }
+});
+
 test('a provisioned identity can open its boiler, teams and permitted team members', async ({ page, request }, testInfo) => {
   const teams = await request.get('/api/teams');
   expect(teams.status()).toBe(200);
