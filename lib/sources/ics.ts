@@ -125,8 +125,8 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
       if (entry.status === "CANCELLED") continue;
       const title = calendarText(entry.summary) || calendarText(event.summary) || "Untitled";
       if (AVAILABILITY_RE.test(title)) continue;
-      const course = courseFor(entry.location ? entry : event, opts.label);
       const metadata = courseworkMetadata(entry, provider);
+      const course = courseFor(entry.location ? entry : event, metadata.courseName ?? opts.label);
       const start = inst.start.getTime();
       const end = inst.end ? inst.end.getTime() : start;
       const occurrence = inst.isRecurring ? `@${(entry.recurrenceid ?? inst.start).toISOString()}` : "";

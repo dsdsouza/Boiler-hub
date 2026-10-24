@@ -27,7 +27,7 @@ async function inspect(page: Page) {
     };
     const number = (e?: Element | null) => Number(e?.getAttribute('aria-label')?.match(/pressure (\d+)/)?.[1]);
     const gauge = [...document.querySelectorAll('[aria-label="Gauge and status"] [role="img"]')].find(visible);
-    const today = [...document.querySelectorAll('section[aria-labelledby="fc"] li')].find(visible);
+    const today = [...document.querySelectorAll('section[aria-labelledby="fc"] button[data-forecast-day]')].find(visible);
     const card = [...document.querySelectorAll('[aria-label="Product Squad boilers"] article')].find((e) => e.querySelector('h2')?.textContent === 'Maya');
     const title = document.querySelector<HTMLInputElement>('#at');
     return {
@@ -44,7 +44,7 @@ async function inspect(page: Page) {
       links: [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(visible).map((n) => n.href),
       width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
       overflow: [...document.querySelectorAll('main p')].filter((e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3).slice(0, 3).map((e) => e.textContent?.slice(0, 90)),
-      personal: gauge ? number(gauge) : null, today: today?.textContent?.trim(),
+      personal: gauge ? number(gauge) : null, today: today?.getAttribute('aria-label'),
       team: card && visible(card) ? number(card.querySelector('[role="img"]')) : null,
       workTeam: visible(document.querySelector('[aria-label="Product Squad boilers"]')),
       previewing: Boolean(title?.value.trim()),
@@ -149,7 +149,7 @@ for (let walk = 0; walk < walks; walk++) {
           if (personalBefore !== null && selected.key.startsWith('click:Complete:') && value > personalBefore) record('completion-increases-pressure', `${personalBefore} to ${value}`);
           if (postedTitle && await page.getByRole('button', { name: `Complete: ${postedTitle}`, exact: true }).count() === 0) record('assignment-missing', 'Posting to Product Squad did not add Maya’s task');
           if (!Number.isInteger(value) || value < 0 || value > 100) record('invalid-pressure', String(value));
-          if (!layout.today?.includes(`Today: ${value},`)) record('forecast-disagrees', `Gauge ${value}; ${layout.today}`);
+          if (!layout.today?.includes(`score ${value},`)) record('forecast-disagrees', `Gauge ${value}; ${layout.today}`);
           if (layout.team !== null && !layout.previewing && layout.team !== value) record('personal-team-disagree', `Personal ${value}; Maya team card ${layout.team}`);
         }
         for (const message of errors.splice(0)) record('browser-error', message);

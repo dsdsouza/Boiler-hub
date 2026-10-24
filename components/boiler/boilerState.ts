@@ -24,7 +24,6 @@ export interface MyBoilerData {
   eventOverrides?: Record<string, "event" | "series">;
   /** Class, repo or team label per task or event id. Items without one are left out. */
   courses?: Record<string, string>;
-  /** IANA zone the forecast days are split in. Absent until the response carries it; see calendarZone. */
 }
 
 /** What a source item (ICS, GitHub) needs beyond its LoadItem: where it came from and its state key. */

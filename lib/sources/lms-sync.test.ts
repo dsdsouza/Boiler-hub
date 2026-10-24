@@ -69,6 +69,7 @@ describe("LMS feed → live sync → owner UI", () => {
     const renamed = refreshed.tasks.find((t) => t.id === original.id)!;
     expect(renamed).toMatchObject({ title: "UPDATED Lab Report A", dueAt: "2026-10-29T17:00:00.000Z", doneAt: "2026-10-23T11:00:00Z", size: "L", courseName: "TEST D2L BIO 101" });
     const view = toMyBoilerData(refreshed);
+    expect(view.courses?.[renamed.id]).toBe("TEST D2L BIO 101");
     expect(view.taskMeta?.[renamed.id]).toMatchObject({ courseName: "TEST D2L BIO 101", url: expect.stringContaining("/d2l/le/content/981101/Home") });
     expect(JSON.stringify(refreshed)).not.toContain("private-test-feed");
     expect(JSON.stringify(db.writes)).not.toContain("Lab Report");
