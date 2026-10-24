@@ -118,9 +118,9 @@ test('event weights raise pressure and restore the original value', async ({ pag
 test('forecast has seven days and today agrees with the gauge', async ({ page }) => {
   const forecast = page.getByRole('region', { name: '7-day forecast', exact: true });
   await expect(forecast.getByRole('listitem')).toHaveCount(7);
-  await expect(forecast.getByRole('listitem').first()).toContainText(`Today: ${await score(page)},`);
+  await expect(forecast.getByRole('button', { name: /^Today,/ })).toHaveAttribute('aria-label', new RegExp(`score ${await score(page)},`));
   await addTask(page, 'QA forecast update');
-  await expect(forecast.getByRole('listitem').first()).toContainText(`Today: ${await score(page)},`);
+  await expect(forecast.getByRole('button', { name: /^Today,/ })).toHaveAttribute('aria-label', new RegExp(`score ${await score(page)},`));
 });
 
 test('zone filter supports an empty state and switching teams resets it', async ({ page }) => {
@@ -191,4 +191,48 @@ test('resizing a completed task leaves other assignments at their original press
   await expect(row).not.toContainText('−');
   await page.getByRole('button', { name: 'Mark not done: QA completed resize', exact: true }).click();
   await expect.poll(() => score(page)).toBe(small);
+});
+
+test('task tabs filter by completion and class with keyboard navigation', async ({ page }) => {
+  const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
+  const open = tasks.getByRole('tab', { name: /^Open/ });
+  const done = tasks.getByRole('tab', { name: /^Done/ });
+  await done.click();
+  await expect(tasks.getByRole('button', { name: 'Mark not done: Fix signup bug', exact: true })).toBeVisible();
+  await expect(tasks.getByRole('button', { name: /^Complete:/ })).toHaveCount(0);
+  await done.press('End');
+  await expect(tasks.getByRole('tab', { name: /^All/ })).toBeFocused();
+  await tasks.getByRole('group', { name: 'Filter by class', exact: true }).getByRole('button', { name: 'Platform', exact: true }).click();
+  await expect(tasks.getByRole('button', { name: 'Complete: Review 3 PRs', exact: true })).toBeVisible();
+  await expect(tasks.getByRole('button', { name: 'Complete: Q4 roadmap deck', exact: true })).toHaveCount(0);
+  await expect(tasks.getByRole('button', { name: 'Mark not done: Fix signup bug', exact: true })).toHaveCount(0);
+  await open.click();
+  await open.press('ArrowRight');
+  await expect(done).toBeFocused();
+  await expect(done).toHaveAttribute('aria-selected', 'true');
+  await expect(tasks.getByText('No completed or cleared tasks.', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(tasks.getByRole('tab', { name: /^Done/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(tasks.getByRole('button', { name: 'Mark not done: Fix signup bug', exact: true })).toBeVisible();
+});
+
+test('forecast details show the selected day and restore focus when closed', async ({ page }) => {
+  const forecast = page.getByRole('region', { name: '7-day forecast', exact: true });
+  const tomorrow = forecast.getByRole('button').nth(1);
+  await tomorrow.click();
+  const panel = page.locator('#forecast-day-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Design review');
+  await expect(tomorrow).toHaveAttribute('aria-expanded', 'true');
+  if (page.viewportSize()!.width < 640) {
+    await expect(panel).toHaveAttribute('role', 'dialog');
+    await expect(panel).toHaveAttribute('aria-modal', 'true');
+    await panel.getByRole('button', { name: 'Close', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(panel.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+  } else await expect(panel).toHaveAttribute('role', 'region');
+  await noOverflow(page);
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(tomorrow).toBeFocused();
 });

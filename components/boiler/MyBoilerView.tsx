@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -18,12 +18,14 @@ import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
 import { ClassSchedule } from "./ClassSchedule";
+import { ForecastDayPanel } from "./ForecastDayPanel";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
 import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
 import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
 import { fireFromForecast } from "./geometry";
+import { browserZone } from "./taskView";
 import type { MyBoiler } from "./useMyBoiler";
 import { StudyAccountability } from "./StudyAccountability";
 import { useStudyAccountability } from "./useStudyAccountability";
@@ -34,6 +36,26 @@ function useTick(ms: number) {
     const t = setInterval(() => setTick((n) => n + 1), ms);
     return () => clearInterval(t);
   }, [ms]);
+}
+
+const WIDE = "(min-width: 640px)"; // Tailwind sm: the strip and panel switch layout here.
+
+function useWide() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(WIDE);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(WIDE).matches,
+    () => true,
+  );
+}
+
+/** Focus the visible copy of a forecast day's button (the strip renders once per breakpoint). */
+function focusDay(date: string) {
+  const buttons = document.querySelectorAll<HTMLButtonElement>(`[data-forecast-day="${date}"]`);
+  [...buttons].find((b) => b.offsetParent !== null)?.focus();
 }
 
 export function RefreshIcon({ spinning }: { spinning?: boolean }) {
@@ -92,6 +114,15 @@ export function MyBoilerView({
   };
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
+  // The forecast day whose drill-down is open. Lives here so both strip copies and the panel share it.
+  const [openDay, setOpenDay] = useState<string | null>(null);
+  const wide = useWide();
+  const closeDay = useCallback(() => {
+    if (!openDay) return;
+    setOpenDay(null);
+    requestAnimationFrame(() => focusDay(openDay));
+  }, [openDay]);
+  const toggleDay = useCallback((date: string) => setOpenDay((d) => (d === date ? null : date)), []);
 
   if (!data) {
     return (
@@ -115,6 +146,11 @@ export function MyBoilerView({
       <PipDressUp score={result.score} />
     </StatusPicker>
   );
+  const timeZone = data.timeZone ?? browserZone();
+  // After a sync the open day may have rolled off the strip; the panel then just closes.
+  const dayIndex = openDay ? result.forecast.findIndex((d) => d.date === openDay) : -1;
+  const shownDay = dayIndex >= 0 ? result.forecast[dayIndex]! : null;
+  const strip = { items: data.items, timeZone, openDate: shownDay?.date ?? null, onOpen: toggleDay };
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,11 +244,23 @@ export function MyBoilerView({
               <span className="text-[13px] text-muted">{forecastCaption(result.forecast)}</span>
             </div>
             <div className="sm:hidden">
-              <ForecastStrip days={result.forecast} compact />
+              <ForecastStrip days={result.forecast} compact {...strip} />
             </div>
             <div className="hidden sm:block">
-              <ForecastStrip days={result.forecast} />
+              <ForecastStrip days={result.forecast} {...strip} />
             </div>
+            {shownDay && (
+              <ForecastDayPanel
+                day={shownDay}
+                isToday={dayIndex === 0}
+                items={data.items}
+                contributions={result.contributions}
+                courses={data.courses}
+                timeZone={timeZone}
+                sheet={!wide}
+                onClose={closeDay}
+              />
+            )}
           </Card>
 
           <TaskList
@@ -225,6 +273,7 @@ export function MyBoilerView({
             onRemove={(id) => void boiler.removeTask(id)}
             onClearOverdue={() => boiler.clearOverdue()}
             meta={data.taskMeta}
+            courses={data.courses}
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
 

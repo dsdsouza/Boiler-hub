@@ -17,7 +17,17 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     sources: res.sources ?? [],
     taskMeta: taskMeta(res.tasks),
     eventOverrides: Object.fromEntries(res.events.filter((e) => e.override).map((e) => [e.id, e.override!])),
+    courses: courses([...res.tasks, ...res.events]),
   };
+}
+
+function courses(items: Array<{ id: string; course?: string }>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const i of items) {
+    const c = i.course?.trim();
+    if (c) out[i.id] = c;
+  }
+  return out;
 }
 
 function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
