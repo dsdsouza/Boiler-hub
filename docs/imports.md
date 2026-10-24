@@ -1,6 +1,6 @@
 # Coursework imports
 
-Boiler Hub reads calendar subscription URLs. The import changes use the fictional feeds saved in the **Investigate Webly schedule scraping** chat, including its Coursicle comparisons. They do not require a school login or a browser extension.
+Boilerplate reads calendar subscription URLs. The import changes use the fictional feeds saved in the **Investigate Webly schedule scraping** chat, including its Coursicle comparisons. They do not require a school login or a browser extension.
 
 ## Supported feed formats
 
@@ -28,4 +28,4 @@ Official setup references: [Brightspace](https://community.d2l.com/brightspace/k
 
 ## Finding the school link
 
-The optional [Calendar Finder](browser-helper.md) checks the page chosen by the user and hands a found subscription link to Boiler Hub for review. Sources links to its setup/download page. It does not enable school feeds or replace the existing import parser.
+The optional [Calendar Finder](browser-helper.md) checks the page chosen by the user and hands a found subscription link to Boilerplate for review. Sources links to its setup/download page. It does not enable school feeds or replace the existing import parser.

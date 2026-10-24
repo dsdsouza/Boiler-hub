@@ -16,7 +16,7 @@ describe("outbound calendar subscriptions", () => {
     expect(event.end?.toISOString()).toBe("2026-10-26T21:01:00.000Z");
     const moved = ical.sync.parseICS(deadlineCalendar([{ ...deadline, dueAt: "2026-10-27T21:00:00Z" }], now));
     expect(moved["task-1@deadlines.boilerhub.work"]?.type).toBe("VEVENT");
-    expect(feed).toContain("X-WR-CALNAME:Boiler Hub deadlines\r\n");
+    expect(feed).toContain("X-WR-CALNAME:Boilerplate deadlines\r\n");
   });
 
   it("escapes feed injection and folds long Unicode titles without corrupting text", () => {
