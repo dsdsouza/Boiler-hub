@@ -1,0 +1,125 @@
+name: Boilerplate QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm lint && pnpm test
+
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://qa-project.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon-placeholder
+      PLAYWRIGHT_PRODUCTION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm build
+      - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failures-${{ matrix.shard }}
+          path: test-results
+          retention-days: 14
+
+  report:
+    if: ${{ !cancelled() }}
+    needs: browsers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser-report
+          path: playwright-report
+          retention-days: 14
+
+  known-issues:
+    # Explicitly visible as a nonblocking job; these assertions remain red until the defects are fixed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://qa-project.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon-placeholder
+      PLAYWRIGHT_PRODUCTION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: pnpm test:e2e:known --project=desktop-chromium --reporter=list,html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: known-issue-evidence
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
