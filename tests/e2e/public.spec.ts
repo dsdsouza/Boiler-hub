@@ -59,13 +59,23 @@ test('public routes load their assets without missing chunks or runtime errors',
   const errors: string[] = [];
   page.on('response', (response) => {
     const path = new URL(response.url()).pathname;
-    if (path.startsWith('/_next/static/') && response.status() >= 400) failures.push({ path, status: response.status() });
+    if ((path.startsWith('/_next/static/') || path.startsWith('/fonts/')) && response.status() >= 400) failures.push({ path, status: response.status() });
   });
   page.on('pageerror', (error) => errors.push(error.message));
   for (const path of ['/', '/demo', '/how']) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('main')).toBeVisible();
+    const fontsLoaded = await page.evaluate(async () => {
+      const faces = await Promise.all([
+        document.fonts.load('400 16px "Bebas Neue"'),
+        document.fonts.load('400 16px "Inter"'),
+        document.fonts.load('500 16px "JetBrains Mono"'),
+        document.fonts.load('700 16px "JetBrains Mono"'),
+      ]);
+      return faces.every((family) => family.length > 0 && family.every((face) => face.status === 'loaded'));
+    });
+    expect(fontsLoaded, 'All bundled font families must load on each public route').toBe(true);
   }
   const removed = await page.goto('/privacy');
   expect(removed?.status()).toBe(404);
