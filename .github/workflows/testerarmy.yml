@@ -1,0 +1,32 @@
+name: TesterArmy cloud regression
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: Public deployment to test
+        required: true
+        default: https://boilerhub.work
+      environment:
+        type: choice
+        options: [production, staging, preview]
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Queue saved TesterArmy group
+        env:
+          TESTERARMY_GROUP_WEBHOOK_URL: ${{ secrets.TESTERARMY_GROUP_WEBHOOK_URL }}
+          QA_TARGET_URL: ${{ inputs.target_url }}
+          QA_ENVIRONMENT: ${{ inputs.environment }}
+        run: node scripts/qa/testerarmy.mjs
