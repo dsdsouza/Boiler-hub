@@ -2,6 +2,10 @@
 
 Signed-in users can open Pip in the corner of a page, or choose **Ask Pip** on My Boiler. Type a question and press Enter or Send; Shift-Enter inserts a new line. Responses appear in speech bubbles. Closing the chat or reloading clears the conversation. The public demo does not send personal assignment questions.
 
+The server receives Gemini's stream with cancellation and bounded buffering, then checks the complete reply before displaying any text. The steam loader stays visible during generation and review; only approved text or the fixed planning redirect reaches the bubble. Scrolling up pauses automatic following. Closing the chat aborts its request; interrupted replies are discarded and the question is restored for retry, so partial text never enters the next conversation turn. Screen readers receive the finished reply without an announcement for every token.
+
+The client requests `application/x-ndjson`: a reviewed `delta`, a final `done` event, or a redacted `error` event. Both sides still support the previous JSON response during rolling deployments. Authentication, origin checks, quotas, the generation timeout and `store: false` remain in place. Course quotes are verified, and the full answer and citations pass the same scope review before release. A failed provider stream or failed review emits no draft text.
+
 The server verifies the Supabase user, reads only their open tasks under RLS, and loads that same user's connected-source assignments with the existing source loader and completion overrides. It excludes meetings, completed assignments, source URLs, and source credentials. Every question reloads the assignment context so completed work drops out. The prompt contains up to 100 open assignments, sorted by due date, and reports partial source data or truncation. Pip suggests a plan; it does not modify or submit work.
 
 ## Planning-only scope

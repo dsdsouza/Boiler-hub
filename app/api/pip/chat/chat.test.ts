@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { APICallError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), scope: vi.fn(), rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), stream: vi.fn(), scope: vi.fn(), rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/app/api/me/_lib/http", () => ({ requireUser: mocks.auth }));
 vi.mock("@/lib/pip/context", () => ({ assignmentContext: mocks.context }));
-vi.mock("@/lib/pip/gemini", () => ({ askGemini: mocks.gemini }));
+vi.mock("@/lib/pip/gemini", () => ({ askGemini: mocks.gemini, streamGemini: mocks.stream }));
 vi.mock("@/lib/pip/scope", () => ({ checkPipScope: mocks.scope }));
 import { POST } from "./route";
 import { MAX_CHAT_BODY } from "@/lib/pip/contracts";
 import { PIP_REFUSAL } from "@/lib/pip/policy";
+import { PIP_STREAM_TYPE, readPipReply } from "@/lib/pip/stream";
 const payload = { messages: [{ role: "user", content: "What is due?" }], timeZone: "UTC", userId: "victim" };
 const request = (body: unknown = payload, origin = "https://boilerhub.work") => new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 beforeEach(() => {
@@ -20,9 +21,53 @@ beforeEach(() => {
   mocks.context.mockResolvedValue({ asOf: "2026-10-24T16:00:00Z", assignments: [] });
   mocks.gemini.mockResolvedValue("Your draft is due tomorrow.");
   mocks.scope.mockResolvedValue({ allowed: true, timeZone: null });
+  mocks.stream.mockImplementation(async function* () { yield "Your draft "; yield "is due tomorrow."; });
 });
 afterEach(() => { vi.resetAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 describe("authenticated, read-only Pip chat", () => {
+  it("streams authenticated replies with the same owner context and quota", async () => {
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    expect(response.headers.get("content-type")).toContain(PIP_STREAM_TYPE);
+    const chunks = vi.fn();
+    expect(await readPipReply(response, chunks)).toBe("Your draft is due tomorrow.");
+    expect(chunks).toHaveBeenCalledWith("Your draft is due tomorrow.");
+    expect(mocks.context).toHaveBeenCalledWith({ rpc: mocks.rpc }, "signed-in-user", "UTC");
+    expect(mocks.rpc).toHaveBeenCalledOnce();
+    expect(mocks.gemini).not.toHaveBeenCalled();
+    expect(mocks.stream.mock.calls[0][2]).toBeInstanceOf(AbortSignal);
+  });
+  it("redacts provider failures that occur after streaming has already started", async () => {
+    mocks.stream.mockImplementation(async function* () { yield "Partial"; throw new Error("private prompt and secret-api-key"); });
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    const text = await response.text();
+    expect(text).toContain('"type":"error"');
+    expect(text).not.toMatch(/private prompt|secret-api-key|Partial|"type":"done"/);
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "unexpected" });
+  });
+  it.each([true, false])("exposes no streamed text before the complete reply review resolves (allowed=%s)", async (allowed) => {
+    let finishReview!: (value: { allowed: boolean; timeZone: null }) => void;
+    mocks.scope.mockResolvedValueOnce({ allowed: true, timeZone: null });
+    mocks.scope.mockImplementationOnce(() => new Promise((resolve) => { finishReview = resolve; }));
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    const onText = vi.fn();
+    const consuming = readPipReply(response, onText);
+    await vi.waitFor(() => expect(mocks.scope).toHaveBeenCalledTimes(2));
+    expect(onText).not.toHaveBeenCalled();
+    finishReview({ allowed, timeZone: null });
+    expect(await consuming).toBe(allowed ? "Your draft is due tomorrow." : PIP_REFUSAL);
+    expect(onText).toHaveBeenCalledOnce();
+  });
+  it("withholds streamed drafts when their review fails", async () => {
+    mocks.scope.mockResolvedValueOnce({ allowed: true, timeZone: null }).mockRejectedValueOnce(new Error("private review failure"));
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const text = await (await POST(streamed)).text();
+    expect(text).toContain('"type":"error"');
+    expect(text).not.toMatch(/Your draft|private review|"type":"delta"/);
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "review", kind: "unexpected" });
+  });
   it("uses the verified identity and server-loaded assignments, ignoring a submitted user id", async () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
