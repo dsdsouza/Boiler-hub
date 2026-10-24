@@ -24,12 +24,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className="min-h-screen">
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
-        mobileNavigation={viewer ? "header" : undefined}
+        mobileNavigation="header"
         account={viewer ? (
           <AccountControls viewer={viewer} />
         ) : (
           <span className="hidden sm:inline-flex">
-            <GoogleSignInButton href={signin} />
+            <GoogleSignInButton href={signin} size="md" />
           </span>
         )}
       />
@@ -136,9 +136,9 @@ function Step({ title, text, icon, color }: { title: string; text: string; icon:
   );
 }
 
-function GoogleSignInButton({ href, className = "" }: { href: string; className?: string }) {
+function GoogleSignInButton({ href, className = "", size = "lg" }: { href: string; className?: string; size?: "md" | "lg" }) {
   return (
-    <LinkButton plain href={href} variant="ghost" size="lg" className={`border-rivet font-semibold text-fg ${className}`}>
+    <LinkButton plain href={href} variant="ghost" size={size} className={`border-rivet font-semibold text-fg ${className}`}>
       <GoogleMark />
       Sign in with Google
     </LinkButton>

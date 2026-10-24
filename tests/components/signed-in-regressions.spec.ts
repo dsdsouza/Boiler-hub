@@ -161,3 +161,13 @@ test('a task awaiting its server identity cannot be completed or resized yet', a
     await expect(page.getByRole('combobox', { name: 'Size: Task still saving', exact: true })).toBeDisabled();
   } finally { release.resolve(); }
 });
+
+test('an expired session clears the retained private boiler during refresh', async ({ page }) => {
+  await page.route('**/api/sync', r => r.fulfill({ status: 401, json: { error: 'Not signed in' } }));
+  await open(page, 'boiler');
+  const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
+  await expect(gauge).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: /^Not signed in$/ })).toBeVisible();
+  await expect(gauge).toHaveCount(0);
+});

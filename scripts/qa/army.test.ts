@@ -9,11 +9,16 @@ it('supports explicit parallel repetitions and the trusted live account bank', (
   expect(parseOptions(['--workers=8', '--repeat', '3', '--url', 'https://boilerhub.work/', '--accounts']))
     .toMatchObject({ workers: 8, repeat: 3, url: 'https://boilerhub.work', accounts: true });
 });
+it('accepts the verified Cloudflare deployment for private account checks', () => {
+  expect(parseOptions(['--url', 'https://boilerplate.zhomander.workers.dev/', '--accounts']))
+    .toMatchObject({ url: 'https://boilerplate.zhomander.workers.dev', accounts: true });
+});
 it.each([
   ['--workers', '0'], ['--workers', '17'], ['--workers', 'NaN'], ['--repeat', '0'], ['--repeat', '101'],
   ['--url'], ['--url', 'file:///tmp/test'], ['--url', 'https://user:password@example.com'],
   ['--url', 'https://example.com?key=private'], ['--url', 'https://example.com/path'], ['--unknown'],
   ['--quick=true'], ['--accounts'], ['--accounts', '--url', 'https://other.vercel.app'],
+  ['--accounts', '--url', 'https://boilerplate.other.workers.dev'],
   ['--accounts', '--url', 'https://boilerhub.work', '--ui'],
 ])('rejects unsafe or invalid options %j', (...argv) => { expect(() => parseOptions(argv)).toThrow(); });
 it('runs the requested instances and keeps authenticated evidence private', () => {

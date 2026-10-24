@@ -8,10 +8,16 @@ import { interruptWorkflows, workflowSummary, renderWorkflows } from './workflow
 
 const argv = process.argv.slice(2);
 const accounts = argv.includes('--accounts');
-let workers = 4, interrupted = false;
-const allowed = new Set(['--accounts', '--workers']);
-for (let i = 0; i < argv.length; i++) { if (!allowed.has(argv[i])) throw new Error('Use --accounts and/or --workers 1..16'); if (argv[i] === '--workers') workers = Number(argv[++i]); }
+let workers = 4, interrupted = false, target = 'https://boilerhub.work';
+const allowed = new Set(['--accounts', '--workers', '--url']);
+for (let i = 0; i < argv.length; i++) {
+  if (!allowed.has(argv[i])) throw new Error('Use --accounts, --url VERIFIED_ORIGIN and/or --workers 1..16');
+  if (argv[i] === '--workers') workers = Number(argv[++i]);
+  else if (argv[i] === '--url') target = argv[++i];
+}
 if (!Number.isInteger(workers) || workers < 1 || workers > 16) throw new Error('Workers must be 1 to 16');
+if (!['https://boilerhub.work', 'https://boilerplate.zhomander.workers.dev'].includes(target)) throw new Error('Only verified Boilerplate origins are allowed');
+if (argv.includes('--url') && !accounts) throw new Error('Use --accounts with --url to run live workflows');
 const id = new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 6);
 const directory = resolve('qa-runs', 'workflows-' + id); await mkdir(directory, { recursive: true, mode: 0o700 });
 const env = { ...process.env, QA_WORKFLOW_RUN_ID: id };
@@ -43,7 +49,7 @@ if (accounts && !interrupted) {
   for (const persona of accountBank('regression').users) {
     if (!bank.users.some(u => u.key === persona.key && u.email === persona.email && u.id)) throw new Error('Synthetic identity mismatch');
   }
-  process.env.PLAYWRIGHT_BASE_URL = env.PLAYWRIGHT_BASE_URL = 'https://boilerhub.work';
+  process.env.PLAYWRIGHT_BASE_URL = env.PLAYWRIGHT_BASE_URL = target;
   process.env.QA_NAMESPACE = env.QA_NAMESPACE = 'regression';
   for (const user of accountBank('regression').users) await createQASession(user.key);
   good = await run('playwright.workflows-live.config.ts', 'live') && good;

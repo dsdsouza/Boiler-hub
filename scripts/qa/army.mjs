@@ -7,13 +7,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const TRUSTED_ACCOUNT_ORIGIN = 'https://boilerhub.work';
+const TRUSTED_ACCOUNT_ORIGINS = new Set(['https://boilerhub.work', 'https://boilerplate.zhomander.workers.dev']);
 const HELP = `Local QA army — browser instances run on your computer.
 
 pnpm qa:army                            Full local checks and six browser configurations
 pnpm qa:army --quick                    Desktop Chromium smoke check
 pnpm qa:army --workers 4 --repeat 3      Repeat every browser case three times
-pnpm qa:army --url https://boilerhub.work --accounts
+pnpm qa:army --url https://boilerplate.zhomander.workers.dev --accounts
 pnpm qa:ui                              Interactive browser test dashboard
 pnpm qa:explore --workers 8              Discover action sequences and check invariants
 pnpm qa:explore --url https://boilerhub.work --accounts --workers 16 --walks 2
@@ -54,7 +54,7 @@ export function parseOptions(argv) {
     }
     options.url = url.origin;
   }
-  if (options.accounts && options.url !== TRUSTED_ACCOUNT_ORIGIN) throw new Error('Account checks require --url https://boilerhub.work so test sessions reach only the verified app.');
+  if (options.accounts && !TRUSTED_ACCOUNT_ORIGINS.has(options.url)) throw new Error('Account checks require a verified Boilerplate app origin so test sessions reach only the intended app.');
   if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public/demo tests.');
   return options;
 }

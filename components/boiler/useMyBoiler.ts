@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Size, Status, Weight } from "@/lib/types";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "./boilerState";
 import type { MyBoilerData, NewTask } from "./boilerState";
 import { mayaBoiler } from "./fixture";
-import { OptimisticQueue } from "./optimisticQueue";
+import { ownerMutations } from "./owner-mutations";
 import { clearItemsBody, eventWeightBody, newTaskBody, sourceItemBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
+import { useBoilerSession } from "./BoilerSession";
 
 export type DataSource = "fixture" | "api";
 
@@ -18,11 +19,15 @@ export interface VentEvent {
   amount: number;
 }
 
+class ApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error ?? `${init?.method ?? "GET"} ${path} failed (${res.status})`);
+    throw new ApiError(body?.error ?? `${init?.method ?? "GET"} ${path} failed (${res.status})`, res.status);
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
@@ -32,39 +37,64 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
  * lib/pressure formulas; in "api" mode it then calls the engine route, and the BoilerResponse that
  * route returns replaces the local guess, so the server result always wins.
  */
-export function useMyBoiler(source: DataSource = SOURCE) {
+export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
+  const session = useBoilerSession();
   // Fixture data is dated relative to the viewer's clock and timezone, so it is
   // built after mount; building it during a static render would not hydrate.
-  const [data, setData] = useState<MyBoilerData | null>(null);
+  const [data, setData] = useState<MyBoilerData | null>(() => source === "api" && userId ? session.read(userId) : null);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [vent, setVent] = useState<VentEvent>({ key: 0, amount: 0 });
   const seq = useRef(0);
   const dataRef = useRef(data);
   dataRef.current = data;
-  const queue = useRef<OptimisticQueue<MyBoilerData> | null>(null);
-  if (!queue.current) queue.current = new OptimisticQueue(
-    (fresh) => { dataRef.current = fresh; setData(fresh); },
-    async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")),
-    setError,
-  );
+  const mutations = useMemo(() => source === "api" && userId
+    ? ownerMutations(session, userId, async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")))
+    : null, [session, source, userId]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (source === "fixture") {
       setData((d) => d ?? mayaBoiler());
       return;
     }
+    if (!userId) return;
     try {
-      queue.current!.replace(toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")));
-      setError(null);
+      const fresh = await session.load(userId, async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")), force);
+      if (fresh) { setData(session.read(userId)); setError(null); }
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) { session.clear(); setData(null); }
       setError(e instanceof Error ? e.message : "Could not load your boiler");
     }
-  }, [source]);
+  }, [source, userId, session]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (source !== "api" || !userId) return;
+    return session.subscribe(() => {
+      const fresh = session.read(userId);
+      dataRef.current = fresh;
+      setData(fresh);
+    });
+  }, [source, userId, session]);
+
+  useEffect(() => mutations?.subscribe(setError), [mutations]);
+
+  useEffect(() => {
+    if (source !== "api") return;
+    const focus = () => { void load(); };
+    const changed = (event: Event) => {
+      if ((event as CustomEvent).detail?.origin !== "boiler") queueMicrotask(() => { void load(true); });
+    };
+    window.addEventListener("focus", focus);
+    window.addEventListener("boiler:data-changed", changed);
+    return () => {
+      window.removeEventListener("focus", focus);
+      window.removeEventListener("boiler:data-changed", changed);
+    };
+  }, [load, source]);
 
   /** Optimistic local update, then the remote call. A returned BoilerResponse replaces local state. */
   const mutate = useCallback(
@@ -73,12 +103,15 @@ export function useMyBoiler(source: DataSource = SOURCE) {
         setData((d) => (d ? local(d) : d));
         return true;
       }
-      return queue.current!.enqueue(local, async () => {
+      if (!mutations) return false;
+      const saved = await mutations.enqueue(local, async () => {
         const fresh = await remote();
         return fresh ? toMyBoilerData(fresh) : null;
       });
+      if (saved) window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
+      return saved;
     },
-    [source],
+    [source, mutations],
   );
 
   const addTask = useCallback(
@@ -200,14 +233,17 @@ export function useMyBoiler(source: DataSource = SOURCE) {
         await new Promise((r) => setTimeout(r, 600));
         setData((d) => (d ? { ...d, syncedAt: new Date().toISOString() } : d));
       } else {
-        await queue.current!.enqueue((d) => d, async () => toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
+        if (!mutations) return;
+        const saved = await mutations.enqueue((d) => d, async () => toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
+        if (saved) window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
       }
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) { session.clear(); setData(null); }
       setError(e instanceof Error ? e.message : "Sync failed");
     } finally {
       setSyncing(false);
     }
-  }, [source]);
+  }, [source, mutations, session]);
 
   return { source, data, error, syncing, vent, addTask, addDemoAssignment, setTaskDone, setTaskSize, removeTask, clearOverdue, setEventWeight, setStatus, refresh };
 }

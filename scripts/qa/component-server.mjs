@@ -22,7 +22,7 @@ import { CreateTeamForm, JoinTeamForm } from '@/app/teams/_components/TeamForms'
 import { EngineRoom } from '@/app/teams/_components/EngineRoom';
 import { OnboardingClient } from '@/app/onboarding/OnboardingClient';
 export default function Harness() {
- const boiler = useMyBoiler('api');
+ const boiler = useMyBoiler('api', '00000000-0000-4000-a000-000000000001');
  const [mode, setMode] = useState('boiler');
  useEffect(() => setMode(new URLSearchParams(location.search).get('mode') || 'boiler'), []);
  const team = {id:'00000000-0000-4000-a000-000000000001', name:'x'.repeat(80), type:'work' as const};

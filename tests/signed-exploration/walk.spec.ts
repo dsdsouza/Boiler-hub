@@ -35,6 +35,7 @@ async function inventory(page: Page) {
 }
 
 for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, async ({ page, request }, info) => {
+  const origin = new URL(info.project.use.baseURL as string).origin;
   const seed = baseSeed + walk * 7919 + [...info.project.name].reduce((n, c) => n + c.charCodeAt(0), 0);
   const rng = random(seed), used = new Map<string, number>();
   const history: { step: number; action: string; path: string }[] = [];
@@ -104,7 +105,7 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
       if (state.assignment) for (const value of ['', 'x'.repeat(200), 'Explore draft']) offer(`assignment-draft:${value.slice(0, 10)}`, () => page.locator('#a-title').fill(value));
       for (const href of new Set(state.links)) {
         const u = new URL(href);
-        if (u.origin === 'https://boilerhub.work' && ['/', '/boiler', '/teams', '/settings/sources', '/onboarding', '/how', ...(teamId ? [`/teams/${teamId}`] : [])].includes(u.pathname)) offer(`navigate:${u.pathname}`, () => page.goto(href));
+        if (u.origin === origin && ['/', '/boiler', '/teams', '/settings/sources', '/onboarding', '/how', ...(teamId ? [`/teams/${teamId}`] : [])].includes(u.pathname)) offer(`navigate:${u.pathname}`, () => page.goto(href));
       }
       if (step % 6 === 5) {
         for (const width of [320, 390, 768, 1280]) offer(`resize:${width}`, () => page.setViewportSize({ width, height: 900 }));

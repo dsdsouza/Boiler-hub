@@ -14,7 +14,7 @@ import { SourcesSettings } from '@/components/sources/SourcesSettings';
 import type { MyTeam, EngineRoomView } from '@/lib/data/teams';
 import type { SourceInfo } from '@/lib/pressure/api-types';
 
-function BoilerScreen() { const boiler = useMyBoiler('api'); return <MyBoilerView boiler={boiler} />; }
+function BoilerScreen() { const boiler = useMyBoiler('api', '00000000-0000-4000-a000-000000000001'); return <MyBoilerView boiler={boiler} />; }
 function Workflows() {
   const params = useSearchParams();
   const [ready, setReady] = useState(false);

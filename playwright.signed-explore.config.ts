@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { accountBank, QA_MARKER } from './scripts/qa/accounts.mjs';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL;
-if (baseURL !== 'https://boilerhub.work') throw new Error('Signed-in exploration requires the verified Boilerplate origin');
+if (!baseURL || !['https://boilerhub.work', 'https://boilerplate.zhomander.workers.dev'].includes(baseURL)) throw new Error('Signed-in exploration requires a verified Boilerplate origin');
 const bankPath = resolve(process.env.QA_ACCOUNT_BANK || '.qa/credentials-regression.json');
 const bank = JSON.parse(readFileSync(bankPath, 'utf8'));
 if (bank.marker !== QA_MARKER || bank.namespace !== 'regression' || bank.supabaseUrl !== 'https://dtnjfycvhbbhzfkfnfio.supabase.co' || !bank.provisionedAt) throw new Error('A provisioned synthetic account bank is required');

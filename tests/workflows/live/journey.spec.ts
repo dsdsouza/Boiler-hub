@@ -5,10 +5,16 @@ import { dirname } from 'node:path';
 import type { BoilerResponse } from '../../../lib/pressure/api-types';
 
 const steps = ['Verify the synthetic session', 'Read the onboarding gauge', 'Save an onboarding note', 'Continue to the personal workload',
-  'Create a dated task', 'Verify task persistence after reload', 'Resize the task', 'Complete the task', 'Verify completion after reload',
+  'Create a dated task', 'Verify task persistence after reopening', 'Resize the task', 'Complete the task', 'Verify completion after reopening',
   'Visit the permitted team workflow', 'Review source and subscription settings', 'Restore test data'];
 const step = (name: string, body: () => Promise<unknown>) => test.step(name, body, { timeout: 40_000 });
 const note = (page: Page) => page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true });
+async function reopen(page: Page) {
+  const fresh = await page.context().newPage();
+  await fresh.goto(page.url());
+  await page.close();
+  return fresh;
+}
 async function navigate(page: Page, label: string, href: string) {
   // The real app uses a bottom navigation on phones and a header on desktop.
   const links = page.locator(`a[href="${href}"]`).filter({ hasText: label });
@@ -42,10 +48,10 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
       await tasks.getByRole('button', { name: 'Add task', exact: true }).click(); expect((await reply).status()).toBe(201);
       await expect(page.getByRole('button', { name: `Complete: ${title}`, exact: true })).toBeEnabled();
     });
-    await step('Verify task persistence after reload', async () => { await page.reload(); await expect(page.getByRole('combobox', { name: `Size: ${title}`, exact: true })).toHaveValue('L'); });
-    await step('Resize the task', async () => { const reply = page.waitForResponse(r => new URL(r.url()).pathname.startsWith('/api/tasks/') && r.request().method() === 'PATCH'); await page.getByRole('combobox', { name: `Size: ${title}`, exact: true }).selectOption('S'); expect((await reply).status()).toBe(200); await page.reload(); await expect(page.getByRole('combobox', { name: `Size: ${title}`, exact: true })).toHaveValue('S'); });
+    await step('Verify task persistence after reopening', async () => { page = await reopen(page); await expect(page.getByRole('combobox', { name: `Size: ${title}`, exact: true })).toHaveValue('L'); });
+    await step('Resize the task', async () => { const reply = page.waitForResponse(r => new URL(r.url()).pathname.startsWith('/api/tasks/') && r.request().method() === 'PATCH'); await page.getByRole('combobox', { name: `Size: ${title}`, exact: true }).selectOption('S'); expect((await reply).status()).toBe(200); page = await reopen(page); await expect(page.getByRole('combobox', { name: `Size: ${title}`, exact: true })).toHaveValue('S'); });
     await step('Complete the task', async () => { const reply = page.waitForResponse(r => new URL(r.url()).pathname.startsWith('/api/tasks/') && r.request().method() === 'PATCH'); await page.getByRole('button', { name: `Complete: ${title}`, exact: true }).click(); expect((await reply).status()).toBe(200); await completed(page, title); });
-    await step('Verify completion after reload', async () => { await page.reload(); await completed(page, title); const body = await (await request.get('/api/me/boiler')).json(); const task = body.tasks.find((t: { title: string }) => t.title === title); expect(task?.doneAt).toBeTruthy(); expect(task?.size).toBe('S'); });
+    await step('Verify completion after reopening', async () => { page = await reopen(page); await completed(page, title); const body = await (await request.get('/api/me/boiler')).json(); const task = body.tasks.find((t: { title: string }) => t.title === title); expect(task?.doneAt).toBeTruthy(); expect(task?.size).toBe('S'); });
     await step('Visit the permitted team workflow', async () => { await navigate(page, 'Teams', '/teams'); await expect(page).toHaveURL(/\/teams$/); const id = info.project.metadata.teamId as string | undefined; if (id) { await page.locator(`a[href="/teams/${id}"]`).first().click(); await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); await expect(page.getByRole('heading', { name: 'New assignment', exact: true })).toHaveCount(info.project.metadata.role === 'lead' ? 1 : 0); } else await expect(page.getByRole('button', { name: 'Create team', exact: true })).toBeVisible(); });
     await step('Review source and subscription settings', async () => { await navigate(page, 'Sources', '/settings/sources'); await expect(page).toHaveURL(/\/settings\/sources$/); await expect(page.getByRole('tablist', { name: 'Source type', exact: true })).toBeVisible(); await expect(page.getByRole('heading', { name: 'Deadlines in Apple Calendar', exact: true })).toBeVisible(); });
   } catch (error) {
