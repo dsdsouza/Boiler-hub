@@ -58,7 +58,6 @@ export function StatusPicker({
           );
         })}
       </div>
-      <p className="m-0 text-[13px] text-muted">{STATUS_META[status].hint}</p>
       <label htmlFor={`${uid}-note`} className="pt-1 text-[13px] font-medium text-body">
         Status note (shown to your teams)
       </label>
@@ -78,8 +77,7 @@ export function StatusPicker({
         }}
         className="bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted"
       />
-      <p className="m-0 flex justify-between text-xs text-muted">
-        <span>Status never changes your score.</span>
+      <p className="m-0 flex justify-end text-xs text-muted">
         <span aria-live="polite">{saved ? "Saved" : <span aria-hidden="true">{draft.length}/80</span>}</span>
       </p>
     </div>

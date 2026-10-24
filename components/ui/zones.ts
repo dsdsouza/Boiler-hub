@@ -53,9 +53,9 @@ export const ZONE_INK_VAR: Record<Zone, string> = {
 
 export const STATUSES: Status[] = ["open", "heads_down", "running_hot", "away"];
 
-export const STATUS_META: Record<Status, { label: string; color: string; hint: string }> = {
-  open: { label: "Open for work", color: "#7FB3D5", hint: "Busy calendar, but I have room." },
-  heads_down: { label: "Heads down", color: "#D1A85A", hint: "Focused, please don’t add anything." },
-  running_hot: { label: "Running hot", color: "#F25C45", hint: "Check in with me." },
-  away: { label: "Away", color: "#B3A48C", hint: "Out or offline." },
+export const STATUS_META: Record<Status, { label: string; color: string }> = {
+  open: { label: "Open for work", color: "#7FB3D5" },
+  heads_down: { label: "Heads down", color: "#D1A85A" },
+  running_hot: { label: "Running hot", color: "#F25C45" },
+  away: { label: "Away", color: "#B3A48C" },
 };
