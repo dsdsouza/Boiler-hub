@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import { PipDock } from "@/components/mascot/PipDock";
-import { Providers } from "@/components/ui/Providers";
 import { SiteFooter } from "@/components/ui/SiteFooter";
-import { THEME_INIT_SCRIPT } from "@/components/ui/theme";
 import "./globals.css";
 
 const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas", display: "swap" });
@@ -21,10 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#15120E" },
-    { media: "(prefers-color-scheme: light)", color: "#F3EBDD" },
-  ],
+  themeColor: "#15120E",
 };
 
 export default function RootLayout({
@@ -33,17 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // data-theme is set before paint by THEME_INIT_SCRIPT, so React sees a mismatch.
-    <html lang="en" suppressHydrationWarning className={`${bebas.variable} ${inter.variable} ${jetbrains.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-      </head>
+    <html lang="en" className={`${bebas.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="antialiased">
-        <Providers>
-          {children}
-          <SiteFooter />
-          <PipDock />
-        </Providers>
+        {children}
+        <SiteFooter />
+        <PipDock />
       </body>
     </html>
   );

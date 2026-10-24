@@ -34,11 +34,12 @@ export function Breakdown({
   const byId = new Map(items.map((i) => [i.id, i]));
 
   return (
-    <Card as="section" aria-labelledby={titleId} className={`px-5 py-6 sm:px-7 ${className}`}>
+    <Card as="section" aria-labelledby={titleId} data-boiler-section="breakdown" className={`px-5 py-6 sm:px-7 ${className}`}>
       <CardTitle id={titleId}>Why is my needle here?</CardTitle>
       <p className="mt-1 mb-3 text-sm text-muted">
         Only you see this breakdown. Teams see a number, a zone and counts. Tag an event Light, Normal or Heavy to tune it.
       </p>
+      {sorted.length === 0 && <p className="m-0 text-sm text-body">Nothing is adding pressure right now.</p>}
       <ul className="m-0 list-none p-0">
         {shown.map((c) => (
           <BreakdownRow

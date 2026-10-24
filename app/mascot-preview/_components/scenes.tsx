@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
-import { ZONE_DESC, ZONE_FILL, ZONE_INK_VAR, ZONE_LABEL, ZONE_RANGE, ZONES, zoneOf } from "@/components/ui/zones";
+import { ZONE_FILL, ZONE_INK_VAR, ZONE_LABEL, ZONE_RANGE, ZONES, zoneOf } from "@/components/ui/zones";
 import { Mascot } from "@/components/mascot/Mascot";
 import {
   DEMO_TASKS,
@@ -101,8 +101,7 @@ export function GaugeCard({ score, status }: { score: number; status: Status }) 
       <p className="m-0 text-sm text-body">
         <span className="font-semibold" style={{ color: ZONE_INK_VAR[zone] }}>
           {ZONE_LABEL[zone]} ({ZONE_RANGE[zone]}).
-        </span>{" "}
-        {ZONE_DESC[zone]}
+        </span>
       </p>
     </Card>
   );

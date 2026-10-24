@@ -48,6 +48,28 @@ describe("classifyIcs (Brightspace-style feed)", () => {
     expect(plain.get("Lab Report 3 - Due")?.kind).toBe("task");
   });
 
+  it("keeps timed class labs in the schedule and lab reports in Tasks", () => {
+    const feed = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:class-lab
+DTSTART:20261026T150000Z
+DTEND:20261026T170000Z
+RRULE:FREQ=WEEKLY;COUNT=2
+SUMMARY:CS 180 Lab
+END:VEVENT
+BEGIN:VEVENT
+UID:lab-report
+DTSTART:20261027T150000Z
+DTEND:20261027T170000Z
+SUMMARY:CS 180 Lab Report Due
+END:VEVENT
+END:VCALENDAR`;
+    const items = byTitle(classify(true, feed));
+    expect(items.get("CS 180 Lab")).toMatchObject({ kind: "event", isRecurring: true });
+    expect(items.get("CS 180 Lab Report Due")).toMatchObject({ kind: "task", size: "M" });
+  });
+
   it("gives every item a stable, distinct key and a source-scoped id", () => {
     const a = classify(true);
     const b = classify(true);

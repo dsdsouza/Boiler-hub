@@ -1,0 +1,42 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Synthetic LMS Test//EN
+METHOD:PUBLISH
+X-WR-CALNAME:Fictional brightspace Test
+BEGIN:VEVENT
+UID:coursicle-brightspace-0@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261029T160000Z
+DTEND:20261029T170000Z
+SUMMARY:UPDATED Lab Report A
+DESCRIPTION:Fictional brightspace assignment.\nCourse: TEST D2L BIO 101\nhttps://school.example/d2l/le/content/981101/Home
+URL:https://school.example/d2l/le/content/981101/Home
+LOCATION:TEST D2L BIO 101
+CATEGORIES:TEST D2L BIO 101
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-brightspace-2@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261027T160000Z
+DTEND:20261027T170000Z
+SUMMARY:Essay Draft
+DESCRIPTION:Fictional brightspace assignment.\nCourse: TEST D2L HIST 202\nhttps://school.example/d2l/le/content/981202/Home
+URL:https://school.example/d2l/le/content/981202/Home
+LOCATION:TEST D2L HIST 202
+CATEGORIES:TEST D2L HIST 202
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-brightspace-3@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:2
+DTSTART:20261028T160000Z
+DTEND:20261028T170000Z
+SUMMARY:New Reading
+DESCRIPTION:Fictional brightspace assignment.\nCourse: TEST D2L HIST 202\nhttps://school.example/d2l/le/content/981202/Home
+URL:https://school.example/d2l/le/content/981202/Home
+LOCATION:TEST D2L HIST 202
+CATEGORIES:TEST D2L HIST 202
+END:VEVENT
+END:VCALENDAR

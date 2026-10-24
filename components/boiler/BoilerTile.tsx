@@ -6,7 +6,8 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_FILL, ZONE_INK, zoneOf } from "@/components/ui/zones";
 import { Boiler } from "./Boiler";
-import { countsLine, timeAgo } from "./format";
+import { timeAgo } from "./format";
+import { CountBadges } from "./CountBadges";
 
 /**
  * One member's boiler in an Engine Room grid (EngineRoom.dc.html). Shows only
@@ -54,7 +55,7 @@ export function BoilerTile({
       </div>
       {card.statusNote && <p className="m-0 text-sm text-fg italic">“{card.statusNote}”</p>}
       <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 border-t border-line pt-2.5 text-[13px] text-muted">
-        <span>{countsLine(card.counts, teamType)}</span>
+        <CountBadges counts={card.counts} teamType={teamType} />
         <span suppressHydrationWarning>
           <span className="sr-only">Updated </span>
           {timeAgo(card.updatedAt)}

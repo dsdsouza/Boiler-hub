@@ -1,0 +1,42 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Synthetic LMS Test//EN
+METHOD:PUBLISH
+X-WR-CALNAME:Fictional blackboard Test
+BEGIN:VEVENT
+UID:coursicle-blackboard-0@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:1
+DTSTART:20261025T160000Z
+DTEND:20261025T170000Z
+SUMMARY:Blackboard Lab Report A
+DESCRIPTION:Fictional blackboard assignment.\nCourse: TEST BB BIO 101\nhttps://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981101_1
+URL:https://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981101_1
+LOCATION:TEST BB BIO 101
+CATEGORIES:TEST BB BIO 101
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-blackboard-1@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:1
+DTSTART:20261026T160000Z
+DTEND:20261026T170000Z
+SUMMARY:Blackboard Quiz One
+DESCRIPTION:Fictional blackboard assignment.\nCourse: TEST BB BIO 101\nhttps://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981101_1
+URL:https://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981101_1
+LOCATION:TEST BB BIO 101
+CATEGORIES:TEST BB BIO 101
+END:VEVENT
+BEGIN:VEVENT
+UID:coursicle-blackboard-2@sample.invalid
+DTSTAMP:20261022T160000Z
+SEQUENCE:1
+DTSTART:20261027T160000Z
+DTEND:20261027T170000Z
+SUMMARY:Blackboard Essay Draft
+DESCRIPTION:Fictional blackboard assignment.\nCourse: TEST BB HIST 202\nhttps://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981202_1
+URL:https://school.example/webapps/blackboard/content/listContent.jsp?course_id=_981202_1
+LOCATION:TEST BB HIST 202
+CATEGORIES:TEST BB HIST 202
+END:VEVENT
+END:VCALENDAR
