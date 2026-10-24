@@ -34,7 +34,18 @@ jobs:
       - run: pnpm exec next typegen
       - run: pnpm typecheck && pnpm lint && pnpm test
       - run: pnpm build:cloudflare
+      - name: Check this commit is still main
+        id: main-head
+        run: |
+          current_main=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$GITHUB_SHA" = "$current_main" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping $GITHUB_SHA because main is now $current_main."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Deploy to zhomander
-        run: pnpm deploy:cloudflare
+        if: steps.main-head.outputs.deploy == 'true'
+        run: pnpm deploy:cloudflare --tag "$GITHUB_SHA"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
