@@ -35,6 +35,9 @@ export default function Harness() {
  </main>;
 }
 `);
+const workflowRoute = join(directory, 'app', 'qa-workflows');
+await mkdir(workflowRoute, { recursive: true });
+await cp(resolve(root, 'tests/workflows/harness.tsx'), join(workflowRoute, 'page.tsx'));
 const child = spawn(resolve(root, 'node_modules/.bin/next'), ['dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219'], {
   cwd: directory, stdio: 'inherit', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' },
 });

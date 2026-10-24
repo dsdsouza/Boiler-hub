@@ -60,12 +60,13 @@ test('exploration: a long assignment title wraps in the posted confirmation', as
 
 test('exploration: returning to the landing page hydrates without browser errors', async ({ page }) => {
   const errors: string[] = [];
-  // Hard navigation cancels in-flight Next prefetches, which log recovery
-  // diagnostics. Runtime and hydration failures are reported through pageerror.
+  // Let prefetches settle before each hard navigation. WebKit can report an
+  // interrupted prefetch as a pageerror when the old document unloads.
+  // Keep collecting every pageerror so runtime/hydration failures still fail.
   page.on('pageerror', (e) => errors.push(e.message));
   for (const path of ['/', '/how', '/', '/demo', '/', '/']) {
     await page.goto(path);
-    await page.waitForTimeout(30);
+    await page.waitForLoadState('networkidle');
   }
   await expect(page.getByRole('slider')).toBeEnabled();
   expect(errors).toEqual([]);

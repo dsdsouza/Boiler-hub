@@ -9,6 +9,7 @@ import { ZONE_LABEL } from "@/components/ui/zones";
 import { companionMessage, type CompanionTarget } from "./companionMessage";
 import { Mascot } from "./Mascot";
 import { PipWardrobe } from "./PipWardrobe";
+import { PipChat } from "./PipChat";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
@@ -29,10 +30,12 @@ function jumpTo(target: CompanionTarget) {
   el.focus({ preventScroll: true });
 }
 
-export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; vent: VentEvent }) {
+export function BoilerCompanion({ data, vent, chatEnabled = true }: { data: MyBoilerData | null; vent: VentEvent; chatEnabled?: boolean }) {
   const [hidden, setHidden] = useState(false);
   const [recentVent, setRecentVent] = useState<number | null>(null);
   const [dressing, setDressing] = useState(false);
+  const [chatting, setChatting] = useState(false);
+  const chatButton = useRef<HTMLButtonElement>(null);
   const wardrobeButton = useRef<HTMLButtonElement>(null);
   const accessory = usePipAccessory();
 
@@ -94,6 +97,11 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           <p className="m-0 mt-0.5 break-words text-sm leading-normal text-body">{message.body}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:items-center">
+          {chatEnabled && <button type="button" ref={chatButton} aria-expanded={chatting}
+            onClick={() => { setChatting((value) => !value); setDressing(false); }}
+            className="bp-button inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass">
+            {chatting ? "Close chat" : "Ask Pip"}
+          </button>}
           {message.action && (
             <button
               type="button"
@@ -106,13 +114,16 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           <button
             type="button"
             ref={wardrobeButton}
-            onClick={() => setDressing((d) => !d)}
+            onClick={() => { setDressing((d) => !d); setChatting(false); }}
             aria-expanded={dressing}
             className="bp-button inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
           >
             Dress up
           </button>
         </div>
+        {chatting && <div className="col-span-full mt-2 max-w-[520px] border-t border-line pt-4" onKeyDown={(event) => {
+          if (event.key === "Escape") { event.stopPropagation(); setChatting(false); chatButton.current?.focus(); }
+        }}><PipChat autoFocus /></div>}
         {dressing && (
           <div
             className="col-span-full mt-1 max-w-[360px] border-t border-line pt-3"

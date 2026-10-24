@@ -58,6 +58,8 @@ describe('honest run outcomes', () => {
     expect(healthyStats(result)).toBe(false);
     expect(healthyStats(summarizeTests([]))).toBe(false);
     expect(healthyStats(summarizeTests([fake('expected')]))).toBe(true);
+    expect(healthyStats({ total: 2, passed: 1, failed: 0, flaky: 0, skipped: 0 })).toBe(false);
+    expect(healthyStats({ total: 1, passed: 1, failed: 0, flaky: 0, skipped: 0, status: 'interrupted' })).toBe(false);
   });
   it('never copies authenticated failure contents into an artifact', () => {
     const result = summarizeTests([fake('unexpected')], true);
