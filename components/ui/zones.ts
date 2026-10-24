@@ -1,0 +1,68 @@
+import type { Status, Zone } from "@/lib/types";
+
+// Zone and status metadata shared by every screen. Thresholds match the PRD.
+export function zoneOf(score: number): Zone {
+  return score < 40 ? "cool" : score < 70 ? "working" : score < 90 ? "hot" : "redline";
+}
+
+export const ZONES: Zone[] = ["cool", "working", "hot", "redline"];
+
+export const ZONE_LABEL: Record<Zone, string> = {
+  cool: "Cool",
+  working: "Working",
+  hot: "Hot",
+  redline: "Redline",
+};
+
+export const ZONE_RANGE: Record<Zone, string> = {
+  cool: "0–39",
+  working: "40–69",
+  hot: "70–89",
+  redline: "90–100",
+};
+
+export const ZONE_BEHAVIOR: Record<Zone, string> = {
+  cool: "Calm, light steam",
+  working: "Steady steam",
+  hot: "Shaking, heavy steam, amber gauge",
+  redline: "Whistle, red glow, strong shake",
+};
+
+export const ZONE_DESC: Record<Zone, string> = {
+  cool: "Calm, light steam. Plenty of room.",
+  working: "Steady steam. A full but manageable week.",
+  hot: "Shaking, heavy steam. Check before adding more.",
+  redline: "The whistle blows. Something has to give.",
+};
+
+/** Fill color, constant across themes. Pair with dark text. */
+export const ZONE_FILL: Record<Zone, string> = {
+  cool: "#7FB3D5",
+  working: "#D1A85A",
+  hot: "#F0913A",
+  redline: "#F25C45",
+};
+
+/** Text color class tuned for the current theme's page ground. */
+export const ZONE_INK: Record<Zone, string> = {
+  cool: "text-cool-ink",
+  working: "text-working-ink",
+  hot: "text-hot-ink",
+  redline: "text-redline-ink",
+};
+
+export const ZONE_INK_VAR: Record<Zone, string> = {
+  cool: "var(--cool-ink)",
+  working: "var(--working-ink)",
+  hot: "var(--hot-ink)",
+  redline: "var(--redline-ink)",
+};
+
+export const STATUSES: Status[] = ["open", "heads_down", "running_hot", "away"];
+
+export const STATUS_META: Record<Status, { label: string; color: string; hint: string }> = {
+  open: { label: "Open for work", color: "#7FB3D5", hint: "Busy calendar, but I have room." },
+  heads_down: { label: "Heads down", color: "#D1A85A", hint: "Focused, please don’t add anything." },
+  running_hot: { label: "Running hot", color: "#F25C45", hint: "Check in with me." },
+  away: { label: "Away", color: "#B3A48C", hint: "Out or offline." },
+};
