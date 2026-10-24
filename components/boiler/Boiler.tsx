@@ -66,6 +66,23 @@ export function Boiler({
   const v = boilerVisuals(s, zone);
   const reduced = useSyncExternalStore(subscribeMotionPreference, reducedMotionSnapshot, serverMotionSnapshot);
   const still = !animate || !!reduced;
+  const liquid = useRef<SVGGElement>(null);
+
+  // Keep a fixed wave timeline. Changing CSS duration re-samples the elapsed
+  // time at a new period and jumps the liquid during small slider movements.
+  useEffect(() => {
+    if (still) return;
+    const rates: Record<string, number> = {
+      "bp-wave-r": 4.2 / v.waveDur,
+      "bp-wave-l": 5.2 / v.waveDur2,
+      "bp-bob": 2.4 / v.bobDur,
+    };
+    for (const animation of liquid.current?.getAnimations({ subtree: true }) ?? []) {
+      if (animation instanceof CSSAnimation && animation.animationName in rates) {
+        animation.updatePlaybackRate(rates[animation.animationName]!);
+      }
+    }
+  }, [still, v.waveDur, v.waveDur2, v.bobDur]);
   // Off-screen (reported by Steam's IntersectionObserver): CSS loops pause in place and the shake stops.
   const [onScreen, setOnScreen] = useState(true);
   const paused = !still && !onScreen;
@@ -165,15 +182,15 @@ export function Boiler({
           <path d={TANK_PATH} fill={v.color} opacity="0.07" />
           <path d={TANK_PATH} fill={`url(#${clipId}-steel)`} />
 
-          <g clipPath={`url(#${clipId})`}>
+          <g ref={liquid} clipPath={`url(#${clipId})`}>
             <g className="bp-level" style={{ transform: `translateY(${v.level}px)` }}>
-              <g className="bp-bob" style={{ ...dur(v.bobDur), "--bob": `${v.bob.toFixed(1)}px` } as CSSProperties}>
+              <g className="bp-bob" style={{ "--bob": `${v.bob.toFixed(1)}px` } as CSSProperties}>
                 <g transform="translate(0 -5)">
-                  <g className="bp-wave-l" style={dur(v.waveDur2)}>
+                  <g className="bp-wave-l">
                     <path d={wavePath(v.waveAmp * 0.7)} fill={v.color} opacity="0.3" />
                   </g>
                 </g>
-                <g className="bp-wave-r" style={dur(v.waveDur)}>
+                <g className="bp-wave-r">
                   <path d={wavePath(v.waveAmp)} fill={v.color} opacity="0.6" stroke="#FFFFFF" strokeOpacity="0.45" strokeWidth="1.5" />
                 </g>
               </g>
