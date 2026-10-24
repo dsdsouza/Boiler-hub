@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { inflateRawSync } from "node:zlib";
 import { makeHandoffUrl, normalizeFeedUrl, readHandoff } from "@/browser-helper/protocol.js";
 import { forgetHelperFeed, HELPER_DRAFT_KEY, readHelperFeed, rememberHelperFeed } from "./helper-handoff";
 import { buildArchive, FILES } from "@/scripts/package-calendar-helper.mjs";
@@ -79,7 +78,8 @@ describe("distributable extension", () => {
       const packedSize=archive.readUInt32LE(offset+18), nameSize=archive.readUInt16LE(offset+26), extraSize=archive.readUInt16LE(offset+28);
       const name=archive.subarray(offset+30,offset+30+nameSize).toString();
       const dataStart=offset+30+nameSize+extraSize;
-      const content=inflateRawSync(archive.subarray(dataStart,dataStart+packedSize));
+      expect(archive.readUInt16LE(offset+8)).toBe(0);
+      const content=archive.subarray(dataStart,dataStart+packedSize);
       expect(content.equals(readFileSync(name.replace("boiler-calendar-helper/","browser-helper/")))).toBe(true);
       names.push(name);offset=dataStart+packedSize;
     }
