@@ -133,3 +133,51 @@ describe("format", () => {
     expect(forecastCaption(mayaBoiler(NOW).result.forecast)).toBe("Sunday is already lit");
   });
 });
+
+describe("series tags and single-event tags", () => {
+  const SERIES = "s".repeat(64);
+  const ev = (id: string, weight: "light" | "heavy") => ({
+    id,
+    kind: "event" as const,
+    source: "google" as const,
+    title: "Standup",
+    start: "2026-10-26T09:00:00Z",
+    end: "2026-10-26T10:00:00Z",
+    seriesKey: SERIES,
+    isRecurring: true,
+    weight,
+  });
+  const base = (): S.MyBoilerData => ({
+    result: {
+      score: 20,
+      raw: 2,
+      zone: "cool",
+      contributions: [
+        { itemId: "e1", title: "Standup", points: 0.25, reason: "1h Standup, Light" },
+        { itemId: "e2", title: "Standup", points: 1.6, reason: "1h Standup, Heavy" },
+      ],
+      counts: { meetings: 2, meetingHours: 2, tasksDue: 0, overdue: 0 },
+      forecast: [],
+    },
+    items: [ev("e1", "light"), ev("e2", "heavy")],
+    status: "open",
+    statusNote: "",
+    syncedAt: NOW.toISOString(),
+    calendar: "ok",
+    eventOverrides: { e2: "event" },
+  });
+
+  it("a series tag leaves events with their own tag alone", () => {
+    const d = S.setEventWeight(base(), "e1", "heavy", true);
+    expect(d.items.map((i) => i.weight)).toEqual(["heavy", "heavy"]);
+    const n = S.setEventWeight(base(), "e1", "light", true);
+    expect(n.items.find((i) => i.id === "e2")?.weight).toBe("heavy");
+    expect(n.eventOverrides).toEqual({ e1: "series", e2: "event" });
+  });
+
+  it("replaces single-event tags it is told to clear", () => {
+    const d = S.setEventWeight(base(), "e1", "light", true, ["e2"]);
+    expect(d.items.map((i) => i.weight)).toEqual(["light", "light"]);
+    expect(d.eventOverrides).toEqual({ e1: "series", e2: "series" });
+  });
+});

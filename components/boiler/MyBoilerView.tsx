@@ -87,10 +87,11 @@ export function MyBoilerView({
         </div>
         <button
           type="button"
-          onClick={() => void boiler.refresh()}
-          disabled={syncing}
+          // aria-disabled, not disabled: a disabled button drops keyboard focus to the page.
+          onClick={() => !syncing && void boiler.refresh()}
+          aria-disabled={syncing}
           aria-busy={syncing}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass aria-disabled:cursor-wait aria-disabled:opacity-70"
         >
           <RefreshIcon spinning={syncing} />
           {syncing ? "Syncing…" : "Refresh"}
@@ -107,13 +108,18 @@ export function MyBoilerView({
         </p>
       )}
 
+      {/*
+        DOM order is the reading order at each width, so Tab follows what is on screen:
+        phone: hero, forecast, tasks, breakdown, status; desktop: gauge plate (hero, status), then
+        forecast, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
+        display:none keeps the hidden copy out of the Tab order and the accessibility tree.
+      */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-        {/* Left: one riveted plate on desktop; on smaller screens its parts join the single column. */}
         <section
           aria-label="Gauge and status"
           className="contents lg:flex lg:min-w-0 lg:flex-[1_1_360px] lg:flex-col lg:items-center lg:gap-[22px] lg:rounded-[14px] lg:border lg:border-line lg:bg-surface lg:px-7 lg:py-8 lg:plate lg:shadow-(--shadow)"
         >
-          <div className="order-1 flex items-center gap-4 sm:flex-col sm:gap-[22px] lg:order-none">
+          <div className="flex items-center gap-4 sm:flex-col sm:gap-[22px]">
             <div className="relative w-[150px] flex-none min-[400px]:w-[170px] sm:w-[290px]">
               <Boiler score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} />
               <VentLabel vent={vent} />
@@ -133,13 +139,13 @@ export function MyBoilerView({
             </div>
           </div>
 
-          <div className="order-5 rounded-[14px] border border-line bg-surface px-5 py-6 max-lg:shadow-(--shadow) lg:order-none lg:w-full lg:border-0 lg:bg-transparent lg:p-0">
+          <div className="hidden lg:block lg:w-full">
             <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
           </div>
         </section>
 
         <div className="contents lg:flex lg:min-w-0 lg:flex-[999_1_560px] lg:flex-col lg:gap-6">
-          <Card as="section" aria-labelledby="fc" className="order-2 px-4 py-4 sm:px-7 sm:py-6 lg:order-none">
+          <Card as="section" aria-labelledby="fc" className="px-4 py-4 sm:px-7 sm:py-6">
             <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2 sm:mb-4">
               <h2 id="fc" className="m-0 font-normal">
                 <Eyebrow className="text-xs sm:hidden">7-day forecast</Eyebrow>
@@ -156,14 +162,14 @@ export function MyBoilerView({
           </Card>
 
           <Breakdown
-            className="order-4 lg:order-none"
+            className="hidden lg:block"
             contributions={result.contributions}
             items={data.items}
-            onWeight={(id, w, series) => void boiler.setEventWeight(id, w, series)}
+            overrides={data.eventOverrides}
+            onWeight={(id, w, series, clear) => void boiler.setEventWeight(id, w, series, clear)}
           />
 
           <TaskList
-            className="order-3 lg:order-none"
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}
@@ -174,6 +180,18 @@ export function MyBoilerView({
             meta={data.taskMeta}
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
+
+          <Breakdown
+            className="lg:hidden"
+            contributions={result.contributions}
+            items={data.items}
+            overrides={data.eventOverrides}
+            onWeight={(id, w, series, clear) => void boiler.setEventWeight(id, w, series, clear)}
+          />
+
+          <div className="rounded-[14px] border border-line bg-surface px-5 py-6 shadow-(--shadow) lg:hidden">
+            <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
+          </div>
         </div>
       </div>
     </div>

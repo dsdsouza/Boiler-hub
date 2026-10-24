@@ -4,7 +4,10 @@ import { weekday } from "./format";
 
 export { forecastCaption } from "./format";
 
-/** Seven bars, today first. `compact` is the phone version (60px bars, no numbers). */
+/**
+ * Seven bars, today first. `compact` is the phone version (60px bars). Every bar carries its score as
+ * text, and the full strip its zone name, so zone is never shown by color alone.
+ */
 export function ForecastStrip({ days, compact }: { days: ForecastDay[]; compact?: boolean }) {
   return (
     <ol className={`m-0 grid list-none grid-cols-7 items-end p-0 ${compact ? "gap-1.5" : "gap-2"}`}>
@@ -13,9 +16,12 @@ export function ForecastStrip({ days, compact }: { days: ForecastDay[]; compact?
           <span className="sr-only">
             {i === 0 ? "Today" : weekday(d.date, true)}: {d.score}, {ZONE_LABEL[d.zone]}
           </span>
+          <span aria-hidden="true" className={`font-mono font-bold ${compact ? "text-[11px]" : "text-[13px]"} ${ZONE_INK[d.zone]}`}>
+            {d.score}
+          </span>
           {!compact && (
-            <span aria-hidden="true" className={`font-mono text-[13px] font-bold ${ZONE_INK[d.zone]}`}>
-              {d.score}
+            <span aria-hidden="true" className="font-mono text-[9px] font-bold tracking-[0.04em] text-muted uppercase">
+              {ZONE_LABEL[d.zone]}
             </span>
           )}
           <div

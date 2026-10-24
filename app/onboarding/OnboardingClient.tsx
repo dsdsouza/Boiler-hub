@@ -159,7 +159,7 @@ export function OnboardingClient() {
         )}
         <div className="flex flex-col gap-1 border-t border-line pt-1">
           <details className="text-sm">
-            <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg marker:text-brass-ink">
+            <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">
               Add a calendar feed (Brightspace, Canvas, Outlook)
             </summary>
             <div className="pt-2 pb-4">
@@ -167,7 +167,7 @@ export function OnboardingClient() {
             </div>
           </details>
           <details className="text-sm">
-            <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg marker:text-brass-ink">Connect GitHub</summary>
+            <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">Connect GitHub</summary>
             <div className="pt-2 pb-4">
               <GitHubTokenForm onAdded={sourceAdded} idPrefix="ob-gh" />
             </div>

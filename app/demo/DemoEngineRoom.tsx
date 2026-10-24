@@ -194,7 +194,7 @@ export function DemoEngineRoom() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-[15px] text-fg"
+                  className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
