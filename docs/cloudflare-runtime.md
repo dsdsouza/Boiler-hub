@@ -8,8 +8,10 @@ invocation, which caused real authenticated requests to terminate with
 `exceededCpu` (HTTP 503 / Cloudflare 1102). `usage_model: standard` in API
 metadata does not establish that the account has a paid subscription.
 
-`wrangler.jsonc` sets a 1,000 ms CPU ceiling for rendering, calendar parsing and
-pressure calculations. This is CPU execution time; waiting for Supabase or
+`wrangler.jsonc` explicitly sets the standard paid 30,000 ms CPU ceiling for
+rendering, calendar parsing and background sync. A 1,000 ms trial budget left
+little margin: live monitoring observed a successful request at 828 ms.
+This is CPU execution time; waiting for Supabase or
 Google does not consume that budget. The ceiling also bounds runaway work.
 Cloudflare rejects this configuration on Free; upgrading the subscription is
 an account-owner action and is not performed by the deploy workflow.
