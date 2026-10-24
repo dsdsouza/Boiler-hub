@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import HelpPage, { dynamic } from "./page";
 
 const { getUser } = vi.hoisted(() => ({ getUser: vi.fn() }));
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser } }),
 }));

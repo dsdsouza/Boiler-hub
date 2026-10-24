@@ -9,13 +9,14 @@ import { POST } from "./route";
 const payload = { messages: [{ role: "user", content: "What is due?" }], timeZone: "UTC", userId: "victim" };
 const request = (body = payload, origin = "https://boilerhub.work") => new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 beforeEach(() => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.stubEnv("GEMINI_API_KEY", "synthetic-key");
   mocks.auth.mockResolvedValue({ user: { id: "signed-in-user" }, supabase: { rpc: mocks.rpc } });
   mocks.rpc.mockResolvedValue({ data: { allowed: true }, error: null });
   mocks.context.mockResolvedValue({ asOf: "2026-10-24T16:00:00Z", assignments: [] });
   mocks.gemini.mockResolvedValue("Your draft is due tomorrow.");
 });
-afterEach(() => { vi.resetAllMocks(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.resetAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 describe("authenticated, read-only Pip chat", () => {
   it("uses the verified identity and server-loaded assignments, ignoring a submitted user id", async () => {
     const response = await POST(request());
@@ -47,6 +48,7 @@ describe("authenticated, read-only Pip chat", () => {
     const response = await POST(request());
     expect(response.status).toBe(503);
     expect(await response.text()).not.toMatch(/secret-api-key|private assignments/);
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "unexpected" });
   });
   it("bounds untrusted input before consuming quota", async () => {
     expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(25000) }] }))).status).toBe(413);
