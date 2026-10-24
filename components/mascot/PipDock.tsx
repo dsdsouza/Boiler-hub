@@ -145,7 +145,7 @@ export function PipDock() {
           </div>
           <PipChat />
           <div className="mt-3 shrink-0">
-            <LinkButton href={message.action.href} variant="ghost" onClick={() => setOpen(false)}>
+            <LinkButton href={message.action.href} variant={message.action.href === "/boiler" ? "primary" : "ghost"} onClick={() => setOpen(false)}>
               {message.action.label}
             </LinkButton>
           </div>

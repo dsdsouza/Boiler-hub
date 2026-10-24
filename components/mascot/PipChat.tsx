@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { MAX_CHAT_BODY, MAX_CHAT_MESSAGE, type PipMessage } from "@/lib/pip/contracts";
 import type { StudyContext } from "@/lib/pip/study";
+import { PipThinking } from "./PipThinking";
 
 const SUGGESTIONS = ["What’s due next?", "Help me plan today"];
 class ChatError extends Error {}
@@ -13,7 +14,6 @@ export function PipChat({ autoFocus = false, studyContext, draftRequest }: { aut
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = useId();
-  const help = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const newestReply = useRef<HTMLParagraphElement>(null);
@@ -71,13 +71,13 @@ export function PipChat({ autoFocus = false, studyContext, draftRequest }: { aut
       {messages.map((message, index) => <p key={index} ref={message.role === "assistant" && index === messages.length - 1 ? newestReply : undefined} className={`m-0 max-w-[95%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere ${message.role === "user" ? "self-end rounded-br-sm bg-brass/15 text-fg" : "self-start rounded-bl-sm bg-surface-2 text-body"}`}>
         <span className="sr-only">{message.role === "user" ? "You: " : "Pip: "}</span>{message.content}
       </p>)}
-      {busy && <p role="status" className="m-0 self-start rounded-2xl rounded-bl-sm bg-surface-2 px-3 py-2 text-sm text-muted">Pip is thinking…</p>}
+      {busy && <PipThinking />}
     </div>
     {!messages.length && <div className="flex shrink-0 flex-wrap gap-2 [@media(max-height:600px)]:hidden">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} disabled={busy} className="bp-button min-h-11 cursor-pointer rounded-lg border border-line bg-transparent px-3 py-2 text-left text-xs text-body hover:border-rivet hover:text-fg">{suggestion}</button>)}</div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="flex shrink-0 flex-col gap-2">
       <label htmlFor={field} className="sr-only">Message Pip</label>
       <div className="flex items-end gap-2 rounded-xl border border-control bg-field p-2 focus-within:border-brass">
-        <textarea ref={input} id={field} value={draft} maxLength={MAX_CHAT_MESSAGE} rows={2} placeholder="Ask about your assignments…" aria-describedby={help} disabled={busy}
+        <textarea ref={input} id={field} value={draft} maxLength={MAX_CHAT_MESSAGE} rows={2} placeholder="Ask about your assignments…" disabled={busy}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }}
           className="min-h-11 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-base leading-normal text-fg placeholder:text-muted focus-visible:outline-none disabled:opacity-70" />
@@ -86,7 +86,6 @@ export function PipChat({ autoFocus = false, studyContext, draftRequest }: { aut
         </button>
       </div>
       {error && <p role="alert" className="m-0 text-sm leading-relaxed text-hot-ink">{error}</p>}
-      <p id={help} className="m-0 text-[11px] leading-relaxed text-muted">Messages, open assignments{studyContext?.sources.length ? ", and your course material" : ""} go to Gemini. Closing this chat clears the conversation.</p>
     </form>
   </div>;
 }
