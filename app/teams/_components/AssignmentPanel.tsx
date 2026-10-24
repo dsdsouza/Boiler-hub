@@ -60,7 +60,6 @@ export function AssignmentPanel({
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState<Posted | null>(null);
   const [, startTransition] = useTransition();
-  const reqId = useRef(0);
   const postedRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -76,12 +75,14 @@ export function AssignmentPanel({
 
   // Live preview, debounced; stale responses are dropped.
   useEffect(() => {
+    let cancelled = false;
     if (!ready || posted) {
       setPreview(null);
       onPreview(null);
+      setLoading(false);
+      setError(null);
       return;
     }
-    const id = ++reqId.current;
     setLoading(true);
     const t = setTimeout(async () => {
       try {
@@ -90,24 +91,27 @@ export function AssignmentPanel({
           due: dueIso(date),
           size,
         });
-        if (id !== reqId.current) return;
+        if (cancelled) return;
         setPreview(p);
         setError(null);
         onPreview(p);
       } catch (e) {
-        if (id !== reqId.current) return;
+        if (cancelled) return;
         setPreview(null);
         onPreview(null);
         setError((e as Error).message);
       } finally {
-        if (id === reqId.current) setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }, 300);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      cancelled = true;
+    };
   }, [teamId, title, date, size, ready, posted, onPreview]);
 
   async function post() {
-    if (!preview) return;
+    if (!ready || !preview || loading || posting) return;
     setPosting(true);
     setError(null);
     try {
@@ -223,7 +227,7 @@ export function AssignmentPanel({
               value={date}
               min={addDays(0)}
               onChange={(e) => setDate(e.target.value)}
-              className={`min-h-11 w-full rounded-lg px-3 text-base [color-scheme:dark] ${MONO}`}
+              className={`min-h-11 w-full rounded-lg px-3 text-base ${MONO}`}
               style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}` }}
             />
           </div>
@@ -241,14 +245,14 @@ export function AssignmentPanel({
             </div>
           </div>
 
-          <div role="status" aria-busy={loading} className="flex flex-col gap-3 rounded-[10px] p-4" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}` }}>
+          <div aria-busy={loading} className="flex flex-col gap-3 rounded-[10px] p-4" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}` }}>
             <div className="text-xs font-semibold tracking-[0.12em]" style={{ color: C.muted }}>
               PRESSURE PREVIEW
             </div>
             {preview ? (
               <PreviewTable preview={preview} labels={labels} />
             ) : (
-              <div className={`text-[30px] leading-[1.05] tracking-[0.02em] ${DISPLAY}`} style={{ color: C.text }}>
+              <div role="status" className={`text-[30px] leading-[1.05] tracking-[0.02em] ${DISPLAY}`} style={{ color: C.text }}>
                 {ready ? (loading ? "Reading the gauges…" : "No preview") : "Add a title to preview"}
               </div>
             )}
@@ -257,7 +261,7 @@ export function AssignmentPanel({
           <button
             type="button"
             onClick={post}
-            disabled={!preview || loading || posting || recipients === 0}
+            disabled={!ready || !preview || loading || posting || recipients === 0}
             className={`min-h-[52px] rounded-lg text-2xl tracking-[0.05em] disabled:opacity-50 ${DISPLAY}`}
             style={{ backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" }}
           >
@@ -293,7 +297,7 @@ function PreviewTable({ preview, labels }: { preview: TeamAssignmentPreview; lab
   const one = labels.members.replace(/s$/, "");
   return (
     <>
-      <div className={`text-[30px] leading-[1.05] tracking-[0.02em] ${DISPLAY}`} style={{ color }}>
+      <div role="status" className={`text-[30px] leading-[1.05] tracking-[0.02em] ${DISPLAY}`} style={{ color }}>
         {s.text}
       </div>
       <div className="flex flex-col">

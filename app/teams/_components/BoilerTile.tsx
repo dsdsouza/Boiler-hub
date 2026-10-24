@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TeamBoiler } from "@/lib/data/teams";
 import { Boiler } from "@/components/boiler/Boiler";
+import { CountBadges } from "@/components/boiler/CountBadges";
 import { timeAgo } from "@/components/boiler/format";
 import { freshness } from "@/app/api/teams/_lib/assignment";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
-import { C, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, countsLine, initials } from "../_theme";
+import { C, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, initials } from "../_theme";
 import { api } from "./api";
 
 export interface TileOverlay {
@@ -36,6 +37,7 @@ export function BoilerTile({
   leadLabel: string;
 }) {
   const router = useRouter();
+  const tooltipId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +67,7 @@ export function BoilerTile({
   return (
     <article
       tabIndex={0}
+      aria-describedby={boiler.synced ? tooltipId : undefined}
       aria-label={`${boiler.name}, ${boiler.synced ? `pressure ${show}, ${ZONE_LABEL[zone]}, ${updatedLabel(boiler.updatedAt)}${age === "stale" ? ", stale" : ""}` : "not synced yet"}, ${status.label}`}
       className="group relative flex flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
@@ -145,7 +148,7 @@ export function BoilerTile({
       )}
 
       <div className="pt-2.5 text-[13px]" style={{ color: C.muted, borderTop: `1px solid ${C.line}` }}>
-        {boiler.synced ? countsLine(c) : "No load data yet"}
+        {boiler.synced ? <CountBadges counts={c} /> : "No load data yet"}
         {boiler.synced && (
           <span className="block text-xs" style={{ color: age === "fresh" ? C.muted : C.text2 }} suppressHydrationWarning>
             {updatedLabel(boiler.updatedAt)}
@@ -156,8 +159,9 @@ export function BoilerTile({
       {/* Hover / focus: category counts only, never event details. */}
       {boiler.synced && (
         <div
+          id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute inset-x-3 top-[64px] z-10 rounded-lg p-3 text-[13px] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="pointer-events-none absolute inset-x-3 bottom-full z-10 mb-2 rounded-lg p-3 text-[13px] opacity-0 shadow-lg transition-opacity motion-reduce:transition-none group-hover:opacity-100 group-focus-visible:opacity-100"
           style={{ backgroundColor: C.surface2, border: `1px solid ${C.rivet}`, color: C.text2 }}
         >
           <div className={`mb-1.5 text-[11px] tracking-[0.12em] ${MONO}`} style={{ color: C.muted }}>

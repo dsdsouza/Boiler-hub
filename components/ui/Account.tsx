@@ -29,7 +29,7 @@ export async function AccountMenu() {
   if (!me) return null;
   return (
     <div className="flex items-center gap-2">
-      <form action="/auth/signout" method="post" className="hidden sm:block">
+      <form action="/auth/signout" method="post">
         <button
           type="submit"
           className="min-h-11 cursor-pointer rounded-lg border-0 bg-transparent px-2 text-sm font-medium text-muted hover:text-fg"

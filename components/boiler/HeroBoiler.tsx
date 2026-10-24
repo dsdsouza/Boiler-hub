@@ -30,7 +30,7 @@ export function HeroBoiler() {
           value={score}
           aria-valuetext={`${score}, ${ZONE_LABEL[zone]}`}
           onChange={(e) => setScore(Number(e.target.value))}
-          className="m-0 h-7 w-full cursor-pointer"
+          className="m-0 h-11 w-full cursor-pointer"
         />
       </div>
     </div>

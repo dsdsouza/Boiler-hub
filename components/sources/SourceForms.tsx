@@ -159,7 +159,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
       <div className="text-sm text-body">
         <p className="mt-0 mb-2">
           Create a{" "}
-          <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer">
+          <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
             fine-grained personal access token
           </a>{" "}
           with <strong>read-only</strong> access. Pick the repositories to include, then under Repository permissions set these to
@@ -182,7 +182,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
         <p className="m-0 text-[13px] text-muted">
           A fine-grained token only sees the repositories it was granted, so review requests on other organizations&apos; repos may not
           appear (an org can also require approval for fine-grained tokens).{" "}
-          <a href={TOKEN_DOCS_URL} target="_blank" rel="noreferrer">
+          <a href={TOKEN_DOCS_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
             How tokens work
           </a>
         </p>
