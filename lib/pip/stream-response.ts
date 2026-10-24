@@ -1,8 +1,9 @@
 import "server-only";
 import { MAX_PIP_REPLY, PIP_STREAM_TYPE, type PipStreamEvent } from "./stream";
+import type { PipGenerationPart } from "./planning";
 
 /** Backpressure and cancellation stay connected to the provider, without buffering a reply. */
-export function pipStreamResponse(source: (signal: AbortSignal) => AsyncGenerator<string>, options: {
+export function pipStreamResponse(source: (signal: AbortSignal) => AsyncGenerator<PipGenerationPart>, options: {
   signal: AbortSignal;
   asOf: string;
   onError: (failure: unknown) => string;
@@ -29,6 +30,10 @@ export function pipStreamResponse(source: (signal: AbortSignal) => AsyncGenerato
             return;
           }
           if (!next.value) continue;
+          if (typeof next.value !== "string") {
+            controller.enqueue(encode({ type: "proposal", proposal: next.value.proposal }));
+            return;
+          }
           length += next.value.length;
           if (length > MAX_PIP_REPLY) throw new Error("Oversized model reply");
           controller.enqueue(encode({ type: "delta", text: next.value }));

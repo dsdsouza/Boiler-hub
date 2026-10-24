@@ -48,7 +48,7 @@ test('connecting a source invalidates the saved boiler on the next tab visit', a
   await page.getByRole('button', { name: 'Import schedule', exact: true }).click();
   await expect(page.getByText('Navigation test calendar', { exact: true })).toBeVisible();
   await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
-  await expect(page.getByText('Freshly imported deadline', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Tasks', exact: true }).getByText('Freshly imported deadline', { exact: true })).toBeVisible();
   expect(reads).toBe(2);
 });
 
@@ -91,9 +91,14 @@ test('a task save finishing after navigation reaches the returning boiler', asyn
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
     await expect.poll(() => reads).toBe(2);
-    await expect(tasks.getByRole('button', { name: `Complete: ${title}`, exact: true })).toHaveCount(0);
+    // The owner's pending draft survives navigation, but cannot be changed
+    // until the server supplies its permanent identity.
+    const task = tasks.getByRole('button', { name: `Complete: ${title}`, exact: true });
+    await expect(task).toHaveCount(1);
+    await expect(task).toBeDisabled();
     finish();
-    await expect(tasks.getByRole('button', { name: `Complete: ${title}`, exact: true })).toBeVisible();
+    await expect(task).toBeEnabled();
+    await expect(task).toHaveCount(1);
   } finally { finish(); }
 });
 
@@ -120,7 +125,8 @@ test('a status save finishing after navigation reaches the returning boiler', as
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
     await expect.poll(() => reads).toBe(2);
-    await expect(status).toHaveAttribute('aria-pressed', 'false');
+    // Keep the newer optimistic choice while the save is still pending.
+    await expect(status).toHaveAttribute('aria-pressed', 'true');
     finish();
     await expect(status).toHaveAttribute('aria-pressed', 'true');
   } finally { finish(); }
