@@ -35,12 +35,13 @@ describe("Help session", () => {
     expect(getUser).toHaveBeenCalledTimes(1);
   });
 
-  it("offers guests sign-in that returns to Help, without account-only navigation", async () => {
+  it("offers guests sign-in that returns to Help and keeps the shared navigation", async () => {
     const html = await render();
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
     expect(header).toContain('/auth/signin?next=%2Fhow');
-    expect(header).toContain('href="/demo"');
-    expect(header).not.toContain('href="/teams"');
+    for (const href of ["/boiler", "/teams", "/settings/sources"]) {
+      expect(header).toContain(`href="${href}"`);
+    }
     expect(header).not.toContain("Sign out");
     expect(html).toContain("Pressure tracks the work still ahead.");
   });

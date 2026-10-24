@@ -32,8 +32,8 @@ test('public home offers a working demo and formula link', async ({ page }) => {
   const helpHeader = page.getByRole('banner');
   await expect(page).toHaveTitle('Help · Boilerplate');
   await expect(helpHeader.getByRole('link', { name: 'Help', exact: true })).toHaveAttribute('aria-current', 'page');
-  await expect(helpHeader.getByRole('link', { name: 'Sign in with Google', exact: true })).toHaveAttribute('href', '/auth/signin?next=%2Fhow');
-  await expect(helpHeader.getByRole('link', { name: 'Teams', exact: true })).toHaveCount(0);
+  await expect(helpHeader.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true })).toHaveAttribute('href', '/auth/signin?next=%2Fhow');
+  await expect(helpHeader.getByRole('link', { name: 'Teams', exact: true })).toHaveAttribute('href', '/teams');
   await expect(page.getByRole('main')).toContainText('8.5');
   await noOverflow(page);
 });

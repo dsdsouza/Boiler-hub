@@ -16,7 +16,7 @@ export default function MascotPreviewPage() {
         </div>
       </div>
 
-      <SiteHeader variant="marketing" maxWidth="max-w-[1320px]" />
+      <SiteHeader variant="marketing" />
 
       <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 pt-7 pb-16 sm:px-8">
         <div className="flex flex-col gap-2">
