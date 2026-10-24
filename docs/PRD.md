@@ -64,9 +64,9 @@ One person has one boiler showing total pressure across their whole life, and jo
 | Lead only | Leads of that team |
 | Everyone | All members of that team |
 
-Leads set their own visibility the same way. Hidden members still count in a lead's anonymous aggregate ("2 hidden members"), never by name.
+Leads set their own visibility the same way. Hidden members still count in a lead's anonymous aggregate ("2 hidden members"), never by name, and no hidden count (or total that would reveal one) is shown when fewer than two members are hidden.
 
-**What a team can see.** Name, avatar, score (0 to 100), zone, status and status note, last-updated time, and category counts such as "9 meetings, 3 deadlines". Never event titles, attendees or times.
+**What a team can see.** Name, avatar, score (0 to 100), zone, status and status note, last-updated time, and category counts such as "9 meetings, 3 deadlines". Never event titles, attendees or times. Tiles show the update time as relative ("2 days ago"), dim after 24 hours and are labelled Stale after 72 hours; assignment previews list never-synced and stale visible members separately ("N members have no recent data") instead of counting them in the summary.
 
 **Personal status.** Set by the person, shown beside the gauge, never changes the score.
 
@@ -113,11 +113,11 @@ The MVP is six screens plus a demo mode; everything else is stretch.
 
 Tasks also come from external sources, not just manual entry. A source is an ICS feed (Brightspace, Canvas, Outlook, any calendar) or a GitHub personal access token, added at `/settings/sources` or in onboarding. Each sync fetches every source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
 
-**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Entries in the next 7 days count, plus deadlines up to 14 days overdue. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. On a feed's first sync, its overdue backlog is marked done without venting, and "Mark all overdue done" does the same later.
+**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Entries in the next 7 days count. Deadlines up to 60 days overdue are listed; past 14 days they add no pressure (overdue aging) and show as stale. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. On a source's first sync (ICS or GitHub), its overdue backlog is marked done without venting, and "Mark all overdue done" does the same later.
 
 **GitHub** (read-only fine-grained token: Issues, Pull requests, Actions, Metadata). Open issues assigned to me (size from `size:S/M/L` labels, due at the milestone's due date or in 7 days); PRs with my review requested (S, due in 2 days); my open PRs whose latest Actions run failed ("Fix CI: repo#n", S, due in 1 day); issues assigned to me closed as completed and my PRs merged in the last 48 h count as completed tasks and vent. Rate limits mark the source as errored with the retry time.
 
-**Overrides and health.** Owners can mark source items done or undone and change their size; these live in `source_item_state`, keyed by a SHA-256 of the external id. A failing source is marked `error` with a readable message and skipped; it never fails the sync. Fetches are cached in memory for a few minutes per server instance (best-effort); Refresh bypasses the cache. Team assignment posts do not fetch anyone's sources: they update snapshots with the preview math, and each member's next sync reconciles.
+**Overrides and health.** Owners can mark source items done or undone and change their size; these live in `source_item_state`, keyed by a SHA-256 of the external id. A failing source is marked `error` with a readable message and skipped; it never fails the sync. Fetches are cached in memory for a few minutes per server instance (best-effort); Refresh bypasses the cache. Team assignment posts do not fetch anyone's calendar or sources: they update existing snapshots with the preview math (keeping each snapshot's original `computed_at`, and creating none for members who never synced), and each member's next sync reconciles.
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
@@ -170,16 +170,20 @@ Pressure is a pure, deterministic function of load items over the next 7 days, m
 
 | Factor | Value |
 | --- | --- |
-| Event weight tag | Light 0.5, Normal 1.0, Heavy 1.6 (user override, else default) |
+| Event weight tag | Light 0.25, Normal 1.0, Heavy 1.6 (user override, else default) |
 | Default for recurring events | Light |
 | Attendees | × (1 + 0.03 × min(attendees, 10)) |
 | User is organizer | × 1.2 |
 | Task size points | S 2, M 4, L 8 |
 | Proximity (days from now, d) | 1 / (1 + 0.35 × d) |
 | Task urgency | 1 / max(days until due, 0.25), capped at 3; overdue = 3 |
+| Task with no due date | Treated as due 7 days from now (urgency 1/7) |
+| Overdue aging | Overdue by more than 14 days: urgency 0. The task adds no pressure and is not counted as overdue; it stays on the owner's list as stale until marked done or removed |
 | Completed task (last 48 h) | Release of 0.5 × size points, fading to 0 over 48 h |
 | Focus time or OOO | Release of 0.5 × hours × proximity |
-| Scale constant K | 25 |
+| Scale constant K | 8.5 |
+
+These are the shipped values; `lib/pressure/config.ts` is the source of truth and every other number (UI, `/how`, teams preview) imports from it. Two were tuned from the original plan so the targets below hold: Light 0.5 → 0.25, so recurring rituals weigh well below one-off meetings, and K 25 → 8.5, so a typical student week lands near 55 and a 25-meeting-hour manager week near 78.
 
 **Formula**
 
@@ -220,7 +224,7 @@ Calendar events are fetched live and never stored. The database holds people, te
 | `teams` | `id`, `name`, `type`, `invite_code`, `created_by` | `type` enum: class, work; 6-character code |
 | `memberships` | `team_id`, `user_id`, `role`, `visibility` | role: lead, member; visibility: hidden, lead, everyone; default hidden |
 | `tasks` | `id`, `owner_id`, `title`, `due_at`, `size`, `done_at`, `source`, `assignment_id` | source: manual, team, ics, github |
-| `team_assignments` | `id`, `team_id`, `title`, `due_at`, `size`, `created_by` | Fans out into one `tasks` row per member |
+| `team_assignments` | `id`, `team_id`, `title`, `due_at`, `size`, `created_by`, `client_key` | Fans out into one `tasks` row per member; `unique (team_id, client_key)` (0003) makes a repeated post of the same draft return the first assignment |
 | `event_weights` | `user_id`, `series_key`, `weight` | `series_key` = SHA-256 of `recurringEventId` or event id |
 | `pressure_snapshots` | `user_id`, `score`, `raw`, `zone`, `counts` (jsonb), `forecast` (jsonb), `computed_at` | One row per user, upserted on every sync |
 | `google_tokens` | `user_id`, `refresh_token` (encrypted), `access_token`, `expires_at` | Server-only, no client access |
@@ -248,7 +252,8 @@ Calendar events are fetched live and never stored. The database holds people, te
 2. In `/auth/callback`, read `provider_token` and `provider_refresh_token` from the session and store them in `google_tokens` (Supabase does not refresh Google tokens for you).
 3. `lib/google/client.ts` refreshes the access token through `https://oauth2.googleapis.com/token` when it is within 5 minutes of expiry.
 4. Fetch `calendars/primary/events` with `timeMin=now`, `timeMax=now+7d`, `singleEvents=true`, `orderBy=startTime`; normalize to `LoadItem`.
-5. Sync on login, on the Refresh button, after task changes, and when My Boiler loads with a snapshot older than 30 minutes.
+5. Sync on login, on the Refresh button, after task changes, when My Boiler loads with a snapshot older than 30 minutes, and once a day for everyone via the Vercel cron `GET /api/cron/resync` (authorized by `Authorization: Bearer $CRON_SECRET`).
+6. If Google is unreachable for any reason other than a revoked or expired grant, the result is tasks-only with a "temporarily unavailable" banner and the snapshot is not saved.
 
 **Google Cloud setup.** OAuth consent screen in Testing mode; add every teammate and any judge emails as test users (limit 100); authorized redirect URI is the Supabase callback; add both the Vercel URL and the GoDaddy domain to authorized origins. Testing-mode refresh tokens expire after 7 days, which is fine for the event.
 
@@ -267,6 +272,7 @@ All worktrees share one Supabase project, one Google OAuth client and one `.env.
 | `GOOGLE_CLIENT_SECRET` | Same OAuth client | No |
 | `TOKEN_ENCRYPTION_KEY` | Generate: `openssl rand -base64 32` | No |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` locally; the GoDaddy domain in production | Yes |
+| `CRON_SECRET` | Generate: `openssl rand -hex 32`; Vercel sends it to the daily cron | No |
 
 **Local ports.** Engine on 3000, UI on 3001, Teams on 3002. Each `http://localhost:300X/auth/callback` must be in Supabase's allowed redirect URLs and each origin in the Google OAuth client.
 
