@@ -69,7 +69,7 @@ export function BoilerTile({
       tabIndex={0}
       aria-describedby={boiler.synced ? tooltipId : undefined}
       aria-label={`${boiler.name}, ${boiler.synced ? `pressure ${show}, ${ZONE_LABEL[zone]}, ${updatedLabel(boiler.updatedAt)}${age === "stale" ? ", stale" : ""}` : "not synced yet"}, ${status.label}`}
-      className="group relative flex flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="group relative flex min-w-0 flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
         backgroundColor: C.surface,
         border: overlay?.moved ? `2px solid ${color}` : `1px solid ${C.line}`,
@@ -142,7 +142,7 @@ export function BoilerTile({
       )}
 
       {boiler.statusNote && (
-        <p className="m-0 text-sm italic" style={{ color: C.text }}>
+        <p className="m-0 break-words text-sm italic" style={{ color: C.text }}>
           “{boiler.statusNote}”
         </p>
       )}

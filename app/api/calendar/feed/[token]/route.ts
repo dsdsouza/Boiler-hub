@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: { params: Promise<{ token:
     if (!data) return new Response("Calendar subscription not found", { status: 404, headers: privateHeaders });
     const tasks = (data as { tasks: CalendarDeadline[] }).tasks;
     return new Response(deadlineCalendar(tasks), {
-      headers: { ...privateHeaders, "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'inline; filename="boiler-hub-deadlines.ics"' },
+      headers: { ...privateHeaders, "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'inline; filename="boilerplate-deadlines.ics"' },
     });
   } catch {
     return new Response("Calendar temporarily unavailable", { status: 503, headers: privateHeaders });

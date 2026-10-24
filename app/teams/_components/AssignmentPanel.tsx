@@ -159,7 +159,7 @@ export function AssignmentPanel({
             <div className={`text-[28px] tracking-[0.03em] ${DISPLAY}`} style={{ color: ZONE_COLOR.cool }}>
               Posted
             </div>
-            <p className="m-0 text-sm leading-normal" style={{ color: C.text2 }}>
+            <p className="m-0 break-words text-sm leading-normal" style={{ color: C.text2 }}>
               “{posted.title}” is now on every {labels.members.replace(/s$/, "")}’s task list, and their boilers have updated.
             </p>
             <p className={`m-0 text-xs ${MONO}`} style={{ color: posted.matched ? ZONE_COLOR.cool : ZONE_COLOR.hot }}>

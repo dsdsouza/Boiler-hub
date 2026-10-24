@@ -4,7 +4,7 @@ import { MascotPreview } from "./_components/MascotPreview";
 
 export const metadata: Metadata = {
   title: "Mascot preview · Boilerplate",
-  description: "Concept preview of Pip, the BoilerHub companion. Demo data only.",
+  description: "Concept preview of Pip, the Boilerplate companion. Demo data only.",
 };
 
 export default function MascotPreviewPage() {

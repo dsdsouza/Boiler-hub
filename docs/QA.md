@@ -1,3 +1,17 @@
+## Local exploration follow-up — October 24, 2026
+
+The local explorer discovers visible controls and tries seeded combinations of input, navigation, resizing and mutations, checking product invariants after each action. The initial 16 walks selected 960 actions with eight parallel workers. Agent exploration and focused browser checks confirmed these defects before their repairs:
+
+| Finding | Repair |
+| --- | --- |
+| Maya's personal task/event changes left her demo team gauge and counts at their original fixture values. | The team card reads her current owner result, counts and status from the shared hook. |
+| Posting an assignment to Product Squad claimed delivery but never added Maya's task. | The demo post fans out to her owner state as a team task. Her gauge, preview and team card agree; completing it removes its own pressure. |
+| A valid 80-character unbroken status note spilled outside a team card, including on mobile. | Both demo and real team cards wrap long notes and allow their grid item to shrink. |
+| A long assignment title escaped the posted confirmation; long task titles could also overflow the breakdown/companion text. | Confirmation, contribution and companion text wrap within their panels. Demo titles use the same 200-character limit as real assignments. |
+| Rapid returns to the landing page triggered React error 418 and discarded server markup. | A Suspense boundary isolates the streamed landing content. A disposable diagnostic build showed React trying to hydrate `main` against its first `section`, matching the framework's hydration replay defect. The unmodified app failed 7/12 stress checks; the boundary passed 12/12 with the same instrumentation. |
+
+The first exploration batch also exposed runner problems: background animation-frame waits could stall a Firefox walk, separate observations could straddle a debounced size update, and engines could retain layout boxes inside closed details panels. The harness uses bounded actions, atomic related-value observations, explicit closed-panel detection and waits for size changes before comparing later actions. These diagnostics are not counted as additional app defects. See [QA automation](qa-automation.md) for repeatable commands and scope. The landing mitigation follows the observed replay behavior described in [React's hydration issue](https://github.com/react/react/issues/37584) and [upstream fix](https://github.com/react/react/pull/35494); no framework dependencies are patched or upgraded by this change.
+
 ## Remaining-work calculation and clearing — October 24, 2026
 
 Reproduced a false zero: ten medium assignments due in five days scored 61 alone, but twenty recently completed medium assignments reduced the old result to 0. Completion now removes only the completed task's load. Focus and out-of-office blocks cannot cancel pending assignments. Tasks use a fourteen-day deadline horizon; older overdue work retains a reduced positive backlog weight.

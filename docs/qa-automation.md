@@ -33,6 +33,21 @@ This mode uses the private `.qa/credentials-regression.json` bank and `.env.qa.l
 
 This replaces the browser execution, parallel runs, repetition and reporting parts of TesterArmy. The scenarios are scripted: discovering new journeys still requires exploration and adding cases. `tests/e2e` holds the browser scenarios, and the historical cloud suite remains in `tests/testerarmy/suite.json`. Ordinary local runs don't contact TesterArmy or require an AI API key.
 
+### Discover new paths locally
+
+On this Mac, double-click `Find New Bugs.command` in `Desktop/Boiler-hub-QA` to start eight workers. Each run saves a separate report with the discovered paths and findings.
+
+```sh
+pnpm qa:explore --workers 8
+pnpm qa:explore --workers 16 --walks 8 --steps 60 --seed 10424
+```
+
+The explorer inventories currently visible controls after every action and favors actions it has not tried. It combines button clicks, task and assignment input, long/Unicode text, select changes, event tags, disclosures, wardrobe controls, public links, reloads, keyboard actions and viewport changes into new sequences. It checks browser errors, missing assets, page/text overflow, pressure bounds, forecast agreement, personal/team agreement, status/completion behavior and assignment delivery. The default is eight walks in each of four browser configurations (32 walks, up to 1,920 selected actions). `--quick` uses Chromium only; `--walks`, `--steps` and `--seed` control the run. A new invocation gets a fresh seed unless one is specified.
+
+Each walk attaches its seed, engine, visited routes, selected actions and candidate findings as `exploration.json` in the browser report. Reports include the checkout revision and uncommitted-state flag. Replay with the same seed and browser; the recorded action history helps reproduction when the app or clock has changed. A discovered finding fails the run and still allows the remaining walks to collect evidence. Timeouts and interrupted walks are failures, not passes. Video recording is off for exploration; failed walks keep screenshots and traces.
+
+This is a bounded state explorer with product invariants, not an autonomous language model. It explores the public site and synthetic demo; it does not click Google consent, change real account data, import remote feeds, or infer arbitrary business requirements. Authenticated checks remain separate. Human/agent triage confirms findings and adds focused regressions before fixes. The first pass discovered real shared-pressure and long-text bugs that the earlier fixed scenarios missed.
+
 ## Run locally
 
 Use Node 24 and pnpm 11.25.0.
@@ -45,7 +60,7 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 43 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (258 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
+There are 48 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (288 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
 
 
 The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
@@ -102,7 +117,7 @@ The current 32-account bank and browser states were provisioned and verified in 
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 258 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
+`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 288 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
 
 
 The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the check intended for required-status enforcement on `main`; the owner will enable that setting separately. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
@@ -5,6 +6,7 @@ import { AccountControls, getViewer } from "@/components/ui/Account";
 import { ZONES, ZONE_DESCRIPTION, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
 import { HeroBoiler } from "@/components/boiler/HeroBoiler";
+import { SignInToast } from "@/components/ui/SignInToast";
 
 const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 
@@ -32,6 +34,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         )}
       />
 
+      {/* Isolate streamed Flight children from the bundled React hydration replay bug. */}
+      <Suspense fallback={null}>
       <main>
         {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
@@ -39,9 +43,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </p>
         )}
         {!viewer && typeof params.next === "string" && !failed && (
-          <p role="note" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-muted sm:px-8">
-            Sign in to open that page.
-          </p>
+          <SignInToast key={params.next} />
         )}
 
         <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-14 sm:pb-20">
@@ -117,6 +119,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
+      </Suspense>
     </div>
   );
 }

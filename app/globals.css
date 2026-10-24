@@ -134,6 +134,32 @@ input[type="range"] {
   .bp-pressure-slider::-moz-range-thumb { background: Highlight; border: 1px solid CanvasText; }
 }
 
+/* Sign-in feedback floats above the page without moving the hero. */
+.bp-signin-toast {
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  animation: bp-toast-arrive 180ms var(--ease-ui);
+}
+.bp-signin-toast-progress { animation: bp-toast-countdown linear forwards; }
+@keyframes bp-toast-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bp-toast-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@media (min-width: 640px) {
+  .bp-signin-toast {
+    right: max(24px, env(safe-area-inset-right));
+    bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-signin-toast { animation: none; }
+  .bp-signin-toast-progress { animation-timing-function: steps(5, end); }
+}
+
 /* Boiler SVG motion. Liquid periods stay fixed; playback speed preserves phase. */
 @keyframes bp-wave-r {
   from { transform: translateX(0); }

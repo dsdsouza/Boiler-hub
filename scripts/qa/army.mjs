@@ -15,15 +15,18 @@ pnpm qa:army --quick                    Desktop Chromium smoke check
 pnpm qa:army --workers 4 --repeat 3      Repeat every browser case three times
 pnpm qa:army --url https://boilerhub.work --accounts
 pnpm qa:ui                              Interactive browser test dashboard
+pnpm qa:explore --workers 8              Discover action sequences and check invariants
 
 Options: --workers 1..16 (default 2), --repeat 1..100 (default 1),
-         --quick, --url ORIGIN, --accounts, --ui, --plan, --help
+         --quick, --url ORIGIN, --accounts, --ui, --explore,
+         --walks 1..100, --steps 1..200, --seed INTEGER, --plan, --help
 Reports: qa-runs/<run>/index.html. Account sessions stay private in .qa/.
 `;
 
 export function parseOptions(argv) {
-  const options = { workers: 2, repeat: 1, quick: false, accounts: false, ui: false, plan: false, help: false, url: null };
-  const bools = new Set(['quick', 'accounts', 'ui', 'plan', 'help']);
+  const options = { workers: 2, repeat: 1, quick: false, accounts: false, ui: false, explore: false, walks: 8, steps: 60,
+    seed: Date.now() % 2_147_483_647 || 1, plan: false, help: false, url: null };
+  const bools = new Set(['quick', 'accounts', 'ui', 'explore', 'plan', 'help']);
   for (let i = 0; i < argv.length; i++) {
     const [flag, inline] = argv[i].split(/=(.*)/s, 2);
     const key = flag.replace(/^--/, '');
@@ -31,7 +34,7 @@ export function parseOptions(argv) {
     if (bools.has(key)) {
       if (inline !== undefined) throw new Error('Boolean options do not take values.');
       options[key] = true;
-    } else if (['workers', 'repeat', 'url'].includes(key)) {
+    } else if (['workers', 'repeat', 'url', 'walks', 'steps', 'seed'].includes(key)) {
       const value = inline ?? argv[++i];
       if (!value || value.startsWith('--')) throw new Error('A required option value is missing.');
       options[key] = key === 'url' ? value : Number(value);
@@ -39,6 +42,9 @@ export function parseOptions(argv) {
   }
   if (!Number.isInteger(options.workers) || options.workers < 1 || options.workers > 16) throw new Error('Workers must be 1 to 16.');
   if (!Number.isInteger(options.repeat) || options.repeat < 1 || options.repeat > 100) throw new Error('Repeat must be 1 to 100.');
+  for (const [key, max] of [['walks', 100], ['steps', 200], ['seed', 2_147_483_647]]) {
+    if (!Number.isInteger(options[key]) || options[key] < 1 || options[key] > max) throw new Error(`Invalid exploration ${key}.`);
+  }
   if (options.url) {
     let url;
     try { url = new URL(options.url); } catch { throw new Error('URL must be an HTTP(S) origin.'); }
@@ -49,6 +55,7 @@ export function parseOptions(argv) {
   }
   if (options.accounts && options.url !== TRUSTED_ACCOUNT_ORIGIN) throw new Error('Account checks require --url https://boilerhub.work so test sessions reach only the verified app.');
   if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public/demo tests.');
+  if (options.explore && options.accounts) throw new Error('Exploration uses synthetic demo data. Run authenticated checks separately.');
   return options;
 }
 
@@ -57,6 +64,7 @@ export function browserArgs(options, runDir, authenticated = false) {
     `--repeat-each=${options.repeat}`, `--global-timeout=${20 * 60_000 * options.repeat}`, '--retries=0', '--fail-on-flaky-tests', '--forbid-only'];
   if (authenticated) args.push('--config=playwright.auth.config.ts', '--reporter=list,./scripts/qa/army-reporter.mjs');
   else {
+    if (options.explore) args.push('--config=playwright.explore.config.ts');
     if (!options.ui) args.push('--reporter=list,html,./scripts/qa/army-reporter.mjs');
     args.push(`--output=${resolve(runDir, 'artifacts')}`);
   }
@@ -70,9 +78,11 @@ export function healthyStats(stats) {
 }
 const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export function renderReport(run) {
+  const mode = run.explore ? `exploration · ${run.walks} walks per browser · ${run.steps} steps · seed ${run.seed}` : run.quick ? 'desktop smoke' : 'full suite';
+  const replay = `pnpm ${run.explore ? 'qa:explore' : 'qa:army'} --workers ${run.workers} --repeat ${run.repeat}${run.explore ? ` --walks ${run.walks} --steps ${run.steps} --seed ${run.seed}` : ''}${run.url ? ` --url ${run.url}` : ''}${run.accounts ? ' --accounts' : ''}${run.quick ? ' --quick' : ''}`;
   const stats = run.stages.filter((s) => s.stats).map((s) => `<p><strong>${escape(s.name)}</strong>: ${s.stats.passed}/${s.stats.total} passed · ${s.stats.failed} failed · ${s.stats.flaky ?? 0} flaky · ${s.stats.skipped ?? 0} skipped</p>`).join('');
   const failures = run.stages.flatMap((s) => s.stats?.failures ?? []).map((f) => `<details><summary>${escape(f.title)}</summary><pre>${escape(f.error)}</pre></details>`).join('');
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boilerplate · Local QA army</title><style>body{font:17px/1.55 system-ui;background:#15120e;color:#f5ead7;max-width:1000px;margin:40px auto;padding:0 24px}h1{font-size:42px;line-height:1.1}a{color:#e3ba70}small{color:#c9bca8}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #514330;padding:12px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.status{font-size:24px;color:${run.status === 'passed' ? '#a7d19d' : '#e3ba70'}}details{margin:16px 0}</style><h1>Local QA army</h1><p class="status">${escape(run.status)}</p>${run.error ? `<p>${escape(run.error)}</p>` : ''}<p>Target: ${escape(run.target)}<br>${run.workers} parallel browser workers · ${run.repeat} repetition(s) · ${run.quick ? 'desktop smoke' : 'full suite'}<br><small>Checkout ${escape(run.commit)}${run.dirty ? ' (uncommitted changes)' : ''} · ${escape(run.startedAt)}</small></p>${stats}<table>${run.stages.map((s) => `<tr><td>${escape(s.name)}</td><td>${escape(s.status)}</td><td>${s.duration ? (s.duration / 1000).toFixed(1) + 's' : ''}</td></tr>`).join('')}</table><p><a href="public/index.html">Browser report, screenshots and traces</a> · <a href="run.json">Run details</a></p>${failures}<p>Repeat locally with <code>pnpm qa:army --workers ${run.workers} --repeat ${run.repeat}</code>. Use <code>pnpm qa:ui</code> to select and watch tests interactively.</p><small>Browsers run locally. The default target is a local copy with demo data and an ephemeral test database. Optional account checks use the live app and its existing synthetic identities; credentials and authenticated traces are excluded from reports. These scripted checks can be expanded as new bugs are found.</small></html>`;
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boilerplate · Local QA army</title><style>body{font:17px/1.55 system-ui;background:#15120e;color:#f5ead7;max-width:1000px;margin:40px auto;padding:0 24px}h1{font-size:42px;line-height:1.1}a{color:#e3ba70}small{color:#c9bca8}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #514330;padding:12px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.status{font-size:24px;color:${run.status === 'passed' ? '#a7d19d' : '#e3ba70'}}details{margin:16px 0}</style><h1>Local QA army</h1><p class="status">${escape(run.status)}</p>${run.error ? `<p>${escape(run.error)}</p>` : ''}<p>Target: ${escape(run.target)}<br>${run.workers} parallel browser workers · ${run.repeat} repetition(s) · ${escape(mode)}<br><small>Checkout ${escape(run.commit)}${run.dirty ? ' (uncommitted changes)' : ''} · ${escape(run.startedAt)}</small></p>${stats}<table>${run.stages.map((s) => `<tr><td>${escape(s.name)}</td><td>${escape(s.status)}</td><td>${s.duration ? (s.duration / 1000).toFixed(1) + 's' : ''}</td></tr>`).join('')}</table><p><a href="public/index.html">Browser report, screenshots and traces</a> · <a href="run.json">Run details</a></p>${failures}<p>Repeat locally with <code>${escape(replay)}</code>. Use <code>pnpm qa:ui</code> to select and watch tests interactively.</p><small>Browsers run locally. The default target is a local copy with demo data and an ephemeral test database. Optional account checks use the live app and its existing synthetic identities; credentials and authenticated traces are excluded from reports. These scripted checks can be expanded as new bugs are found.</small></html>`;
 }
 
 async function freePort() {
@@ -109,7 +119,7 @@ export async function main(argv) {
   if (options.help) { console.log(HELP); return 0; }
   if (options.plan) {
     console.log(JSON.stringify({ ...options, target: options.url ?? 'local production build on a free port',
-      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), 'public/demo browsers', ...(options.accounts ? ['private QA sessions', '32 test accounts'] : [])] }, null, 2));
+      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(options.accounts ? ['private QA sessions', '32 test accounts'] : [])] }, null, 2));
     return 0;
   }
   const target = options.url ?? `http://localhost:${await freePort()}`;
@@ -136,7 +146,8 @@ export async function main(argv) {
   };
   const baseEnv = { ...process.env, PLAYWRIGHT_BASE_URL: options.url ?? '', PLAYWRIGHT_PORT: new URL(run.target).port,
     PLAYWRIGHT_PRODUCTION: '1', PLAYWRIGHT_HTML_OPEN: 'never', PLAYWRIGHT_HTML_OUTPUT_DIR: resolve(runDir, 'public'),
-    QA_ARMY_RESULT_FILE: resolve(runDir, 'public-summary.json'), QA_ARMY_PRIVATE: '0', QA_ARMY_UI: options.ui ? '1' : '0' };
+    QA_ARMY_RESULT_FILE: resolve(runDir, 'public-summary.json'), QA_ARMY_PRIVATE: '0', QA_ARMY_UI: options.ui ? '1' : '0',
+    QA_EXPLORE_WALKS: String(options.walks), QA_EXPLORE_STEPS: String(options.steps), QA_EXPLORE_SEED: String(options.seed) };
   if (!options.url) {
     baseEnv.NEXT_PUBLIC_SUPABASE_URL = 'https://qa-project.supabase.co';
     baseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'qa-anon-placeholder';
@@ -175,7 +186,7 @@ export async function main(argv) {
     }
     const built = options.url || await stage('Production build', ['build']);
     if (built && !interrupted) {
-      await stage('Public and demo browsers', browserArgs(options, runDir));
+      await stage(options.explore ? 'Exploratory browser walks' : 'Public and demo browsers', browserArgs(options, runDir));
       const entry = run.stages.at(-1);
       entry.stats = await readJSON(resolve(runDir, 'public-summary.json'));
       if (!healthyStats(entry.stats)) entry.status = 'failed';
