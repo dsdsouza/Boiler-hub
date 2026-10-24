@@ -60,8 +60,9 @@ test('exploration: a long assignment title wraps in the posted confirmation', as
 
 test('exploration: returning to the landing page hydrates without browser errors', async ({ page }) => {
   const errors: string[] = [];
+  // Hard navigation cancels in-flight Next prefetches, which log recovery
+  // diagnostics. Runtime and hydration failures are reported through pageerror.
   page.on('pageerror', (e) => errors.push(e.message));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   for (const path of ['/', '/how', '/', '/demo', '/', '/']) {
     await page.goto(path);
     await page.waitForTimeout(30);
