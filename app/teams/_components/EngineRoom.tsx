@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { AssignmentPreview, Status, Zone } from "@/lib/types";
 import type { EngineRoomView } from "@/lib/data/teams";
@@ -150,6 +150,40 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
 
         {isLead && <AssignmentPanel teamId={room.team.id} labels={l} onPreview={onPreview} />}
       </div>
+      {isLead && <JumpToAssignment />}
     </main>
+  );
+}
+
+/**
+ * Sticky "New assignment" button for leads, shown while the panel is out of view (on a phone it sits
+ * below every tile). It scrolls to the panel and puts focus in its first field.
+ */
+function JumpToAssignment() {
+  const [panelVisible, setPanelVisible] = useState(true);
+
+  useEffect(() => {
+    const panel = document.getElementById("new-assignment")?.closest("aside");
+    if (!panel) return;
+    const io = new IntersectionObserver(([entry]) => setPanelVisible(!!entry?.isIntersecting), { threshold: 0.15 });
+    io.observe(panel);
+    return () => io.disconnect();
+  }, []);
+
+  if (panelVisible) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const panel = document.getElementById("new-assignment")?.closest("aside");
+        panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const target = panel?.querySelector<HTMLElement>("#a-title") ?? panel?.querySelector<HTMLElement>("button");
+        target?.focus({ preventScroll: true });
+      }}
+      className={`fixed right-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-20 min-h-12 rounded-full px-5 text-xl tracking-[0.05em] shadow-lg outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 sm:right-8 sm:bottom-6 ${DISPLAY}`}
+      style={{ backgroundColor: C.brass, color: C.onFill, outlineColor: C.brassLight, boxShadow: "inset 0 -3px 0 #8C6A35" }}
+    >
+      + New assignment
+    </button>
   );
 }

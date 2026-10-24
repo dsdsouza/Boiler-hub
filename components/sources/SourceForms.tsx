@@ -6,7 +6,7 @@ import { defaultFeedLabel, isCourseworkUrl } from "@/lib/sources/hints";
 import { foundLine, sourcesCall, type AddedSource } from "./api";
 
 export const fieldClass =
-  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-[15px] text-fg placeholder:text-muted";
+  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 const labelClass = "text-[13px] font-medium text-body";
 
 /** Paste an ICS link (Brightspace, Canvas, Outlook, any feed). Used on /settings/sources and in onboarding. */
@@ -61,7 +61,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
             placeholder="https://school.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=…"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className={`${fieldClass} font-mono text-[13px]`}
+            className={`${fieldClass} font-mono text-base`}
           />
           <span className="text-xs text-muted">The link works like a password. It is stored encrypted and never shown again.</span>
         </div>
@@ -120,7 +120,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
 function HowTo({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <details className="group text-sm text-body">
-      <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg marker:text-brass-ink">How to: {title}</summary>
+      <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">How to: {title}</summary>
       <p className="mt-0 mb-2 pl-4">{children}</p>
     </details>
   );
@@ -201,7 +201,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
             placeholder="github_pat_…"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            className={`${fieldClass} font-mono text-[13px]`}
+            className={`${fieldClass} font-mono text-base`}
           />
         </div>
         <Button type="submit" variant="primary" disabled={busy || !token.trim()}>

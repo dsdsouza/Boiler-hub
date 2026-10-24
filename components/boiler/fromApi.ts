@@ -15,6 +15,7 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     calendar: res.calendar,
     sources: res.sources ?? [],
     taskMeta: taskMeta(res.tasks),
+    eventOverrides: Object.fromEntries(res.events.filter((e) => e.override).map((e) => [e.id, e.override!])),
   };
 }
 
@@ -79,9 +80,16 @@ export function eventWeightBody(
   item: Pick<LoadItem, "id" | "seriesKey">,
   weight: Weight | null,
   applyToSeries: boolean,
-): { eventId: string; seriesKey?: string; weight: Weight | null; applyToSeries: boolean } {
+  clearEventIds: readonly string[] = [],
+): { eventId: string; seriesKey?: string; weight: Weight | null; applyToSeries: boolean; clearEventIds?: string[] } {
   const series = applyToSeries && !!item.seriesKey;
-  return { eventId: item.id, ...(series ? { seriesKey: item.seriesKey } : {}), weight, applyToSeries: series };
+  return {
+    eventId: item.id,
+    ...(series ? { seriesKey: item.seriesKey } : {}),
+    weight,
+    applyToSeries: series,
+    ...(series && clearEventIds.length > 0 ? { clearEventIds: [...clearEventIds] } : {}),
+  };
 }
 
 /** PATCH /api/me/status. An empty note clears it. */
