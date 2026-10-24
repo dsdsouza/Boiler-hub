@@ -6,7 +6,7 @@ import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { timeAgo } from "@/components/boiler/format";
 import { LinkButton } from "@/components/ui/Button";
-import { readStorage, writeStorage } from "@/components/ui/theme";
+import { readStorage, writeStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";

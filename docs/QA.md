@@ -1,5 +1,16 @@
 # QA status
 
+## Theme removal and GitHub follow-up — October 24, 2026
+
+The theme button, saved-theme initialization script, OS theme listener and light palette are removed. The app consistently uses its dark iron and brass palette, including native form controls and the browser theme color. Pip's storage helpers now live in `components/ui/storage.ts`.
+
+- In the live signed-in account, the user connected GitHub using the Sources form. The saved source showed Working; Test returned `Found 0 items.` A My Boiler refresh completed without an error. This verifies the live connection's empty-result path, not a populated workload. No GitHub issues, pull requests or workflow runs were created or changed for this check.
+- The GitHub regression pass reproduced first-page truncation, ignored incomplete search results, and CI authentication/server/network failures being treated as healthy. Searches now paginate (up to GitHub's 1,000-result limit), incomplete or over-limit results show an error, and CI failures propagate unless access is unavailable (403/404). CI inspection remains bounded to the ten most recently updated open PRs.
+- All 14 adapter tests pass, covering assigned issues, review requests, failing/passing CI, completions, size labels, pagination, incomplete results, search limits, rate limits, rejected tokens and CI errors. The full 141-test suite, TypeScript check, ESLint and production build passed in an isolated copy of this change. The build needed a clean retry after a Google font loader failure.
+- Computer-use checks covered the landing header at 390 and 1440 CSS pixels and the demo at 320 pixels. The page stayed dark under emulated light and dark OS settings, the theme control was absent, and no horizontal overflow was observed. A production-mode check confirmed that a previously saved light preference is ignored, with no browser console errors. The source detector found only the pre-existing bounce-easing advisory in the stylesheet; that animation was unchanged.
+
+The live domain still serves the earlier UI. The revised appearance and adapter fixes require deployment from staging. Populated GitHub ingestion was exercised with mocked API responses; the connected live account returned no matching items.
+
 ## Staging follow-up — October 24, 2026
 
 The requested onboarding copy is removed. Meeting, hour, due and optional overdue totals now use individual rounded badges in onboarding and team tiles. On phones, the first-reading message has a full row so it does not wrap into a narrow column.

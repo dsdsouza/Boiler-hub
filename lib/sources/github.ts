@@ -15,6 +15,14 @@ const RECENT_MS = 2 * DAY_MS;
 /** Open PRs whose Actions runs we check per sync (2 calls each). */
 export const MAX_CI_PRS = 10;
 const FAILED = new Set(["failure", "timed_out", "startup_failure"]);
+const SEARCH_PAGE_SIZE = 100;
+const SEARCH_LIMIT = 1000;
+
+class GithubHttpError extends SourceError {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 /** The subset of a search/issues result we read. */
 export interface GhIssue {
@@ -121,19 +129,29 @@ export function githubError(res: Response): SourceError {
     return new SourceError(when ? `GitHub rate limit reached, retrying after ${hhmm(when)} UTC` : "GitHub rate limit reached, retrying shortly");
   }
   if (res.status === 401) return new SourceError("GitHub rejected the token. It may have expired or been revoked");
-  if (res.status === 403) return new SourceError("GitHub refused the request. Check the token's read permissions");
-  return new SourceError(`GitHub returned ${res.status}`);
+  if (res.status === 403) return new GithubHttpError("GitHub refused the request. Check the token's read permissions", res.status);
+  return new GithubHttpError(`GitHub returned ${res.status}`, res.status);
 }
 
 function hhmm(d: Date) {
   return d.toISOString().slice(11, 16);
 }
 
-const isRateLimit = (e: unknown) => e instanceof SourceError && e.message.startsWith("GitHub rate limit");
-
-async function search(get: Get, q: string): Promise<GhIssue[]> {
-  const r = await get<{ items?: GhIssue[] }>(`/search/issues?q=${encodeURIComponent(q)}&per_page=50&sort=updated`);
-  return r.items ?? [];
+async function search(get: Get, q: string, limit = SEARCH_LIMIT): Promise<GhIssue[]> {
+  const items: GhIssue[] = [];
+  for (let page = 1; items.length < limit; page++) {
+    const r = await get<{ items?: GhIssue[]; total_count?: number; incomplete_results?: boolean }>(
+      `/search/issues?q=${encodeURIComponent(q)}&per_page=${SEARCH_PAGE_SIZE}&sort=updated&page=${page}`,
+    );
+    if (r.incomplete_results) throw new SourceError("GitHub returned incomplete results. Try syncing again shortly");
+    if (limit === SEARCH_LIMIT && (r.total_count ?? 0) > SEARCH_LIMIT) {
+      throw new SourceError("GitHub matched more than 1,000 items, beyond its search limit. Use a token limited to fewer repositories");
+    }
+    const found = r.items ?? [];
+    items.push(...found);
+    if (found.length < SEARCH_PAGE_SIZE || items.length >= (r.total_count ?? Infinity)) break;
+  }
+  return items.slice(0, limit);
 }
 
 /** Whether the PR's latest Actions run of any workflow failed. Missing Actions access counts as not failing. */
@@ -153,8 +171,8 @@ async function ciFailing(get: Get, pr: GhIssue): Promise<boolean> {
     }
     return [...latest.values()].some((r) => r.conclusion !== null && FAILED.has(r.conclusion));
   } catch (e) {
-    if (isRateLimit(e)) throw e;
-    return false;
+    if (e instanceof GithubHttpError && (e.status === 403 || e.status === 404)) return false;
+    throw e;
   }
 }
 
@@ -169,7 +187,7 @@ export async function fetchGithub(token: string, now: Date, fetchImpl: typeof fe
   const [assigned, reviewRequested, mine, closedAssigned, mergedMine] = await Promise.all([
     search(get, `is:open is:issue archived:false assignee:${login}`),
     search(get, `is:open is:pr archived:false review-requested:${login}`),
-    search(get, `is:open is:pr archived:false author:${login}`),
+    search(get, `is:open is:pr archived:false author:${login}`, MAX_CI_PRS),
     search(get, `is:closed is:issue reason:completed assignee:${login} closed:>=${since}`),
     search(get, `is:pr is:merged author:${login} merged:>=${since}`),
   ]);

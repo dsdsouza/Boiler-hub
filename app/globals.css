@@ -1,58 +1,10 @@
 @import "tailwindcss";
 
 /*
-  Palette from docs/design/README.md. Dark is the designed theme; light is
-  derived from it (parchment ground, iron ink) with the same brass and zone
-  accents. `*-ink` tokens are zone colors tuned for text on the page ground;
-  `zone-*` fills stay constant across themes (badges put dark text on them).
+  Iron and brass palette from docs/design/README.md. `*-ink` tokens are
+  zone colors tuned for text on the page ground; zone badges use dark text.
 */
 :root {
-  color-scheme: light;
-  --bg: #f3ebdd;
-  --bg-2: #ece2d0;
-  --surface: #fbf6ec;
-  --surface-2: #eadfcb;
-  --line: #d3c4aa;
-  --rivet: #a08b6b;
-  --muted: #6b5d49;
-  --text-2: #3d342a;
-  --text: #1f1a14;
-  --brass-ink: #745214;
-  --link-hover: #5e4210;
-  --cool-ink: #2b6690;
-  --working-ink: #745214;
-  --hot-ink: #a54f0c;
-  --redline-ink: #b3301c;
-  --field: #fffdf8;
-  --steam: #8f8676;
-  --shadow: 0 1px 0 rgb(255 255 255 / 0.7) inset, 0 1px 2px rgb(31 26 20 / 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #15120e;
-    --bg-2: #1a1611;
-    --surface: #1f1a14;
-    --surface-2: #2a231b;
-    --line: #3a3027;
-    --rivet: #6b5a44;
-    --muted: #b3a48c;
-    --text-2: #d9ccb5;
-    --text: #f1e7d3;
-    --brass-ink: #e3be74;
-    --link-hover: #f3d79c;
-    --cool-ink: #7fb3d5;
-    --working-ink: #d1a85a;
-    --hot-ink: #f0913a;
-    --redline-ink: #f25c45;
-    --field: #15120e;
-    --steam: #ece6da;
-    --shadow: none;
-  }
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #15120e;
   --bg-2: #1a1611;

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MyBoilerData } from "@/components/boiler/boilerState";
 import type { VentEvent } from "@/components/boiler/useMyBoiler";
 import { Card } from "@/components/ui/Card";
-import { readStorage, writeStorage } from "@/components/ui/theme";
+import { readStorage, writeStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { companionMessage, type CompanionTarget } from "./companionMessage";
 import { Mascot } from "./Mascot";
