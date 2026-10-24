@@ -75,18 +75,24 @@ export function Boiler({
   const clipId = "bt" + useId().replace(/[^a-zA-Z0-9]/g, "");
 
   // Whistle when the score crosses 90 on the way up.
-  const prev = useRef(s);
+  // Score changes within Redline must not cancel the shutoff timer.
+  const atWhistlePressure = s >= 90;
+  const prev = useRef(atWhistlePressure);
   const [whistleKey, setWhistleKey] = useState(0);
   const [whistling, setWhistling] = useState(false);
   useEffect(() => {
     const was = prev.current;
-    prev.current = s;
-    if (!whistle || !(was < 90 && s >= 90)) return;
+    prev.current = atWhistlePressure;
+    if (!whistle || !atWhistlePressure) {
+      setWhistling(false);
+      return;
+    }
+    if (was) return;
     setWhistleKey((k) => k + 1);
     setWhistling(true);
     const t = setTimeout(() => setWhistling(false), 1500);
     return () => clearTimeout(t);
-  }, [s, whistle]);
+  }, [atWhistlePressure, whistle]);
 
   const fireLevel = Math.max(0, Math.min(1, fire ?? v.fire));
   const label = `${name} at pressure ${s}, ${ZONE_LABEL[zone]}${status ? `, ${STATUS_META[status].label}` : ""}`;
