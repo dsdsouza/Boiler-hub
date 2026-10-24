@@ -4,7 +4,6 @@ import { SiteHeader } from "@/components/ui/SiteHeader";
 import { ZONES, ZONE_BEHAVIOR, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
 import { HeroBoiler } from "@/components/boiler/HeroBoiler";
-import { VisibilityList } from "@/components/ui/VisibilityList";
 
 const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 
@@ -109,19 +108,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="border-t border-line bg-bg-2">
-          <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-start gap-12 px-4 py-16 sm:px-8 sm:py-[72px]">
-            <div className="flex flex-col gap-4">
-              <h2 className={`${display} text-[44px] leading-none sm:text-[52px]`}>We never store what is on your calendar.</h2>
-              <p className="m-0 text-[17px] leading-relaxed text-body">
-                Teams see a number, a zone and your status, only if you choose. Never event titles, attendees or times. You can hide from any team at any
-                time.
-              </p>
-            </div>
-            <VisibilityList />
           </div>
         </section>
       </main>
