@@ -36,6 +36,7 @@ function Workflows() {
     <nav aria-label="Workflow pages" className="mb-6 flex flex-wrap gap-5">
       {['boiler', 'teams', 'sources', 'onboarding'].map(v => <Link key={v} href={`/qa-workflows?view=${v}`}>{v}</Link>)}
     </nav>
+    <div data-qa-app>
     {view === 'boiler' && <BoilerScreen />}
     {view === 'onboarding' && <OnboardingClient />}
     {view === 'teams' && <main><h1>Teams</h1><div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>
@@ -46,6 +47,7 @@ function Workflows() {
     </main>}
     {view === 'engine' && room && <EngineRoom room={room} />}
     {view === 'sources' && sources && <main><h1>Sources</h1><SourcesSettings initial={sources} /></main>}
+    </div>
   </div>;
 }
 function FixtureRouter({ children }: { children: React.ReactNode }) {
