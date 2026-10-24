@@ -170,10 +170,10 @@ export async function loadSources(
     }),
   );
 
-  // A new feed's first good sync: its backlog of past-due entries was most likely handed in already,
-  // so mark it done without a vent. The owner can reopen any of them.
+  // A new source's first good sync: its backlog of past-due items (handed-in coursework, issues
+  // with long-past milestones) was most likely dealt with already, so mark it done without a vent.
   const backlog = results.flatMap(({ row, items, error }) =>
-    !error && row.kind === "ics" && !row.last_synced_at ? overdueOpen(applyItemState(items, state, now), now) : [],
+    !error && !row.last_synced_at ? overdueOpen(applyItemState(items, state, now), now) : [],
   );
   if (backlog.length > 0) {
     const done_at = silentDoneAt(now);

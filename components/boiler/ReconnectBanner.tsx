@@ -22,3 +22,15 @@ export function ReconnectBanner({ next = "/boiler", className = "" }: { next?: s
     </div>
   );
 }
+
+/** Shown when the engine reports calendar: "unavailable" (a Google outage or network error, not a sign-in problem). */
+export function CalendarUnavailableBanner({ className = "" }: { className?: string }) {
+  return (
+    <div role="status" className={`rounded-lg border border-hot-ink bg-surface px-4 py-3 ${className}`}>
+      <p className="m-0 text-sm text-body">
+        <strong className="text-fg">Google Calendar temporarily unavailable — showing tasks only.</strong> We will try again on the next
+        refresh. Your teams keep seeing your last synced score.
+      </p>
+    </div>
+  );
+}

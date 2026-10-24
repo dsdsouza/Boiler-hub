@@ -127,6 +127,16 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     [mutate],
   );
 
+  /** Remove a manual task (stale ones, mostly). */
+  const removeTask = useCallback(
+    (id: string) =>
+      mutate(
+        (d) => S.clearTasks(d, new Set([id])),
+        async () => (await api<{ boiler: BoilerResponse }>(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE" })).boiler,
+      ),
+    [mutate],
+  );
+
   /** "Mark all overdue done": clears every overdue source task without a vent. */
   const clearOverdue = useCallback(() => {
     const current = dataRef.current;
@@ -188,7 +198,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     }
   }, [source]);
 
-  return { source, data, error, syncing, vent, addTask, setTaskDone, setTaskSize, clearOverdue, setEventWeight, setStatus, refresh };
+  return { source, data, error, syncing, vent, addTask, setTaskDone, setTaskSize, removeTask, clearOverdue, setEventWeight, setStatus, refresh };
 }
 
 export type MyBoiler = ReturnType<typeof useMyBoiler>;

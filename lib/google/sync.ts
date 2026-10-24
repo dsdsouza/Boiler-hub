@@ -38,8 +38,8 @@ interface TaskRow {
  * caller MUST have verified who `userId` is: the signed-in user, or a member the caller has just
  * checked lead rights over (CLAUDE.md rule 6). Every query here is scoped to `userId`.
  *
- * When Google needs a reconnect, the result uses tasks only and the snapshot is NOT saved, so teammates
- * keep seeing the last real score instead of a misleadingly low one.
+ * When Google needs a reconnect or is unavailable, the result uses tasks only and the snapshot is NOT
+ * saved, so teammates keep seeing the last real score instead of a misleadingly low one.
  */
 export async function syncUser(
   admin: SupabaseClient,
@@ -129,7 +129,10 @@ async function loadCalendar(
     return { state: "ok", ...week };
   } catch (e) {
     if (e instanceof GoogleReconnectError) return { state: "reconnect", events: [], timeZone: "UTC" };
-    throw e;
+    // Anything else (Google 5xx, network, a failed token refresh) is treated like a reconnect
+    // for this sync: tasks-only result, no snapshot saved, and the page still renders.
+    console.error(`[sync] Google Calendar unavailable for ${userId}`, e);
+    return { state: "unavailable", events: [], timeZone: "UTC" };
   }
 }
 
