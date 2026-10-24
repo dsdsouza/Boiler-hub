@@ -26,7 +26,11 @@ export async function getViewer(): Promise<Viewer | null> {
 /** Right-hand slot of the app header: sign out plus avatar. Renders nothing when signed out. */
 export async function AccountMenu() {
   const me = await getViewer();
-  if (!me) return null;
+  return me ? <AccountControls viewer={me} /> : null;
+}
+
+/** Account actions for a viewer already verified during this request. */
+export function AccountControls({ viewer: me }: { viewer: Viewer }) {
   return (
     <div className="flex items-center gap-2">
       <form action="/auth/signout" method="post">
