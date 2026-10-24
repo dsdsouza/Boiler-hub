@@ -29,6 +29,7 @@ export async function sourcesCall<T>(path: string, method: string, body?: unknow
   });
   const json = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!res.ok) throw new Error(json?.error ?? `${method} ${path} failed (${res.status})`);
+  if (method !== "GET" && typeof window !== "undefined") window.dispatchEvent(new Event("boiler:data-changed"));
   return json as T;
 }
 
