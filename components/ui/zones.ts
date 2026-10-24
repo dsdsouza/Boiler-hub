@@ -28,13 +28,6 @@ export const ZONE_BEHAVIOR: Record<Zone, string> = {
   redline: "Whistle, red glow, strong shake",
 };
 
-export const ZONE_DESC: Record<Zone, string> = {
-  cool: "Calm, light steam. Plenty of room.",
-  working: "Steady steam. A full but manageable week.",
-  hot: "Shaking, heavy steam. Check before adding more.",
-  redline: "The whistle blows. Something has to give.",
-};
-
 /** Fill color, constant across themes. Pair with dark text. */
 export const ZONE_FILL: Record<Zone, string> = {
   cool: "#7FB3D5",

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
@@ -45,7 +44,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
         <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-[72px] sm:pb-20">
           <div className="flex flex-col gap-6">
-            <div className="font-mono text-[13px] tracking-[0.18em] text-brass-ink">STEAM &amp; STEEL · CAPACITY GAUGE</div>
             <h1 className={`${display} text-[clamp(48px,7vw,88px)] leading-[0.95] tracking-[0.01em]`}>
               You can see everyone’s calendar. You can’t see their pressure.
             </h1>
@@ -62,7 +60,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 Sign in with Google
               </LinkButton>
             </div>
-            <p className="m-0 text-sm text-muted">The demo needs no sign-in. It loads a seeded class and work team.</p>
           </div>
           <HeroBoiler />
         </section>
@@ -95,18 +92,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 text="Join a class or work team and choose who sees your gauge: Hidden, Lead only, or Everyone. Hidden is the default."
               />
             </div>
-            <p className="m-0 text-[15px] text-body">
-              Curious about the maths? <Link href="/how">See the formula and weights</Link>.
-            </p>
           </div>
         </section>
 
         <section className="border-t border-line">
           <div className="mx-auto flex max-w-[1240px] flex-col gap-9 px-4 py-16 sm:px-8 sm:py-[72px]">
-            <div className="flex flex-col gap-2">
-              <h2 className={`${display} text-[44px] sm:text-[52px]`}>Four zones, one glance</h2>
-              <p className="m-0 text-[17px] text-body">The gauge measures load, not wellbeing.</p>
-            </div>
+            <h2 className={`${display} text-[44px] sm:text-[52px]`}>Four zones, one glance</h2>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] gap-5">
               {ZONES.map((z) => (
                 <div key={z} className="flex flex-col items-center gap-3 rounded-xl border border-line bg-surface p-6 shadow-(--shadow)">

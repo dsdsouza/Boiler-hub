@@ -162,7 +162,6 @@ export default function HowPage() {
               </li>
             ))}
           </ul>
-          <p className="m-0 text-body">The gauge measures load, not wellbeing.</p>
         </section>
 
         <section aria-labelledby="privacy" className="flex flex-col gap-5">
