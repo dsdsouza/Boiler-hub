@@ -75,7 +75,8 @@ export function browserArgs(options, runDir, authenticated = false) {
 }
 
 export function healthyStats(stats) {
-  return Boolean(stats && stats.total > 0 && stats.failed === 0 && stats.flaky === 0 && stats.skipped === 0);
+  return Boolean(stats && stats.total > 0 && stats.passed === stats.total && stats.failed === 0 && stats.flaky === 0 && stats.skipped === 0
+    && (!stats.status || stats.status === 'passed'));
 }
 const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export function renderReport(run) {
@@ -83,7 +84,7 @@ export function renderReport(run) {
   const replay = `pnpm ${run.explore ? 'qa:explore' : 'qa:army'} --workers ${run.workers} --repeat ${run.repeat}${run.explore ? ` --walks ${run.walks} --steps ${run.steps} --seed ${run.seed}` : ''}${run.url ? ` --url ${run.url}` : ''}${run.accounts ? ' --accounts' : ''}${run.quick ? ' --quick' : ''}`;
   const stats = run.stages.filter((s) => s.stats).map((s) => `<p><strong>${escape(s.name)}</strong>: ${s.stats.passed}/${s.stats.total} passed · ${s.stats.failed} failed · ${s.stats.flaky ?? 0} flaky · ${s.stats.skipped ?? 0} skipped</p>`).join('');
   const failures = run.stages.flatMap((s) => s.stats?.failures ?? []).map((f) => `<details><summary>${escape(f.title)}</summary><pre>${escape(f.error)}</pre></details>`).join('');
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boilerplate · Local QA army</title><style>body{font:17px/1.55 system-ui;background:#15120e;color:#f5ead7;max-width:1000px;margin:40px auto;padding:0 24px}h1{font-size:42px;line-height:1.1}a{color:#e3ba70}small{color:#c9bca8}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #514330;padding:12px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.status{font-size:24px;color:${run.status === 'passed' ? '#a7d19d' : '#e3ba70'}}details{margin:16px 0}</style><h1>Local QA army</h1><p class="status">${escape(run.status)}</p>${run.error ? `<p>${escape(run.error)}</p>` : ''}<p>Target: ${escape(run.target)}<br>${run.workers} parallel browser workers · ${run.repeat} repetition(s) · ${escape(mode)}<br><small>Checkout ${escape(run.commit)}${run.dirty ? ' (uncommitted changes)' : ''} · ${escape(run.startedAt)}</small></p>${stats}<table>${run.stages.map((s) => `<tr><td>${escape(s.name)}</td><td>${escape(s.status)}</td><td>${s.duration ? (s.duration / 1000).toFixed(1) + 's' : ''}</td></tr>`).join('')}</table><p><a href="public/index.html">Browser report, screenshots and traces</a> · <a href="run.json">Run details</a></p>${failures}<p>Repeat locally with <code>${escape(replay)}</code>. Use <code>pnpm qa:ui</code> to select and watch tests interactively.</p><small>Browsers run locally. The default target is a local copy with demo data and an ephemeral test database. Optional account checks use the live app and its existing synthetic identities; credentials and authenticated traces are excluded from reports. These scripted checks can be expanded as new bugs are found.</small></html>`;
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boilerplate · Local QA army</title><style>body{font:17px/1.55 system-ui;background:#15120e;color:#f5ead7;max-width:1000px;margin:40px auto;padding:0 24px}h1{font-size:42px;line-height:1.1}a{color:#e3ba70}small{color:#c9bca8}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #514330;padding:12px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.status{font-size:24px;color:${run.status === 'passed' ? '#a7d19d' : '#e3ba70'}}details{margin:16px 0}</style><h1>Local QA army</h1><p class="status">${escape(run.status)}</p>${run.error ? `<p>${escape(run.error)}</p>` : ''}<p>Target: ${escape(run.target)}<br>${run.workers} parallel browser workers · ${run.repeat} repetition(s) · ${escape(mode)}<br><small>Checkout ${escape(run.commit)}${run.dirty ? ' (uncommitted changes)' : ''} · ${escape(run.startedAt)}</small></p>${stats}${run.stages.filter(s => s.workflowReport).map(s => `<p><a href="${escape(s.workflowReport)}">${escape(s.name)}: step-by-step results and stopping points</a></p>`).join('')}<table>${run.stages.map((s) => `<tr><td>${escape(s.name)}</td><td>${escape(s.status)}</td><td>${s.duration ? (s.duration / 1000).toFixed(1) + 's' : ''}</td></tr>`).join('')}</table><p><a href="public/index.html">Browser report, screenshots and traces</a> · <a href="run.json">Run details</a></p>${failures}<p>Repeat locally with <code>${escape(replay)}</code>. Use <code>pnpm qa:ui</code> to select and watch tests interactively.</p><small>Browsers run locally. The default target is a local copy with demo data and an ephemeral test database. Optional account checks use the live app and its existing synthetic identities; credentials and authenticated traces are excluded from reports. These scripted checks can be expanded as new bugs are found.</small></html>`;
 }
 
 async function freePort() {
@@ -120,7 +121,7 @@ export async function main(argv) {
   if (options.help) { console.log(HELP); return 0; }
   if (options.plan) {
     console.log(JSON.stringify({ ...options, target: options.url ?? 'local production build on a free port',
-      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts'] : [])] }, null, 2));
+      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions', 'complete local workflows'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts', 'complete live personal workflows'] : [])] }, null, 2));
     return 0;
   }
   const target = options.url ?? `http://localhost:${await freePort()}`;
@@ -201,6 +202,13 @@ export async function main(argv) {
         passed: stats?.expected ?? 0, failed: stats?.unexpected ?? 0, flaky: stats?.flaky ?? 0, skipped: stats?.skipped ?? 0 };
       if (!healthyStats(entry.stats)) entry.status = 'failed';
     }
+    if (!options.quick && !interrupted) {
+      await stage('Complete local workflows', ['test:workflows', `--workers=${Math.min(options.workers, 8)}`, `--repeat-each=${options.repeat}`, '--retries=0'],
+        { QA_WORKFLOW_REPORT_DIR: resolve(runDir, 'workflows'), QA_WORKFLOW_RUN_ID: runDir.split('/').at(-1) });
+      const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'workflows/summary.json'));
+      entry.workflowReport = 'workflows/index.html';
+      if (!healthyStats(entry.stats)) entry.status = 'failed';
+    }
     if (options.accounts && !interrupted) {
       const authEnv = { QA_NAMESPACE: 'regression', QA_ACCOUNT_BANK: resolve(ROOT, '.qa/credentials-regression.json'),
         QA_AUTH_WORKERS: String(Math.min(options.workers, 4)), QA_ARMY_PRIVATE: '1', QA_ARMY_RESULT_FILE: resolve(runDir, 'accounts-summary.json'),
@@ -209,6 +217,12 @@ export async function main(argv) {
         await stage(options.explore ? 'Signed-in exploratory walks' : 'Live test accounts', browserArgs(options, runDir, true), authEnv, true);
         const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'accounts-summary.json'));
         if (!healthyStats(entry.stats)) entry.status = 'failed';
+        await stage('Complete live personal workflows', ['test:workflows:live', `--workers=${Math.min(options.workers, 8)}`, '--retries=0'],
+          { ...authEnv, QA_WORKFLOW_REPORT_DIR: resolve(runDir, 'signed-workflows'), QA_WORKFLOW_RUN_ID: `live-${runDir.split('/').at(-1)}`,
+            QA_WORKFLOW_COVERAGE: 'Live personal workflows through the browser, API and persisted data. Existing synthetic accounts only; mutations restored afterward.' }, true);
+        const workflows = run.stages.at(-1); workflows.stats = await readJSON(resolve(runDir, 'signed-workflows/summary.json'));
+        workflows.workflowReport = 'signed-workflows/index.html';
+        if (!healthyStats(workflows.stats)) workflows.status = 'failed';
       } else run.stages.push({ name: 'Live test accounts', status: 'blocked' });
     }
     run.status = interrupted ? 'interrupted' : run.stages.every((s) => s.status === 'passed') ? 'passed' : 'failed';

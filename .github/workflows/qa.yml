@@ -58,6 +58,17 @@ jobs:
       - run: pnpm build
       - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
       - run: pnpm test:components --shard=${{ matrix.shard }}/3
+      - name: Complete workflow journeys with step diagnostics
+        run: pnpm test:workflows --shard=${{ matrix.shard }}/3
+        env:
+          QA_WORKFLOW_REPORT_DIR: qa-runs/ci-workflows
+          QA_WORKFLOW_RUN_ID: ci-${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-report-${{ matrix.shard }}
+          path: qa-runs/ci-workflows
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:

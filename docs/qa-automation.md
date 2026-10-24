@@ -202,3 +202,31 @@ The deployment recovery guard ignores canceled assets from departing documents. 
 After these repairs, the complete production-browser suite passed **198/198** cases across all six configurations, with no retries or skipped tests. **284/284 unit/database tests**, type checks, lint and the production build passed. Database tests cover mid-transaction rollback, same-draft idempotency, stale revision rejection, service-role execution and decimal serialization. A live service-role transaction fanned out to all 14 class members and was rolled back. The live hidden-count function was checked against every membership without persisting test changes.
 
 The local QA army then passed **306/306 unit/database tests** and **204/204 browser cases**, including a new regression for navigation-cancelled assets. Its first full run exposed a Firefox reload caused by treating a cancelled asset request as a deployment failure. Recovery now confirms an HTTP asset failure before reloading. A repeat smoke run passed 66/66 cases before the new regression was added. A subsequent live run passed all 34 public/demo scenarios and all 32 existing account checks. The interactive dashboard was also verified by running and replaying a case from its interface. GitHub run [40126242427](https://github.com/dsdsouza/Boiler-hub/actions/runs/40126242427) passed all 306 unit/database and 204 browser checks on `1f2362b`; an earlier CI attempt failed during Google's font download before one browser shard could start.
+
+
+## Whole workflows and stuck-step reports
+
+Open **Check Whole Workflows.command**, or run:
+
+```bash
+pnpm qa:workflows --workers 4
+pnpm qa:workflows --accounts --workers 8
+```
+
+The first command runs seven complete journeys on Chromium, Firefox, WebKit and a phone configuration: onboarding to a completed and reopened task; class and work teams from creation through a second person's assignment completion and visibility changes; failed task/status saves through successful recovery; connecting, testing and removing a calendar feed; calendar subscription consent through revocation; and a Pip conversation from a failed reply through retry, follow-up and closing. These use actual app components in a disposable Next checkout with resettable simulated services. The harness route is never shipped and makes no calls to live data services. Fixture services exist in the browser, so their router adapter uses explicit fresh-page checkpoints instead of a production server refresh. These local journeys do not claim real backend create/join/assignment writes or a real Gemini response; the live personal journeys and existing API/database tests provide separate coverage.
+
+`--accounts` additionally refreshes the existing 32 synthetic account sessions and runs each account through real onboarding, note persistence, task creation, resizing, completion, reload verification, permitted team navigation and source settings on `https://boilerhub.work`. These checks use the real application API and database. Each identity modifies only its unique temporary manual task and its own status; cleanup deletes that task, restores the original status, and verifies both. The live suite does not create teams, post assignments, change source connections or create private calendar subscriptions. Those full lifecycle mutations are covered by the resettable local journeys. Fresh Google consent, real calendar grants and external provider connectivity remain separate manual/integration checks.
+
+Each goal is a named Playwright step with a bounded timeout. The generated `qa-runs/workflows-<run>/{local,live}/index.html` updates while a run is active. It shows every planned step, duration, last completed goal, the point where progress stopped, and cleanup outcome. A timed-out step is **stuck**; a failed assertion is **failed**; later goals are **blocked**. Interrupted, skipped, missing and incomplete journeys never pass. The process exits unsuccessfully if any journey cannot finish. The command also prints stopping points directly.
+
+Public report summaries contain static step labels and outcomes, not authenticated error text. Detailed errors remain in `.qa/workflow-diagnostics/<run>/errors.json`; failed live screenshots remain in `.qa/workflow-live-artifacts/`. Sessions, private diagnostics and screenshot contents are excluded from published CI reports. Reports describe where a runner stopped; candidates must still be reproduced before being called app bugs.
+
+`pnpm qa:army` and `pnpm qa:check` include local journeys. Account army runs also include the live personal journeys after session preparation. Feature-branch CI shards the local journeys with the browser checks and uploads a separate workflow report per shard. No retries or expected failures turn an unfinished journey green.
+
+To verify the stuck detector itself, run a deliberate diagnostic separately:
+
+```bash
+QA_WORKFLOW_PROBE=1 QA_WORKFLOW_REPORT_DIR=qa-runs/workflow-probe pnpm test:workflows --project=chromium --workers=1
+```
+
+This command is **supposed to fail** at “Wait for the stuck task save,” block “Complete the task,” and complete cleanup. It is excluded from regular product checks and does not represent an app bug.
