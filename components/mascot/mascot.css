@@ -78,6 +78,14 @@
 [data-still] .mp-burst { animation: none; opacity: 0; }
 [data-still] .mp-level { transition: none; }
 
+/* Off-screen hero (the boiler's IntersectionObserver sets data-paused): hold Pip's loops in place. */
+[data-paused] .mp-blink,
+[data-paused] .mp-wave,
+[data-paused] .mp-drip,
+[data-paused] .mp-hop {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mp-blink, .mp-wave, .mp-water-r, .mp-water-l, .mp-bubble, .mp-hop, .mp-drip, .mp-pop {
     animation: none;

@@ -8,7 +8,8 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
-import { Boiler } from "./Boiler";
+import { PipHero } from "@/components/mascot/PipHero";
+import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
 import { ClassSchedule } from "./ClassSchedule";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
@@ -64,6 +65,7 @@ export function MyBoilerView({
   headingLevel?: 1 | 2;
 }) {
   useTick(30_000);
+  const accessory = usePipAccessory();
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
 
@@ -132,7 +134,7 @@ export function MyBoilerView({
         >
           <div className="flex items-center gap-4 sm:flex-col sm:gap-[22px]">
             <div className="relative w-[150px] flex-none min-[400px]:w-[170px] sm:w-[290px]">
-              <Boiler score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} />
+              <PipHero score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} accessory={accessory} />
               <VentLabel vent={vent} />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
