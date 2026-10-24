@@ -1,24 +1,206 @@
 @import "tailwindcss";
 
+/*
+  Palette from docs/design/README.md. Dark is the designed theme; light is
+  derived from it (parchment ground, iron ink) with the same brass and zone
+  accents. `*-ink` tokens are zone colors tuned for text on the page ground;
+  `zone-*` fills stay constant across themes (badges put dark text on them).
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  color-scheme: light;
+  --bg: #f3ebdd;
+  --bg-2: #ece2d0;
+  --surface: #fbf6ec;
+  --surface-2: #eadfcb;
+  --line: #d3c4aa;
+  --rivet: #a08b6b;
+  --muted: #6b5d49;
+  --text-2: #3d342a;
+  --text: #1f1a14;
+  --brass-ink: #745214;
+  --link-hover: #5e4210;
+  --cool-ink: #2b6690;
+  --working-ink: #745214;
+  --hot-ink: #a54f0c;
+  --redline-ink: #b3301c;
+  --field: #fffdf8;
+  --steam: #8f8676;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.7) inset, 0 1px 2px rgb(31 26 20 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #15120e;
+    --bg-2: #1a1611;
+    --surface: #1f1a14;
+    --surface-2: #2a231b;
+    --line: #3a3027;
+    --rivet: #6b5a44;
+    --muted: #b3a48c;
+    --text-2: #d9ccb5;
+    --text: #f1e7d3;
+    --brass-ink: #e3be74;
+    --link-hover: #f3d79c;
+    --cool-ink: #7fb3d5;
+    --working-ink: #d1a85a;
+    --hot-ink: #f0913a;
+    --redline-ink: #f25c45;
+    --field: #15120e;
+    --steam: #ece6da;
+    --shadow: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #15120e;
+  --bg-2: #1a1611;
+  --surface: #1f1a14;
+  --surface-2: #2a231b;
+  --line: #3a3027;
+  --rivet: #6b5a44;
+  --muted: #b3a48c;
+  --text-2: #d9ccb5;
+  --text: #f1e7d3;
+  --brass-ink: #e3be74;
+  --link-hover: #f3d79c;
+  --cool-ink: #7fb3d5;
+  --working-ink: #d1a85a;
+  --hot-ink: #f0913a;
+  --redline-ink: #f25c45;
+  --field: #15120e;
+  --steam: #ece6da;
+  --shadow: none;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-rivet: var(--rivet);
+  --color-muted: var(--muted);
+  --color-body: var(--text-2);
+  --color-fg: var(--text);
+  --color-field: var(--field);
+  --color-brass-ink: var(--brass-ink);
+  --color-cool-ink: var(--cool-ink);
+  --color-working-ink: var(--working-ink);
+  --color-hot-ink: var(--hot-ink);
+  --color-redline-ink: var(--redline-ink);
+
+  --color-soot: #15120e;
+  --color-steam: #ece6da;
+  --color-brass: #d1a85a;
+  --color-brass-light: #e3be74;
+  --color-brass-dark: #8c6a35;
+  --color-zone-cool: #7fb3d5;
+  --color-zone-working: #d1a85a;
+  --color-zone-hot: #f0913a;
+  --color-zone-redline: #f25c45;
+  --color-zone-away: #b3a48c;
+
+  --font-display: var(--font-bebas), Impact, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+  }
+
+  a {
+    color: var(--brass-ink);
+  }
+  a:hover {
+    color: var(--link-hover);
+  }
+
+  :where(button, input, select, a, [tabindex]):focus-visible {
+    outline: 2px solid var(--brass-ink);
+    outline-offset: 2px;
+  }
+}
+
+/* Riveted plate: four rivets in the corners (Main.dc.html). */
+@utility plate {
+  background-image:
+    radial-gradient(circle at 12px 12px, var(--rivet) 2.5px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 12px) 12px, var(--rivet) 2.5px, transparent 3.5px),
+    radial-gradient(circle at 12px calc(100% - 12px), var(--rivet) 2.5px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), var(--rivet) 2.5px, transparent 3.5px);
+}
+
+input[type="range"] {
+  accent-color: #d1a85a;
+}
+
+/* Boiler SVG motion. Durations come from inline custom properties. */
+@keyframes bp-wave-r {
+  from { transform: translateX(0); }
+  to { transform: translateX(80px); }
+}
+@keyframes bp-wave-l {
+  from { transform: translateX(0); }
+  to { transform: translateX(-80px); }
+}
+@keyframes bp-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--bob, 0px)); }
+}
+@keyframes bp-flame {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.15); }
+}
+@keyframes bp-glow {
+  0%, 100% { opacity: var(--glow-lo, 0); }
+  50% { opacity: var(--glow-hi, 0); }
+}
+@keyframes bp-flutter {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--flutter, 0px)); }
+}
+@keyframes bp-fire {
+  0%, 100% { opacity: var(--fire-lo, 0.4); }
+  50% { opacity: var(--fire-hi, 0.6); }
+}
+
+.bp-wave-r { animation: bp-wave-r var(--dur, 3s) linear infinite; }
+.bp-wave-l { animation: bp-wave-l var(--dur, 4s) linear infinite; }
+.bp-bob { animation: bp-bob var(--dur, 2s) ease-in-out infinite; }
+.bp-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: bp-flame 0.9s ease-in-out infinite; }
+.bp-glow { opacity: var(--glow-lo, 0); animation: bp-glow 0.8s ease-in-out infinite; }
+.bp-flutter { animation: bp-flutter var(--dur, 0.3s) ease-in-out infinite; }
+.bp-fire { opacity: var(--fire-lo, 0.4); animation: bp-fire 1.6s ease-in-out infinite; }
+.bp-level { transition: transform 900ms cubic-bezier(0.34, 1.3, 0.64, 1); }
+.bp-lift { transition: transform 600ms ease; }
+
+[data-still] .bp-wave-r,
+[data-still] .bp-wave-l,
+[data-still] .bp-bob,
+[data-still] .bp-flame,
+[data-still] .bp-glow,
+[data-still] .bp-flutter,
+[data-still] .bp-fire {
+  animation: none;
+}
+[data-still] .bp-glow { opacity: var(--glow-hi, 0); }
+[data-still] .bp-level,
+[data-still] .bp-lift { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-wave-r, .bp-wave-l, .bp-bob, .bp-flame, .bp-glow, .bp-flutter, .bp-fire {
+    animation: none;
+  }
+  .bp-glow { opacity: var(--glow-hi, 0); }
+  .bp-level, .bp-lift { transition: none; }
 }
