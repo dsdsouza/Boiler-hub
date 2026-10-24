@@ -8,7 +8,7 @@ import type { MyBoilerData, NewTask, TaskMeta } from "./boilerState";
 export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
   return {
     result: res.result,
-    items: [...res.events.map(eventItem), ...res.tasks.map(taskItem)],
+    items: [...res.events.map((e) => eventItem(e, res.sources ?? [])), ...res.tasks.map(taskItem)],
     status: res.status.status,
     statusNote: res.status.note ?? "",
     syncedAt: res.computedAt,
@@ -28,11 +28,11 @@ function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
   return out;
 }
 
-function eventItem(e: OwnerEvent): LoadItem {
+function eventItem(e: OwnerEvent, sources: BoilerResponse["sources"]): LoadItem {
   return {
     id: e.id,
     kind: "event",
-    source: "google",
+    source: sources.find((s) => s.id === e.id.split(":")[0])?.kind ?? "google",
     title: e.title,
     start: e.start,
     end: e.end,

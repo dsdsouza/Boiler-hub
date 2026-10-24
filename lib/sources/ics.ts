@@ -16,6 +16,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const LOOKBACK_DAYS = 60;
 
 const DEADLINE_RE = /\b(due|assignments?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?)\b/i;
+const CLASS_MEETING_RE = /\b(lectures?|seminars?|tutorials?|recitations?|laborator(?:y|ies)|labs?)\b/i;
+const EXPLICIT_DEADLINE_RE = /\b(due|deadlines?|submissions?|assignments?|homework|problem sets?|essays?|papers?|reports?|presentations?|readings?|discussions?|quiz(?:zes)?|exams?|midterms?|finals?|projects?)\b/i;
 // Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
 // reading, and any other deadline) is S.
 const LARGE_RE = /\b(exams?|midterms?|finals?)\b/i;
@@ -78,7 +80,9 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
       const itemKey = sha256(`${event.uid}${occurrence}`);
       const id = sourceItemId(opts.sourceId, itemKey);
 
-      const keyword = DEADLINE_RE.test(title);
+      // A timed "CS 180 Lab" is a class, while "Lab report due" remains a deadline.
+      const classMeeting = opts.coursework && end > start && CLASS_MEETING_RE.test(title) && !EXPLICIT_DEADLINE_RE.test(title);
+      const keyword = DEADLINE_RE.test(title) && !classMeeting;
       const deadline = inst.isFullDay ? opts.coursework || keyword : end === start || keyword;
 
       if (deadline) {
