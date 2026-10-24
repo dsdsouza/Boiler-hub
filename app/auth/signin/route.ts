@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { safeNext } from "@/lib/auth";
+import { NEXT_COOKIE, safeNext } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl;
@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      // Keep this exactly /auth/callback (no query string) so it matches the
+      // Supabase redirect allowlist. The post-login path travels in a cookie.
+      redirectTo: `${origin}/auth/callback`,
       scopes: "openid email profile https://www.googleapis.com/auth/calendar.readonly",
       queryParams: { access_type: "offline", prompt: "consent" },
     },
@@ -19,5 +21,13 @@ export async function GET(request: NextRequest) {
   if (error || !data.url) {
     return NextResponse.redirect(`${origin}/?error=signin`);
   }
-  return NextResponse.redirect(data.url);
+  const response = NextResponse.redirect(data.url);
+  response.cookies.set(NEXT_COOKIE, next, {
+    path: "/auth",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: origin.startsWith("https://"),
+    maxAge: 600,
+  });
+  return response;
 }
