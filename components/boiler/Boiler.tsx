@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Status, Zone } from "@/lib/types";
 import { useSound } from "@/components/ui/Providers";
 import { STATUS_META, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
@@ -27,6 +27,12 @@ export interface BoilerProps {
   vent?: number;
   /** Whistle (visual, plus sound if enabled in the header) when the score crosses 90. Default: lg only. */
   whistle?: boolean;
+  /** Accessible name, e.g. "Pip". Default "Boiler". */
+  name?: string;
+  /** SVG transform for the pressure gauge, to move it off the shoulder (Pip wears it as his eye). */
+  gaugeTransform?: string;
+  /** Extra SVG drawn last, over the machine (Pip's face, limbs and outfit). Shakes with the boiler. */
+  overlay?: ReactNode;
   className?: string;
 }
 
@@ -43,6 +49,9 @@ export function Boiler({
   fire,
   vent = 0,
   whistle = size === "lg",
+  name = "Boiler",
+  gaugeTransform,
+  overlay,
   className = "",
 }: BoilerProps) {
   const s = Math.round(clampScore(score));
@@ -77,7 +86,7 @@ export function Boiler({
   }, [s, whistle]);
 
   const fireLevel = Math.max(0, Math.min(1, fire ?? v.fire));
-  const label = `Boiler at pressure ${s}, ${ZONE_LABEL[zone]}${status ? `, ${STATUS_META[status].label}` : ""}`;
+  const label = `${name} at pressure ${s}, ${ZONE_LABEL[zone]}${status ? `, ${STATUS_META[status].label}` : ""}`;
   const lift = v.lift + (whistling ? 6 : 0);
 
   const shake = !still && onScreen && v.shake;
@@ -208,7 +217,9 @@ export function Boiler({
           </g>
           {status && <circle cx="50" cy="76" r="3.4" fill={STATUS_META[status].color} stroke="#15120E" strokeWidth="1" />}
 
-          <Gauge score={s} color={v.color} still={still} />
+          <g transform={gaugeTransform}>
+            <Gauge score={s} color={v.color} still={still} />
+          </g>
 
           {/* Firebox */}
           <rect x="56" y="270" width="128" height="7" rx="3.5" fill="#D1A85A" />
@@ -219,6 +230,7 @@ export function Boiler({
           </g>
           <rect x="70" y="277" width="6" height="16" fill="#6B5A44" />
           <rect x="164" y="277" width="6" height="16" fill="#6B5A44" />
+          {overlay}
         </svg>
         <Steam score={s} zone={zone} level={v.level} active={!still} vent={vent} whistle={whistleKey} onVisibility={setOnScreen} />
       </motion.div>
