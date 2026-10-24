@@ -66,7 +66,7 @@ begin
   end if;
 
   if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 0 then
-    raise exception 'FAIL: non-lead E must not receive a hidden count';
+    raise exception 'FAIL: ordinary member E must not receive a hidden count';
   end if;
 
   -- Direct table reads are owner-only.
@@ -137,7 +137,7 @@ begin
     raise exception 'FAIL: lead L should see L, C and E, saw %', seen;
   end if;
   if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 0 then
-    raise exception 'FAIL: lead L must not receive a count of one';
+    raise exception 'FAIL: a lead must not receive a single hidden member count';
   end if;
   select count(*) into n from public.pressure_snapshots where user_id <> 'aaaaaaaa-0000-4000-a000-00000000000a';
   if n <> 0 then raise exception 'FAIL: lead L read % other snapshots directly', n; end if;

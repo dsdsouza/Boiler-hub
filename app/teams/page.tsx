@@ -15,7 +15,7 @@ export default async function TeamsPage() {
   const teams = await listMyTeams(supabase, data.user.id);
 
   return (
-    <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 pb-16 pt-7 sm:px-8">
+    <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 pb-24 pt-7 sm:px-8 sm:pb-16">
       <div className="flex flex-col gap-1.5">
         <div className={`text-[13px] tracking-[0.16em] ${MONO}`} style={{ color: C.brassLight }}>
           MY TEAMS

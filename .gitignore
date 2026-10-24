@@ -45,6 +45,7 @@ next-env.d.ts
 /.qa/
 /playwright-report/
 /test-results/
+/test-results-auth/
 /blob-report/
 /all-blob-reports/
 /output/playwright/

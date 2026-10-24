@@ -41,8 +41,8 @@ jobs:
         run: |
           node scripts/qa/ci-accounts.mjs
           pnpm qa:session --all
-      - name: Verify all 32 accounts
+      - name: Verify all 32 accounts and privacy contracts
         run: pnpm test:e2e:auth
       - name: Remove private browser sessions
         if: always()
-        run: node -e "require('node:fs').rmSync('.qa', { recursive:true, force:true })"
+        run: node -e "for (const path of ['.qa', 'test-results-auth']) require('node:fs').rmSync(path, { recursive:true, force:true })"

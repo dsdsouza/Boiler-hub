@@ -18,7 +18,7 @@ export function Card<T extends ElementType = "div">({
   const Tag: ElementType = as ?? "div";
   return (
     <Tag
-      className={`rounded-[14px] border bg-surface shadow-(--shadow) ${emphasis ? "border-rivet" : "border-line"} ${plate ? "plate" : ""} ${className}`}
+      className={`bp-card rounded-[14px] border bg-surface shadow-(--shadow) ${emphasis ? "border-rivet" : "border-line"} ${plate ? "plate" : ""} ${className}`}
       {...rest}
     />
   );
@@ -26,7 +26,7 @@ export function Card<T extends ElementType = "div">({
 
 /** Section heading used inside cards (Bebas, 30px in the designs). */
 export function CardTitle({ className = "", ...rest }: ComponentProps<"h2">) {
-  return <h2 className={`m-0 font-display text-[30px] font-normal leading-none tracking-[0.03em] ${className}`} {...rest} />;
+  return <h2 className={`m-0 font-display text-[26px] font-normal leading-none sm:text-[30px] tracking-[0.03em] ${className}`} {...rest} />;
 }
 
 /** Small caps label ("YOUR STATUS", "7-DAY FORECAST"). */
