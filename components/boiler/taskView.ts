@@ -1,4 +1,6 @@
-import type { LoadItem } from "@/lib/types";
+import type { ForecastDay, LoadItem } from "@/lib/types";
+import { ZONE_LABEL } from "@/components/ui/zones";
+import { weekday } from "./format";
 
 // Pure helpers behind the task tabs, the class filter and the forecast day panel. Unit tested.
 
@@ -86,4 +88,10 @@ export function bucketDay(items: LoadItem[], date: string, timeZone: string): Da
 /** Open tasks due on `date`: the "N items due" in each forecast day's label. */
 export function openDueCount(items: LoadItem[], date: string, timeZone: string): number {
   return bucketDay(items, date, timeZone).tasks.filter((t) => !t.doneAt).length;
+}
+
+/** "Thursday, Working, score 52, 3 items due": the day button's accessible name. */
+export function dayLabel(day: ForecastDay, isToday: boolean, due: number) {
+  const dueText = due === 0 ? "nothing due" : `${due} ${due === 1 ? "item" : "items"} due`;
+  return `${isToday ? "Today" : weekday(day.date, true)}, ${ZONE_LABEL[day.zone]}, score ${day.score}, ${dueText}`;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LoadItem } from "@/lib/types";
-import { bucketDay, coursesIn, dayKey, filterByCourse, filterByTab, openDueCount, sortTasks, tabCounts } from "./taskView";
+import { bucketDay, coursesIn, dayLabel, dayKey, filterByCourse, filterByTab, openDueCount, sortTasks, tabCounts } from "./taskView";
 
 const task = (id: string, due: string | undefined, doneAt: string | null = null): LoadItem => ({
   id,
@@ -113,5 +113,13 @@ describe("day bucketing", () => {
     expect(day.tasks.map((t) => t.id)).toEqual(["done-early", "late"]);
     expect(day.events.map((e) => e.id)).toEqual(["standup"]);
     expect(openDueCount(list, "2026-10-26", NY)).toBe(1);
+  });
+});
+
+describe("forecast day label", () => {
+  it("names the day, zone, score and open items due", () => {
+    expect(dayLabel({ date: "2026-10-29", score: 52, zone: "working" }, false, 3)).toBe("Thursday, Working, score 52, 3 items due");
+    expect(dayLabel({ date: "2026-10-24", score: 18, zone: "cool" }, true, 1)).toBe("Today, Cool, score 18, 1 item due");
+    expect(dayLabel({ date: "2026-10-30", score: 81, zone: "redline" }, false, 0)).toBe("Friday, Redline, score 81, nothing due");
   });
 });
