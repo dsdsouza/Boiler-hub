@@ -1,4 +1,4 @@
-import { APICallError } from "ai";
+import { APICallError, RetryError } from "ai";
 import { expect, it } from "vitest";
 import { pipFailure } from "./failure";
 
@@ -9,6 +9,7 @@ it("records the failing stage and provider status without error contents or cred
     responseBody: "secret provider details", data: { key: "secret" },
   });
   expect(pipFailure("gemini", failure)).toEqual({ stage: "gemini", kind: "provider", status: 403 });
+  expect(pipFailure("gemini", new RetryError({ message: "private", reason: "maxRetriesExceeded", errors: [failure] }))).toEqual({ stage: "gemini", kind: "provider", status: 403 });
   expect(pipFailure("assignments", new Error("private assignments"))).toEqual({ stage: "assignments", kind: "unexpected" });
   expect(pipFailure("gemini", new DOMException("private assignments", "TimeoutError"))).toEqual({ stage: "gemini", kind: "timeout" });
 });
