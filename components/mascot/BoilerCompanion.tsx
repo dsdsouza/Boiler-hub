@@ -12,6 +12,7 @@ import { PipWardrobe } from "./PipWardrobe";
 import { PipChat } from "./PipChat";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
+import type { StudyContext } from "@/lib/pip/study";
 
 // What Pip says inside MyBoilerView; actions jump to its
 // existing headings. No avatar here: the big Pip hero on the page is the one speaking.
@@ -30,7 +31,7 @@ function jumpTo(target: CompanionTarget) {
   el.focus({ preventScroll: true });
 }
 
-export function BoilerCompanion({ data, vent, chatEnabled = true }: { data: MyBoilerData | null; vent: VentEvent; chatEnabled?: boolean }) {
+export function BoilerCompanion({ data, vent, chatEnabled = true, studyContext, chatRequest }: { data: MyBoilerData | null; vent: VentEvent; chatEnabled?: boolean; studyContext?: StudyContext; chatRequest?: { question: string; key: number } | null }) {
   const [hidden, setHidden] = useState(false);
   const [recentVent, setRecentVent] = useState<number | null>(null);
   const [dressing, setDressing] = useState(false);
@@ -40,6 +41,7 @@ export function BoilerCompanion({ data, vent, chatEnabled = true }: { data: MyBo
   const accessory = usePipAccessory();
 
   useEffect(() => setHidden(readStorage(PIP_HIDDEN_KEY) === "1"), []);
+  useEffect(() => { if (chatRequest && chatEnabled) { setHidden(false); setChatting(true); setDressing(false); } }, [chatRequest, chatEnabled]);
 
   useEffect(() => {
     if (!vent.key) return;
@@ -123,7 +125,7 @@ export function BoilerCompanion({ data, vent, chatEnabled = true }: { data: MyBo
         </div>
         {chatting && <div className="col-span-full mt-2 max-w-[520px] border-t border-line pt-4" onKeyDown={(event) => {
           if (event.key === "Escape") { event.stopPropagation(); setChatting(false); chatButton.current?.focus(); }
-        }}><PipChat autoFocus /></div>}
+        }}><PipChat autoFocus studyContext={studyContext} draftRequest={chatRequest} /></div>}
         {dressing && (
           <div
             className="col-span-full mt-1 max-w-[360px] border-t border-line pt-3"

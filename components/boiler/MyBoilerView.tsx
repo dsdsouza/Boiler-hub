@@ -23,6 +23,8 @@ import { timeAgo } from "./format";
 import { fireFromForecast } from "./geometry";
 import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import type { MyBoiler } from "./useMyBoiler";
+import { StudyAccountability } from "./StudyAccountability";
+import { useStudyAccountability } from "./useStudyAccountability";
 
 function useTick(ms: number) {
   const [, setTick] = useState(0);
@@ -70,6 +72,8 @@ export function MyBoilerView({
 }) {
   useTick(30_000);
   const accessory = usePipAccessory();
+  const study = useStudyAccountability(boiler);
+  const [chatRequest, setChatRequest] = useState<{ question: string; key: number } | null>(null);
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
 
@@ -115,7 +119,9 @@ export function MyBoilerView({
         </button>
       </div>
 
-      <BoilerCompanion data={data} vent={vent} chatEnabled={boiler.source !== "fixture"} />
+      <BoilerCompanion data={data} vent={vent} chatEnabled={boiler.source !== "fixture"} studyContext={study.context} chatRequest={chatRequest} />
+
+      <StudyAccountability boiler={boiler} study={study} onAsk={(question) => setChatRequest((previous) => ({ question, key: (previous?.key ?? 0) + 1 }))} />
 
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
