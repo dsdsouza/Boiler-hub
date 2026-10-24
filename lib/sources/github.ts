@@ -5,7 +5,7 @@ import { SourceError, sourceItemId, type SourceAdapter, type SourceItem } from "
 // GitHub (personal access token, read-only). Fetched live each sync, never stored.
 //   open issues assigned to me          -> task, size from size:S/M/L labels (else M), due = milestone due_on (else +7d)
 //   PRs with review requested from me   -> S task, due +2d
-//   my open PRs with failing Actions    -> S task "Fix CI: repo#n", due +1d
+//   my open PRs with failing Actions    -> S task "Fix CI: #n", due +1d
 //   issues assigned to me closed as completed, or my PRs merged, in the last 48h -> completed tasks (they vent)
 
 const API = "https://api.github.com";
@@ -57,29 +57,30 @@ export function mapGithub(snap: GhSnapshot, sourceId: string, now: Date): Source
   const t = now.getTime();
   const at = (ms: number) => new Date(t + ms).toISOString();
   const byKey = new Map<string, SourceItem>();
-  const add = (external: string, item: Omit<SourceItem, "id" | "itemKey" | "sourceId" | "source" | "kind">) => {
+  const add = (i: GhIssue, external: string, item: Omit<SourceItem, "id" | "itemKey" | "sourceId" | "source" | "kind" | "course">) => {
     const itemKey = sha256(external);
     if (byKey.has(itemKey)) return;
-    byKey.set(itemKey, { id: sourceItemId(sourceId, itemKey), itemKey, sourceId, source: "github", kind: "task", ...item });
+    byKey.set(itemKey, { id: sourceItemId(sourceId, itemKey), itemKey, sourceId, source: "github", kind: "task", course: repoOf(i), ...item });
   };
-  const ref = (i: GhIssue) => `${repoOf(i)}#${i.number}`;
+  // The repo is the item's course label, so titles carry only the number.
+  const ref = (i: GhIssue) => `#${i.number}`;
 
   // Completed first, so an item closed in the window wins over a stale open copy.
   for (const i of snap.closedAssigned) {
-    add(`issue:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: i.milestone?.due_on ?? i.closed_at ?? undefined, doneAt: i.closed_at ?? at(0), url: i.html_url });
+    add(i, `issue:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: i.milestone?.due_on ?? i.closed_at ?? undefined, doneAt: i.closed_at ?? at(0), url: i.html_url });
   }
   for (const i of snap.mergedMine) {
     const doneAt = i.pull_request?.merged_at ?? i.closed_at ?? at(0);
-    add(`pr:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: doneAt, doneAt, url: i.html_url });
+    add(i, `pr:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: doneAt, doneAt, url: i.html_url });
   }
   for (const i of snap.assigned) {
-    add(`issue:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: i.milestone?.due_on ?? at(7 * DAY_MS), doneAt: null, url: i.html_url });
+    add(i, `issue:${i.node_id}`, { title: `${ref(i)} ${i.title}`, size: sizeFromLabels(i.labels), due: i.milestone?.due_on ?? at(7 * DAY_MS), doneAt: null, url: i.html_url });
   }
   for (const i of snap.reviewRequested) {
-    add(`review:${i.node_id}`, { title: `Review: ${ref(i)} ${i.title}`, size: "S", due: at(2 * DAY_MS), doneAt: null, url: i.html_url });
+    add(i, `review:${i.node_id}`, { title: `Review: ${ref(i)} ${i.title}`, size: "S", due: at(2 * DAY_MS), doneAt: null, url: i.html_url });
   }
   for (const i of snap.failingCi) {
-    add(`ci:${i.node_id}`, { title: `Fix CI: ${ref(i)}`, size: "S", due: at(1 * DAY_MS), doneAt: null, url: `${i.html_url}/checks` });
+    add(i, `ci:${i.node_id}`, { title: `Fix CI: ${ref(i)}`, size: "S", due: at(1 * DAY_MS), doneAt: null, url: `${i.html_url}/checks` });
   }
   return [...byKey.values()];
 }

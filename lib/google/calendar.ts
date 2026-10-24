@@ -24,14 +24,16 @@ export interface GoogleEvent {
 
 export interface CalendarWeek {
   events: GoogleEvent[];
-  /** The calendar's IANA time zone, used for forecast day boundaries. */
+  /** The calendar's IANA time zone, used for forecast day boundaries. UTC if Google sent none. */
   timeZone: string;
+  /** The zone exactly as Google reported it; absent when it sent none. */
+  reportedTimeZone?: string;
 }
 
 /** Primary-calendar events from `now` to now + 7 days, recurring events expanded. */
 export async function fetchPrimaryEvents(accessToken: string, now: Date): Promise<CalendarWeek> {
   const events: GoogleEvent[] = [];
-  let timeZone = "UTC";
+  let reportedTimeZone: string | undefined;
   let pageToken: string | undefined;
 
   for (let page = 0; page < MAX_PAGES; page++) {
@@ -55,10 +57,10 @@ export async function fetchPrimaryEvents(accessToken: string, now: Date): Promis
 
     const body = (await res.json()) as { items?: GoogleEvent[]; nextPageToken?: string; timeZone?: string };
     events.push(...(body.items ?? []));
-    if (body.timeZone) timeZone = body.timeZone;
+    if (body.timeZone) reportedTimeZone = body.timeZone;
     pageToken = body.nextPageToken;
     if (!pageToken) break;
   }
 
-  return { events, timeZone };
+  return { events, timeZone: reportedTimeZone ?? "UTC", ...(reportedTimeZone ? { reportedTimeZone } : {}) };
 }

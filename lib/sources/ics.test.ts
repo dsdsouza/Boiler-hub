@@ -1,31 +1,31 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classifyIcs, sizeForTitle, zonedTime } from "./ics";
+import { classifyIcs, cleanTitle, courseFromLocation, sizeForTitle, zonedTime } from "./ics";
 import { SourceError } from "./types";
 
 const FEED = readFileSync(join(__dirname, "__fixtures__", "brightspace.ics"), "utf8");
 const NOW = new Date("2026-10-26T12:00:00Z"); // Monday, 08:00 in New York
 const SOURCE = "11111111-1111-4111-8111-111111111111";
 
-const classify = (coursework: boolean, text = FEED) =>
-  classifyIcs(text, { sourceId: SOURCE, coursework, now: NOW, timeZone: "UTC" });
+const classify = (coursework: boolean, text = FEED, label?: string) =>
+  classifyIcs(text, { sourceId: SOURCE, coursework, now: NOW, timeZone: "UTC", label });
 const byTitle = (items: ReturnType<typeof classify>) => new Map(items.map((i) => [i.title, i]));
 
 describe("classifyIcs (Brightspace-style feed)", () => {
   it("turns deadlines into tasks with sizes and due times", () => {
     const items = byTitle(classify(true));
-    expect(items.get("Lab Report 3 - Due")).toMatchObject({ kind: "task", source: "ics", size: "M", due: "2026-10-28T03:59:00.000Z" });
-    expect(items.get("Quiz 4 - Availability Ends")).toMatchObject({ kind: "task", size: "M", due: "2026-10-29T15:00:00.000Z" });
+    expect(items.get("Lab Report 3")).toMatchObject({ kind: "task", source: "ics", size: "M", due: "2026-10-28T03:59:00.000Z" });
+    expect(items.get("Quiz 4")).toMatchObject({ kind: "task", size: "M", due: "2026-10-29T15:00:00.000Z" });
     // All-day: due 23:59 that day in the feed's zone (X-WR-TIMEZONE America/New_York, EDT).
     expect(items.get("Midterm Exam")).toMatchObject({ kind: "task", size: "L", due: "2026-10-31T03:59:00.000Z" });
   });
 
   it("lists deadlines overdue up to 60 days (stale past 14) and drops those more than 7 days out", () => {
     const items = byTitle(classify(true));
-    expect(items.get("Problem Set 5 - Due")).toMatchObject({ kind: "task", size: "S", due: "2026-10-16T03:59:00.000Z" });
-    expect(items.get("Reading Response 1 - Due")).toMatchObject({ kind: "task", due: "2026-10-01T03:59:00.000Z" }); // 25 days back: listed, stale
-    expect(items.has("Final Project Proposal - Due")).toBe(false); // 8.6 days out
+    expect(items.get("Problem Set 5")).toMatchObject({ kind: "task", size: "S", due: "2026-10-16T03:59:00.000Z" });
+    expect(items.get("Reading Response 1")).toMatchObject({ kind: "task", due: "2026-10-01T03:59:00.000Z" }); // 25 days back: listed, stale
+    expect(items.has("Final Project Proposal")).toBe(false); // 8.6 days out
   });
 
   it("other timed entries become events; Free, cancelled and ended ones are skipped", () => {
@@ -45,7 +45,7 @@ describe("classifyIcs (Brightspace-style feed)", () => {
     const plain = byTitle(classify(false));
     expect(plain.has("Fall Break")).toBe(false);
     expect(plain.get("Midterm Exam")).toMatchObject({ kind: "task", size: "L" });
-    expect(plain.get("Lab Report 3 - Due")?.kind).toBe("task");
+    expect(plain.get("Lab Report 3")?.kind).toBe("task");
   });
 
   it("gives every item a stable, distinct key and a source-scoped id", () => {
@@ -71,6 +71,126 @@ describe("classifyIcs (Brightspace-style feed)", () => {
 
   it("rejects something that is not a calendar", () => {
     expect(() => classify(true, "<html><body>Please sign in</body></html>")).toThrow(SourceError);
+  });
+});
+
+describe("ICS task titles", () => {
+  it("drop the Due decoration but keep their size and key", () => {
+    const items = byTitle(classify(true));
+    expect(items.get("Lab Report 3")).toMatchObject({ size: "M" });
+    expect([...items.keys()].some((t) => /\bdue\b/i.test(t))).toBe(false);
+    // The key hashes the UID, never the title, so done/size state survives the rename.
+    const raw = classify(true, FEED.replace("SUMMARY:Lab Report 3 - Due", "SUMMARY:Lab Report 3"));
+    expect(byTitle(raw).get("Lab Report 3")!.itemKey).toBe(items.get("Lab Report 3")!.itemKey);
+  });
+});
+
+/** A feed of entries in the shape of the probed Brightspace feed (values redacted). */
+const feedOf = (entries: { summary: string; location?: string; start: string; end?: string }[]) =>
+  [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Desire2Learn Inc.//D2L Calendar//EN",
+    ...entries.flatMap((e, i) => [
+      "BEGIN:VEVENT",
+      `UID:d2l-test-${i}@example.edu`,
+      "DTSTAMP:20261024T120000Z",
+      `DTSTART:${e.start}`,
+      `DTEND:${e.end ?? e.start}`,
+      `SUMMARY:${e.summary}`,
+      ...(e.location ? [`LOCATION:${e.location}`] : []),
+      "CLASS:PUBLIC",
+      "END:VEVENT",
+    ]),
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+const AMS = "-AMS 210.02 Applied Linear Algebra - Fall 2026";
+
+describe("ICS availability markers", () => {
+  it("are skipped: neither tasks nor events", () => {
+    const feed = feedOf([
+      { summary: "Unit 4 Homework - Available", location: AMS, start: "20261027T130000Z" },
+      { summary: "Unit 4 Quiz - Availability Starts", location: AMS, start: "20261027T140000Z" },
+      { summary: "Unit 4 Quiz - Availability Ends", location: AMS, start: "20261028T140000Z", end: "20261028T150000Z" },
+      { summary: "Unit 4 Homework - Due", location: AMS, start: "20261029T035900Z" },
+    ]);
+    expect(classify(true, feed).map((i) => `${i.kind} ${i.title}`)).toEqual(["task Unit 4 Homework"]);
+  });
+
+  it("only when the marker ends the title", () => {
+    const feed = feedOf([{ summary: "Available seats lab - Due", start: "20261029T035900Z" }]);
+    expect(classify(true, feed).map((i) => i.title)).toEqual(["Available seats lab"]);
+  });
+});
+
+describe("ICS course", () => {
+  it("comes from a Brightspace LOCATION, else the source label", () => {
+    const feed = feedOf([
+      { summary: "Unit 5 Quiz - Due", location: AMS, start: "20261029T035900Z" },
+      { summary: "Essay 2 - Due", location: "Engineering 143 (-WRT 102.200 Intermediate Writing Workshop - Fall 2026)", start: "20261029T035900Z" },
+      { summary: "Survey - Due", location: "Stony Brook University", start: "20261029T035900Z" },
+      { summary: "Feedback - Due", location: "https://example.edu/survey (Stony Brook University)", start: "20261029T035900Z" },
+      { summary: "Reading - Due", start: "20261029T035900Z" },
+      { summary: "Review session", location: "-CSE 150.01,R01 Foundations of Computer Science: Honors - Fall 2026", start: "20261027T180000Z", end: "20261027T190000Z" },
+    ]);
+    const by = byTitle(classify(true, feed, "Brightspace"));
+    expect(by.get("Unit 5 Quiz")?.course).toBe("AMS 210");
+    expect(by.get("Essay 2")?.course).toBe("WRT 102");
+    expect(by.get("Survey")?.course).toBe("Brightspace");
+    expect(by.get("Feedback")?.course).toBe("Brightspace");
+    expect(by.get("Reading")?.course).toBe("Brightspace");
+    expect(by.get("Review session")).toMatchObject({ kind: "event", course: "CSE 150" });
+  });
+
+  it("is absent with no LOCATION course and no label", () => {
+    const feed = feedOf([{ summary: "Reading - Due", location: "Hall 2", start: "20261029T035900Z" }]);
+    expect(classify(true, feed)[0]).not.toHaveProperty("course");
+  });
+});
+
+describe("courseFromLocation", () => {
+  it("shortens a course code to subject and number, dropping section and term", () => {
+    expect(courseFromLocation(AMS)).toBe("AMS 210");
+    expect(courseFromLocation("-WRT 102.200 Intermediate Writing Workshop - Fall 2026")).toBe("WRT 102");
+    expect(courseFromLocation("-CSE 150.01,R01 Foundations of Computer Science: Honors - Fall 2026")).toBe("CSE 150");
+    expect(courseFromLocation("-HON 101.S08 Introduction to Honors College and Stony Brook - Fall 2026")).toBe("HON 101");
+    expect(courseFromLocation("Engineering 143 (-AMS 210.02 Applied Linear Algebra - Fall 2026)")).toBe("AMS 210");
+  });
+
+  it("keeps the cleaned name when there is no code, capped at 60 characters", () => {
+    expect(courseFromLocation("-Required Equity & Access Training - New Students (D, E, F, G)")).toBe(
+      "Required Equity & Access Training - New Students (D, E, F, G",
+    );
+    expect(courseFromLocation("-Orientation Week - Spring 2027")).toBe("Orientation Week");
+  });
+
+  it("ignores locations without the Brightspace marker", () => {
+    for (const loc of ["Stony Brook University", "https://example.edu/x (Stony Brook University)", "Hall 2", "Room 5 (East)", "", "-"]) {
+      expect(courseFromLocation(loc), loc).toBeUndefined();
+    }
+  });
+});
+
+describe("cleanTitle", () => {
+  it("strips Due suffixes in a few spellings", () => {
+    for (const t of ["Lab Report 3 - Due", "Lab Report 3 – Due", "Lab Report 3 — due date", "Lab Report 3: Due", "Lab Report 3 (Due)", "Lab Report 3 -Due  "]) {
+      expect(cleanTitle(t), t).toBe("Lab Report 3");
+    }
+  });
+
+  it("strips Due prefixes", () => {
+    expect(cleanTitle("Due: Essay 2")).toBe("Essay 2");
+    expect(cleanTitle("DUE DATE - Essay 2")).toBe("Essay 2");
+    expect(cleanTitle("Due Date: Essay 2 - Due")).toBe("Essay 2");
+  });
+
+  it("keeps Due inside a title, and a title that is only Due", () => {
+    expect(cleanTitle("Assignment 2 due")).toBe("Assignment 2 due");
+    expect(cleanTitle("Due process essay")).toBe("Due process essay");
+    expect(cleanTitle("Overdue reading - notes")).toBe("Overdue reading - notes");
+    expect(cleanTitle("Due")).toBe("Due");
+    expect(cleanTitle(" - Due")).toBe("- Due");
   });
 });
 

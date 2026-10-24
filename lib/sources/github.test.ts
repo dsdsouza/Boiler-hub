@@ -74,20 +74,22 @@ describe("GitHub adapter (mocked API)", () => {
     );
     const by = new Map(items.map((i) => [i.title, i]));
 
-    expect(by.get("acme/api#1 Fix login")).toMatchObject({ kind: "task", source: "github", size: "L", due: "2026-10-30T07:00:00Z", doneAt: null, url: "https://github.com/acme/api/issues/1" });
-    expect(by.get("acme/api#2 Docs typo")).toMatchObject({ size: "S", due: iso(7 * DAY) });
-    expect(by.get("acme/api#3 Unlabelled bug")).toMatchObject({ size: "M", due: iso(7 * DAY) });
-    expect(by.get("Review: acme/api#10 Add caching")).toMatchObject({ size: "S", due: iso(2 * DAY) });
-    expect(by.get("Fix CI: acme/api#20")).toMatchObject({ size: "S", due: iso(DAY), url: "https://github.com/acme/api/pull/20/checks" });
-    expect(by.has("Fix CI: acme/api#21")).toBe(false);
-    expect(by.has("Fix CI: acme/api#22")).toBe(false); // latest run of that workflow passed
-    expect(by.get("acme/api#4 Shipped thing")).toMatchObject({ doneAt: iso(-5 * 3_600_000), size: "M" });
-    expect(by.get("acme/api#23 Merged feature")).toMatchObject({ doneAt: iso(-DAY) });
+    expect(by.get("#1 Fix login")).toMatchObject({ kind: "task", source: "github", size: "L", due: "2026-10-30T07:00:00Z", doneAt: null, url: "https://github.com/acme/api/issues/1" });
+    expect(by.get("#2 Docs typo")).toMatchObject({ size: "S", due: iso(7 * DAY) });
+    expect(by.get("#3 Unlabelled bug")).toMatchObject({ size: "M", due: iso(7 * DAY) });
+    expect(by.get("Review: #10 Add caching")).toMatchObject({ size: "S", due: iso(2 * DAY) });
+    expect(by.get("Fix CI: #20")).toMatchObject({ size: "S", due: iso(DAY), url: "https://github.com/acme/api/pull/20/checks" });
+    expect(by.has("Fix CI: #21")).toBe(false);
+    expect(by.has("Fix CI: #22")).toBe(false); // latest run of that workflow passed
+    expect(by.get("#4 Shipped thing")).toMatchObject({ doneAt: iso(-5 * 3_600_000), size: "M" });
+    expect(by.get("#23 Merged feature")).toMatchObject({ doneAt: iso(-DAY) });
 
     for (const i of items) {
       expect(i.itemKey).toMatch(/^[0-9a-f]{64}$/);
       expect(i.id).toBe(`${SRC}:${i.itemKey}`);
     }
+    // Every item is labelled with its repo.
+    expect(new Set(items.map((i) => i.course))).toEqual(new Set(["acme/api"]));
     // Completed items vent.
     const done = items.filter((i) => i.doneAt);
     expect(computePressure(done, NOW).raw).toBeLessThan(0);

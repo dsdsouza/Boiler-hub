@@ -28,7 +28,13 @@ interface TaskRow {
   done_at: string | null;
   source: Task["source"];
   assignment_id: string | null;
+  course: string | null;
+  /** Embedded on sync's read: the assignment's team, for team tasks. */
+  team_assignments?: { team_id: string } | null;
 }
+
+/** tasks columns the routes select and return through toTask. */
+export const TASK_COLUMNS = "id, title, due_at, size, done_at, source, assignment_id, course";
 
 /**
  * Fetch the user's calendar, tasks and connected sources (ICS, GitHub), compute pressure, and upsert
@@ -60,30 +66,40 @@ export async function syncUser(
     return { items: [], sources: [] };
   });
 
-  const [tasksRes, weightsRes, profileRes, calendar, sources] = await Promise.all([
+  const [tasksRes, weightsRes, profileRes, teamsRes, calendar, sources] = await Promise.all([
     admin
       .from("tasks")
-      .select("id, title, due_at, size, done_at, source, assignment_id")
+      .select(`${TASK_COLUMNS}, team_assignments(team_id)`)
       .eq("owner_id", userId)
       .or(`done_at.is.null,done_at.gte.${recentDone}`)
       .returns<TaskRow[]>(),
     admin.from("event_weights").select("series_key, weight").eq("user_id", userId).returns<{ series_key: string; weight: Weight }[]>(),
     admin.from("profiles").select("status, status_note").eq("id", userId).maybeSingle<{ status: Status; status_note: string | null }>(),
+    // Team names label team tasks. Only teams the user is still a member of, as RLS would allow.
+    admin
+      .from("memberships")
+      .select("team_id, teams(name)")
+      .eq("user_id", userId)
+      .returns<{ team_id: string; teams: { name: string } | null }[]>(),
     calendarP,
     sourcesP,
   ]);
   if (tasksRes.error) throw new Error(`tasks read failed: ${tasksRes.error.message}`);
   if (weightsRes.error) throw new Error(`event_weights read failed: ${weightsRes.error.message}`);
   if (profileRes.error) throw new Error(`profiles read failed: ${profileRes.error.message}`);
+  // Labels are optional: without them, team tasks just show no course.
+  if (teamsRes.error) console.error("[sync] team names read failed", teamsRes.error.message);
+  const teamNames = new Map((teamsRes.data ?? []).flatMap((m) => (m.teams?.name ? [[m.team_id, m.teams.name] as const] : [])));
 
   const weights = new Map((weightsRes.data ?? []).map((w) => [w.series_key, w.weight]));
   const eventItems = [
     ...normalizeEvents(calendar.events, weights),
     ...sources.items.filter((i) => i.kind === "event").map((i) => withWeight(i, weights)),
   ];
+  const eventCourses = new Map(sources.items.flatMap((i) => (i.kind === "event" && i.course ? [[i.id, i.course] as const] : [])));
   const labels = new Map(sources.sources.map((s) => [s.id, s.label]));
   const tasks = [
-    ...(tasksRes.data ?? []).map(toTask),
+    ...(tasksRes.data ?? []).map((row) => toTask(row, teamNames)),
     ...sources.items.filter((i) => i.kind === "task").map((i) => sourceTask(i, labels.get(i.sourceId))),
   ].sort(byOpenThenDue);
   const items: LoadItem[] = [...eventItems, ...tasks.map(taskItem)];
@@ -110,11 +126,12 @@ export async function syncUser(
   return {
     result,
     tasks,
-    events: eventItems.map((item) => ownerEvent(item, weights)),
+    events: eventItems.map((item) => ownerEvent(item, weights, eventCourses.get(item.id))),
     status: { status: profileRes.data?.status ?? "open", note: profileRes.data?.status_note ?? null },
     calendar: calendar.state,
     sources: sources.sources,
     computedAt,
+    ...(calendar.reportedTimeZone ? { timeZone: calendar.reportedTimeZone } : {}),
   };
 }
 
@@ -122,7 +139,7 @@ async function loadCalendar(
   admin: SupabaseClient,
   userId: string,
   now: Date,
-): Promise<{ state: CalendarState; events: GoogleEvent[]; timeZone: string }> {
+): Promise<{ state: CalendarState; events: GoogleEvent[]; timeZone: string; reportedTimeZone?: string }> {
   try {
     const token = await getAccessToken(admin, userId, now);
     const week = await fetchPrimaryEvents(token, now);
@@ -145,7 +162,10 @@ async function snapshotIsStale(admin: SupabaseClient, userId: string, now: Date)
   return !data || now.getTime() - Date.parse(data.computed_at) > SNAPSHOT_MAX_AGE_MS;
 }
 
-export function toTask(row: TaskRow): Task {
+/** A tasks row as a Task. Team tasks are labelled with their team's name, others with their own course. */
+export function toTask(row: TaskRow, teamNames?: ReadonlyMap<string, string>): Task {
+  const teamId = row.team_assignments?.team_id;
+  const course = row.course ?? (teamId ? teamNames?.get(teamId) : undefined);
   return {
     id: row.id,
     title: row.title,
@@ -154,6 +174,7 @@ export function toTask(row: TaskRow): Task {
     doneAt: row.done_at,
     source: row.source,
     assignmentId: row.assignment_id,
+    ...(course ? { course } : {}),
   };
 }
 
@@ -170,6 +191,7 @@ function sourceTask(item: SourceItem, label: string | undefined): Task {
     itemKey: item.itemKey,
     ...(label ? { sourceLabel: label } : {}),
     ...(item.url ? { url: item.url } : {}),
+    ...(item.course ? { course: item.course } : {}),
   };
 }
 
@@ -197,7 +219,7 @@ function byOpenThenDue(a: Task, b: Task): number {
   return (a.dueAt ?? "9999").localeCompare(b.dueAt ?? "9999");
 }
 
-function ownerEvent(item: LoadItem, weights: ReadonlyMap<string, Weight>): OwnerEvent {
+function ownerEvent(item: LoadItem, weights: ReadonlyMap<string, Weight>, course: string | undefined): OwnerEvent {
   const override = weights.has(eventKey(item.id))
     ? "event"
     : item.isRecurring && weights.has(item.seriesKey!)
@@ -213,5 +235,6 @@ function ownerEvent(item: LoadItem, weights: ReadonlyMap<string, Weight>): Owner
     seriesKey: item.seriesKey!,
     isRecurring: Boolean(item.isRecurring),
     release: Boolean(item.release),
+    ...(course ? { course } : {}),
   };
 }
