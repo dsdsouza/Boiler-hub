@@ -8,11 +8,21 @@ The `Deploy Boilerplate to Cloudflare` GitHub Actions workflow builds and deploy
 every push to `main`. It can also be started manually from the Actions tab.
 It uses the OpenNext Cloudflare adapter for the Next.js app and its server routes.
 
+Merged pull requests deploy after the checks, build, and upload succeed. This
+normally takes a few minutes; a failed run leaves the last successful version
+serving traffic. Open pull requests are not deployed to this production Worker.
+Before uploading, the workflow checks that its commit still matches `main`, so
+rerunning an older workflow cannot replace a newer commit. Each deployed Worker
+version is tagged with its full Git commit SHA for comparison with `main`.
+
 ## Deployment credential
 
 The repository secret `CLOUDFLARE_API_TOKEN` must contain a Cloudflare token with
-Workers Editor access scoped to the `boilerplate` Worker in the `zhomander`
-account. Do not store credentials in the repository.
+Workers Editor access scoped to the `boilerplate` Worker and Workers Metadata
+Read-Only access at the `zhomander` account scope. The read-only permission lets
+Wrangler inspect dashboard configuration after variables or settings are changed
+there; without it, the metadata check can fail before upload. Write access stays
+limited to `boilerplate`. Do not store credentials in the repository.
 
 ## Application environment variables
 
@@ -46,9 +56,14 @@ to rebuild the browser bundle.
 
 ## URLs and scheduled sync
 
-Configure the custom domain, DNS, Supabase redirect URLs, and Google OAuth origins
-as part of the URL migration. This setup does not change those settings or the
-existing Vercel project.
+The Cloudflare app uses `https://boilerplate.zhomander.workers.dev`. Supabase's
+Site URL uses this origin, its redirect allowlist includes
+`https://boilerplate.zhomander.workers.dev/auth/callback`, and the Google OAuth
+client includes this origin. Google's authorized redirect URI remains the
+Supabase project's `/auth/v1/callback` URL.
+
+`boilerhub.work` remains on Vercel. Its existing Google origins and Supabase
+callback URLs are retained; this setup does not change its DNS or custom domain.
 
 Cloudflare runs the existing `/api/cron/resync` handler daily at **10:00 UTC**,
 matching `vercel.json`. The custom Worker supplies the existing bearer secret
