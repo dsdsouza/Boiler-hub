@@ -1,10 +1,10 @@
 # Apple Calendar
 
-## Show Boiler Hub deadlines in Apple Calendar
+## Show Boilerplate deadlines in Apple Calendar
 
-In My Boiler or Sources, choose **Subscribe in Apple Calendar**. Boiler Hub creates a private subscription URL, then opens its `webcal://` link. Confirm Subscribe in Apple Calendar. If the browser blocks opening another app, the prepared **Open Apple Calendar** link provides a fresh click, and **Copy subscription link** lets you paste the HTTPS URL into Calendar → Add Subscription Calendar. This is a live subscription, not a one-time file import. [Apple’s subscription guide](https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac) describes its confirmation and refresh controls.
+In My Boiler or Sources, choose **Subscribe in Apple Calendar**. Boilerplate creates a private subscription URL, then opens its `webcal://` link. Confirm Subscribe in Apple Calendar. If the browser blocks opening another app, the prepared **Open Apple Calendar** link provides a fresh click, and **Copy subscription link** lets you paste the HTTPS URL into Calendar → Add Subscription Calendar. This is a live subscription, not a one-time file import. [Apple’s subscription guide](https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac) describes its confirmation and refresh controls.
 
-The feed contains open, dated tasks created in Boiler Hub and team assignments. Imported calendars and GitHub items are excluded to avoid republishing their existing feeds. Completing, removing, or rescheduling a task changes the next feed response. Each deadline has a stable event ID and a transparent one-minute marker at the actual due time. Apple controls its refresh timing; changes are not pushed instantly. Empty task lists return valid empty calendars; failures return 503 instead of an empty response that could clear downloaded events.
+The feed contains open, dated tasks created in Boilerplate and team assignments. Imported calendars and GitHub items are excluded to avoid republishing their existing feeds. Completing, removing, or rescheduling a task changes the next feed response. Each deadline has a stable event ID and a transparent one-minute marker at the actual due time. Apple controls its refresh timing; changes are not pushed instantly. Empty task lists return valid empty calendars; failures return 503 instead of an empty response that could clear downloaded events.
 
 Anyone with the private URL can read its deadlines. **Disable subscription** revokes it immediately for future requests. Apple may retain already downloaded data until the calendar is removed. Creating another subscription generates a new token; repeated clicks while enabled keep the existing link working. The server stores a SHA-256 hash and encrypted token, never the raw token. Authenticated management is scoped to the owner with RLS. Calendar clients read through a narrow SQL function using the feed token; it exposes no source credentials or other users’ tasks and uses no service-role client.
 
@@ -12,9 +12,9 @@ Before enabling this on a new hosted environment, manually run [0004_calendar_su
 
 Verification: production build, type checks, lint, and application tests passed. [SQL integration checks](../supabase/tests/calendar_subscriptions.sql) passed on isolated PostgreSQL 17 with all four migrations applied, covering RLS, cross-user access, edits/completion, empty feeds and revocation. Browser fixtures verified preparation, errors, link generation, disabling, and the 390px layout. Live verification on boilerhub.work confirmed subscription creation and a dated test deadline in the feed. The user confirmed that the button opened Apple Calendar's subscription window. A test deadline was then verified inside native Apple Calendar at the correct time; completing it in the subscribed account and refreshing Calendar removed it.
 
-Subscriptions belong to individual Boiler Hub accounts. If a valid feed looks empty, compare the subscription URL saved in Apple Calendar with the private URL in Sources for the account containing the tasks. Different sign-ins produce different links. On Mac, refresh with Command-R or View → Refresh Calendars. Only open tasks with a due date appear.
+Subscriptions belong to individual Boilerplate accounts. If a valid feed looks empty, compare the subscription URL saved in Apple Calendar with the private URL in Sources for the account containing the tasks. Different sign-ins produce different links. On Mac, refresh with Command-R or View → Refresh Calendars. Only open tasks with a due date appear.
 
-## Read an existing iCloud calendar in Boiler Hub
+## Read an existing iCloud calendar in Boilerplate
 
 Apple Calendar connects through a published, read-only iCloud calendar feed. In **Sources → Connect a calendar**, choose **Apple Calendar (iCloud)**, paste its public calendar link, optionally name it, and choose **Connect Apple Calendar**. The same form is in onboarding under **Connect more calendars or GitHub**. Repeat for each calendar you want to include.
 
@@ -22,7 +22,7 @@ On iPhone or iPad, open Calendar → Calendars, tap the info button beside an iC
 
 The link begins with `webcal://p…-caldav.icloud.com/published/…`; HTTPS links work too. A page such as `icloud.com/calendar` is not a calendar feed. Device-only calendars must first move to iCloud. Google or Outlook calendars displayed in Apple's app should use their original provider. No Apple Account password or app-specific password is requested.
 
-Public Calendar means anyone who has the link can read its contents. The form explains this before connecting. Removing the source stops Boiler Hub from reading it; disabling Public Calendar in Apple Calendar revokes the link for everyone.
+Public Calendar means anyone who has the link can read its contents. The form explains this before connecting. Removing the source stops Boilerplate from reading it; disabling Public Calendar in Apple Calendar revokes the link for everyone.
 
 The existing ICS adapter normalizes webcal to HTTPS, checks the URL and redirects, validates the feed before saving, and encrypts its link. It reads events live on sync; events and task contents are never stored. Recurrence, exclusions, moved occurrences, DURATION and daylight saving changes use node-ical. Ordinary all-day and Free events do not add load; deadline-like entries follow the same task classification as other calendar feeds. Refresh bypasses the short in-memory source cache. Test and Remove work from the source list.
 

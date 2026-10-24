@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Boiler Hub Calendar Finder",
+  "name": "Boilerplate Calendar Finder",
   "version": "1.0.0",
-  "description": "Find a school calendar subscription link on the page you choose, then review it in Boiler Hub.",
+  "description": "Find a school calendar subscription link on the page you choose, then review it in Boilerplate.",
   "minimum_chrome_version": "102",
   "permissions": ["activeTab", "scripting"],
   "action": {
