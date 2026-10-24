@@ -8,7 +8,7 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
-import { BoilerCompanion } from "@/components/mascot/BoilerCompanion";
+import { PipDressUp } from "@/components/mascot/PipDressUp";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -86,6 +86,11 @@ export function MyBoilerView({
 
   const { result } = data;
   const fire = fireFromForecast(result.forecast.map((d) => d.score));
+  const statusPicker = (
+    <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)}>
+      <PipDressUp score={result.score} />
+    </StatusPicker>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,8 +108,6 @@ export function MyBoilerView({
           {syncing ? "Syncing…" : "Refresh"}
         </button>
       </div>
-
-      <BoilerCompanion data={data} vent={vent} />
 
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
@@ -152,7 +155,7 @@ export function MyBoilerView({
           </div>
 
           <div className="hidden lg:block lg:w-full">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
+            {statusPicker}
           </div>
         </section>
 
@@ -171,7 +174,6 @@ export function MyBoilerView({
             <div className="hidden sm:block">
               <ForecastStrip days={result.forecast} />
             </div>
-            <p className="mt-3 mb-0 text-[13px] text-muted">Assumes future tasks are finished by their due dates. Already overdue work stays counted.</p>
           </Card>
 
           <TaskList
@@ -197,7 +199,7 @@ export function MyBoilerView({
           />
 
           <div className="rounded-[14px] border border-line bg-surface px-5 py-6 shadow-(--shadow) lg:hidden">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)} />
+            {statusPicker}
           </div>
         </div>
       </div>
