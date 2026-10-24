@@ -61,6 +61,23 @@ describe("preview", () => {
     expect(preview.recipients).toBe(8);
   });
 
+  it("never names hidden stale or never-synced members; they fold into the anonymous hidden count", () => {
+    const mixed = [
+      target("a", 65),
+      target("hs", 88, false, hoursAgo(100)), // hidden, stale
+      target("hn", null, false), // hidden, never synced
+      target("h", 85, false),
+    ];
+    const p = toPreview(mixed, computeTargets(mixed, input, now));
+    expect(p.noRecentData).toEqual([]);
+    expect(p.hidden.count).toBe(3);
+    expect(p.hidden.intoRedline).toBe(1); // only the recent one can be counted crossing
+    const lone = [target("a", 65), target("hs", 88, false, hoursAgo(100))];
+    const q = toPreview(lone, computeTargets(lone, input, now));
+    expect(q.noRecentData).toEqual([]);
+    expect(q.hidden).toEqual({ count: 0, intoRedline: 0 });
+  });
+
   it("shows no hidden count below two hidden members, and no recipient total that would reveal one", () => {
     const one = [target("a", 65), target("h", 85, false)];
     const p = toPreview(one, computeTargets(one, input, now));
