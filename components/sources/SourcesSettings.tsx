@@ -7,6 +7,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { timeAgo } from "@/components/boiler/format";
 import { foundLine, sourcesCall, type TestResult } from "./api";
 import { CalendarFeedForm, GitHubTokenForm } from "./SourceForms";
+import { CalendarSubscription } from "./CalendarSubscription";
 
 const KIND_LABEL: Record<SourceInfo["kind"], string> = { ics: "Calendar feed", github: "GitHub" };
 
@@ -18,6 +19,7 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <CalendarSubscription />
       <Card as="section" aria-labelledby="yours" className="px-5 py-6 sm:px-7">
         <CardTitle id="yours" className="mb-3">
           Your sources
