@@ -25,6 +25,15 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 | sources | `lib/sources`, `app/api/sources`, `app/settings`, `components/sources` |
 | foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `app/privacy`, `middleware.ts`, `supabase/`, `fixtures/`, `scripts/`, config files |
 
+### Current parallel tracks (data / tasks-ui)
+
+These override the table above for `track/data` and `track/tasks-ui`.
+
+- **Nobody on these tracks edits `lib/pressure/compute.ts` or `lib/pressure/config.ts`.** A teammate is fixing the release math there.
+- **track/data** (worktree `../bp-data`) owns `lib/sources`, `lib/google`, `app/api/tasks`, `app/api/sources`, `components/sources`, `supabase/migrations`.
+- **track/tasks-ui** (worktree `../bp-tasks-ui`) owns `components/boiler` (TaskList, the forecast strip, MyBoilerView) and `app/boiler`.
+- The optional `course` label on `Task` and `OwnerEvent` in `lib/pressure/api-types.ts` is the contract between them: data fills it, tasks-ui renders it, and both treat it as possibly absent.
+
 ## Visual source of truth (ui track)
 
 `docs/design/` holds the chosen designs and is the UI track's visual source of truth. Start with `docs/design/README.md`: it lists each screen's template (`*.dc.html`), the fonts and the palette tokens. The `.dc.html` files are design templates, not runnable pages; rebuild them as React components and match their layout, copy, SVG geometry and colors. Other tracks should reuse `components/ui` once it exists rather than restyling. Only the human edits `docs/design/`.
