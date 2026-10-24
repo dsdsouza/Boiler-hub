@@ -9,6 +9,13 @@ test('demo loads without browser exceptions and fits the viewport', async ({ pag
   await page.reload();
   await expect(gauge(page)).toBeVisible();
   await noOverflow(page);
+  const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
+  const size = (await tasks.getByRole('combobox', { name: 'Size', exact: true }).boundingBox())!;
+  const due = (await tasks.getByRole('combobox', { name: 'Due', exact: true }).boundingBox())!;
+  expect(Math.abs(size.width - due.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(size.y - due.y)).toBeLessThanOrEqual(1);
+  expect(size.height).toBe(44);
+  expect(due.height).toBe(44);
   expect(errors).toEqual([]);
 });
 
@@ -130,20 +137,28 @@ test('assignment requires a title, previews size and posts with feedback', async
   await expect(assignment.getByRole('button', { name: /^Post to / })).toBeDisabled();
 });
 
-test('Pip accessory is exclusive and hide/show survives a reload', async ({ page }) => {
-  const pip = page.getByRole('complementary', { name: 'Pip, your pressure companion', exact: true });
-  await pip.getByRole('button', { name: 'Dress up', exact: true }).click();
-  await pip.getByRole('radio', { name: 'None', exact: true }).focus();
-  await pip.getByRole('radio', { name: 'None', exact: true }).press('ArrowRight');
-  await expect(pip.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
-  await expect(pip.getByRole('radio', { checked: true })).toHaveCount(1);
-  await pip.getByRole('button', { name: 'Done', exact: true }).click();
-  await pip.getByRole('button', { name: 'Hide Pip', exact: true }).click();
-  await expect(pip).toHaveCount(0);
+test('Pip wardrobe sits below the status note and preserves its selection', async ({ page }) => {
+  await expect(page.getByRole('complementary', { name: 'Pip, your pressure companion', exact: true })).toHaveCount(0);
+  const dressUp = page.getByRole('button', { name: 'Dress up', exact: true });
+  const note = page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true });
+  const noteBox = (await note.boundingBox())!;
+  const buttonBox = (await dressUp.boundingBox())!;
+  expect(buttonBox.y).toBeGreaterThanOrEqual(noteBox.y + noteBox.height);
+  await dressUp.click();
+  const wardrobe = page.getByRole('region', { name: 'Pip wardrobe', exact: true });
+  await expect(wardrobe.getByRole('radio', { name: 'None', exact: true })).toBeFocused();
+  await wardrobe.getByRole('radio', { name: 'None', exact: true }).press('ArrowRight');
+  await expect(wardrobe.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
+  await expect(wardrobe.getByRole('radio', { checked: true })).toHaveCount(1);
+  await noOverflow(page);
+  await wardrobe.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(dressUp).toBeFocused();
   await page.reload();
-  await page.getByRole('button', { name: 'Show Pip', exact: true }).click();
-  await pip.getByRole('button', { name: 'Dress up', exact: true }).click();
-  await expect(pip.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
+  await dressUp.click();
+  await expect(wardrobe.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
+  await wardrobe.getByRole('radio', { name: 'Top hat', exact: true }).press('Escape');
+  await expect(wardrobe).toHaveCount(0);
+  await expect(dressUp).toBeFocused();
 });
 
 
