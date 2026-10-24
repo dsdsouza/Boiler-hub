@@ -61,13 +61,13 @@ Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `out
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 168 regular browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. The `known-issues` job is deliberately nonblocking and uploads red assertions as evidence. A green overall workflow does not mean these defects are fixed.
+`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 186 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
 
-Vitest uses `it.fails` for the database/date/recovery defects below. Its summary reports them as **expected fail**, separate from passed tests; an unexpected pass makes that contract fail so the quarantine must be removed when the product is fixed. Browser defects use `@known-issue` and are excluded from the regular gate. Run them explicitly with:
+The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the single required status check for `main`. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.
 
-```sh
-pnpm test:e2e:known --project=desktop-chromium
-```
+GitHub must also enforce this check in repository settings. After the first successful staging run, a repository administrator can run `pnpm qa:protect-main` while authenticated through `gh`. The script verifies admin permission, finds the successful Actions check, pins its GitHub App, and requires an up-to-date PR plus **QA gate**, including for administrators. Force pushes and branch deletion are disabled. A workflow file alone cannot prevent merging; verify the server-side protection separately. The script intentionally changes only this repository's `main` branch.
+
+Focused regression command: `pnpm test:e2e:regressions`. Full local check: `pnpm qa:check` (start with `pnpm build` and `PLAYWRIGHT_PRODUCTION=1` for production-browser testing).
 
 ## TesterArmy
 
@@ -75,24 +75,34 @@ Project: Boilerplate (`RMqKVQlZMsQ_`), target `https://boilerhub.work/`. Twenty 
 
 The manual `TesterArmy cloud regression` workflow is ready to queue a saved group after a deployment. To activate it, enable Webhook in the chosen group's menu and save the generated URL as the GitHub Actions repository secret `TESTERARMY_GROUP_WEBHOOK_URL`. This secret has **not** been configured by this setup. The URL is never committed or logged. The workflow validates its destination, passes the commit/target/environment, and reports acceptance separately from actual test completion. See [TesterArmy group webhooks](https://docs.tester.army/run/group-webhooks).
 
-## Reproduced findings, 2026-10-24
+## Regression fixes, 2026-10-24
 
-| ID | Impact and reproduction | Evidence / scope |
+| ID | Result | Regression coverage |
 | --- | --- | --- |
-| QA-001 | In `/demo`, change Maya's personal status to Away and save a note, then inspect Maya in Product Squad: the team card keeps the original status/note. | Browser assertion in `known-issues.spec.ts`; demo state synchronization only. No evidence that live accounts share the defect. |
-| QA-002 | The task form offers Today, Tomorrow, In 3 days and In a week, with no undated choice, although the API accepts null and formula documentation describes undated tasks. | Browser assertion; UI capability gap. The original cloud task run substituted Tomorrow and its pass does not cover this requirement. |
-| QA-003 | An authenticated member can call `team_hidden_count` directly and get a count; a lead can get an exact count of one. The PRD reserves anonymous aggregates for leads and suppresses counts below two. | Two expected failures against the shipped SQL function and grants. The API's safer presentation does not protect the direct Supabase RPC. Production schema deployment was not inspected. A repair needs a new migration, applied by a human per repository policy. |
-| QA-004 — resolved | Completed tasks now add no load or negative credit. Resizing a completed task leaves other assignments unchanged. | Promoted to the normal demo regression suite with the completed-task review disclosure. |
-| QA-005 | `parseDue('1')` becomes January 2001 and `parseDue('01/02/2030')` is accepted with a locale-ambiguous interpretation despite the API promising an ISO date-time. | Two expected-failure date contract tests. Wrong-date risk, not a demonstrated security exploit. |
-| QA-006 | When recipient tasks save but the following snapshot write fails, retrying the same assignment draft finds the duplicate and returns without repairing scores. | Fault-injection contract test calls the real `createAssignment` helper twice. No production outage is claimed; this demonstrates the recovery path. |
-| QA-007 | During a live rollout, a homepage load referenced seven missing CSS/JavaScript assets. The slider reached 69 while the gauge remained at 62 because the client code did not load. | Live run: 161/162 passed, one failed. The trace contains seven HTTP 404 responses; the same case passed 3/3 immediately afterward. This was an observed transient deployment asset mismatch; its infrastructure cause is unconfirmed. Sanitized evidence is in `tests/evidence/deployment-assets-20261024.json`. |
+| QA-001 | A shared demo owner state supplies Maya's status and note to the team card, including after team switching. Reload resets the fixture. | `tests/e2e/regressions.spec.ts` |
+| QA-002 | The form offers **No due date**. Undated tasks retain their remaining-work load, render an honest label and complete normally. | Browser regression and existing request/engine contracts |
+| QA-003 | Migration 0005 restricts the hidden-count RPC to leads and suppresses counts below two in SQL itself. | All 32 SQL identities, positive lead aggregates, outsiders, direct RPCs and legacy SQL contract |
+| QA-004 | The newer staging model already removes completion credit. Completed-task resizing preserves other work, and reopening uses the new size. | Normal demo lifecycle regression |
+| QA-005 | Manual and team task dates require ISO date-times with explicit timezones and real calendar dates. Numeric, ambiguous, impossible and timezone-free inputs are rejected. | `tests/contracts/task-dates.test.ts` |
+| QA-006 | Migration 0006 posts the draft, recipient tasks and snapshots in one transaction. A failed snapshot update leaves no partial post; retry succeeds once. Stale snapshots or changed membership roll back instead of overwriting newer work. | Real helper calling migrated PostgreSQL, injected trigger failure, duplicate retry, hidden/never-synced recipients, service-role and client authorization |
+| Stale Privacy check | Public asset smoke covers the current routes and separately requires `/privacy` to return 404. | All six browser configurations |
+| QA-007 (historic rollout) | Prior live loads briefly referenced missing assets; no infrastructure cause was established. Asset and runtime checks remain in the blocking browser suite. | Sanitized historic evidence: `tests/evidence/deployment-assets-20261024.json` |
+
+Migrations 0005 and 0006 must be applied through the Supabase SQL editor before deploying the new assignment API, per `CLAUDE.md`. They preserve existing tables, event privacy, recipient freshness and forecasts. They prevent new partial posts; recipients of any historic interrupted post reconcile through their normal sync.
 
 Two earlier cloud findings were not substantiated: the completion report compared nonlinear displayed score points with raw pressure points, and the recurring-event report treated a rolling seven-day forecast change as a series leak. Neither is counted as a confirmed defect here. A reduced-motion development hydration warning was also observed; the stylesheet includes a reduced-motion fallback, so it is a diagnostic observation rather than a claimed animation failure.
 
-Still unverified without real project access: live account creation, Google OAuth/calendar refresh and revocation, real recurring event isolation, authenticated API authorization end-to-end, and the cloud webhook. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control.
+Still outside this automated gate: fresh Google OAuth consent/revocation, real recurring-event isolation, provisioned live QA account flows, a real Brightspace school feed and the cloud webhook. The existing signed-in session was previously checked for Google refresh, source validation and mobile layout; those checks do not substitute for these unverified flows. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control.
 
 ## Execution record
 
 On 2026-10-24, against main baseline `c635a3c`: the production build, type check and lint passed; Vitest reported 178 passed and five expected failures; all 162 regular browser cases passed with zero retries, skips or flaky cases. The three browser defects above were reproduced separately with failing assertions and saved screenshots/traces. Thirty-two SQL identities were created in the ephemeral database; no live Supabase users were provisioned. The repository had no Supabase credentials, no accessible connected Supabase project, and no TesterArmy webhook secret.
 
 After pushing `d0e5145`, the live deployment run passed 161/162 cases and exposed QA-007. The failed gauge boundary passed three sequential rechecks after the rollout. An additional asset-health scenario was then added and passed across all six configurations against the production build, bringing the regular suite to 168 cases. Treat the rollout failure as a real captured deployment problem, not an additional successful run.
+
+
+After the regression fixes, the production build, type check and lint passed. Vitest passed **274/274** tests across 33 files, with no expected failures. The production-browser suite passed **186/186** cases across all six configurations, with zero retries, skips or flaky tests. The first development pass exposed a reload assertion that did not reselect the demo team and a local WebKit origin mismatch; both were corrected before this final run.
+
+Migrations **0005 and 0006 were applied through the Supabase SQL editor** to the project verified against the live app's sign-in destination. A read-only transaction checked the hidden-count contract for every existing membership in the live database. The atomic posting function is installed, executable by `service_role`, and inaccessible to `authenticated`; no user data was inserted or changed by that verification. Failure injection and rollback recovery were exercised only in ephemeral PostgreSQL.
+
+Repository administration is separate from pushing code. The available GitHub CLI accounts lack admin permission, and the signed-in browser shows “You don't have access to repository options.” The owner setup command above is provided so required-check enforcement can be completed without changing credentials. Do not treat the workflow's presence as proof that branch protection is enabled.

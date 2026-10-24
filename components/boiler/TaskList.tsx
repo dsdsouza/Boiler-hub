@@ -13,12 +13,13 @@ import { dueText, formatPoints } from "./format";
 
 const BADGE_INK: Record<string, string> = { manual: "text-muted", team: "text-brass-ink", ics: "text-cool-ink", github: "text-body" };
 
-type DueChoice = "today" | "tomorrow" | "3d" | "7d";
-const DUE_LABEL: Record<DueChoice, string> = { today: "Today", tomorrow: "Tomorrow", "3d": "In 3 days", "7d": "In a week" };
-const DUE_DAYS: Record<DueChoice, number> = { today: 0, tomorrow: 1, "3d": 3, "7d": 7 };
+type DueChoice = "none" | "today" | "tomorrow" | "3d" | "7d";
+const DUE_LABEL: Record<DueChoice, string> = { none: "No due date", today: "Today", tomorrow: "Tomorrow", "3d": "In 3 days", "7d": "In a week" };
+const DUE_DAYS: Record<Exclude<DueChoice, "none">, number> = { today: 0, tomorrow: 1, "3d": 3, "7d": 7 };
 
 /** End of the working day `days` from now; today rolls to midnight once 5 pm has passed. */
 function dueFor(choice: DueChoice, now = new Date()) {
+  if (choice === "none") return "";
   const d = new Date(now);
   d.setDate(d.getDate() + DUE_DAYS[choice]);
   d.setHours(17, 0, 0, 0);
@@ -180,7 +181,7 @@ export function TaskList({
                 {t.source === "manual" ? "Older overdue — complete or remove" : "Older overdue — review"}
               </span>
             ) : (
-              <span>{done ? completedLabel : capitalize(dueText(t.due ?? now.toISOString(), now))}</span>
+              <span>{done ? completedLabel : t.due ? capitalize(dueText(t.due, now)) : "No due date"}</span>
             )}
             {!done && t.due && Date.parse(t.due) > now.getTime() + TASK_LOOKAHEAD_DAYS * 86_400_000 && <span>Outside {TASK_LOOKAHEAD_DAYS}-day score</span>}
             {removable && (

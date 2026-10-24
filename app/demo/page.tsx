@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { DemoEngineRoom } from "./DemoEngineRoom";
-import { DemoMyBoiler } from "./DemoMyBoiler";
+import { DemoContent } from "./DemoContent";
 
 export const metadata: Metadata = {
   title: "Demo · Boilerplate",
@@ -47,12 +46,7 @@ export default function DemoPage() {
       </nav>
 
       <main className="mx-auto flex max-w-[1320px] flex-col gap-16 px-4 pt-7 pb-16 sm:px-8">
-        <section id="engine-room" aria-label="Engine Room" className="scroll-mt-4">
-          <DemoEngineRoom />
-        </section>
-        <section id="maya" aria-label="Maya’s boiler" className="scroll-mt-4 border-t border-line pt-12">
-          <DemoMyBoiler />
-        </section>
+        <DemoContent />
       </main>
     </div>
   );
