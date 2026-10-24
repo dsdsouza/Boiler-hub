@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Size, Zone } from "@/lib/types";
 import { BoilerTile } from "@/components/boiler/BoilerTile";
-import { demoTeams, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
+import { demoTeams, mayaUserId, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
+import type { MyBoilerData } from "@/components/boiler/boilerState";
 import { safeHiddenCount } from "@/app/api/teams/_lib/assignment";
 import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/lib/pressure";
 import { Button } from "@/components/ui/Button";
@@ -54,8 +55,11 @@ function chip(on: boolean) {
   }`;
 }
 
-export function DemoEngineRoom() {
-  const [teams, setTeams] = useState<DemoTeam[]>(demoTeams);
+export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) {
+  const [storedTeams, setTeams] = useState<DemoTeam[]>(demoTeams);
+  const teams = storedTeams.map((t) => ({ ...t, boilers: t.boilers.map((b) =>
+    personal && b.userId === mayaUserId ? { ...b, status: personal.status, statusNote: personal.statusNote } : b,
+  ) }));
   const [teamIdx, setTeamIdx] = useState(1);
   const [filter, setFilter] = useState<Zone | "all">("all");
   const team = teams[teamIdx]!;
