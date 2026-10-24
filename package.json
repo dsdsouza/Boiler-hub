@@ -20,7 +20,8 @@
     "test:e2e:auth": "playwright test --config=playwright.auth.config.ts",
     "qa:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e",
     "qa:army": "node scripts/qa/army.mjs",
-    "qa:ui": "node scripts/qa/army.mjs --ui"
+    "qa:ui": "node scripts/qa/army.mjs --ui",
+    "qa:explore": "node scripts/qa/army.mjs --explore"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
