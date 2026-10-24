@@ -102,12 +102,34 @@ The MVP is six screens plus a demo mode; everything else is stretch.
 
 **Stretch, in priority order**
 
-1. ICS feed URL import (Canvas, Outlook, Blackboard) as a task and event source.
+1. ~~ICS feed URL import (Canvas, Outlook, Blackboard) as a task and event source.~~ Shipped, see Sources.
 2. Browser extension mock: a floating gauge over Google Calendar, UI only, reading the demo or `/api/me/boiler`.
 3. Pipe reroute: in the Engine Room, drag a team assignment from one member to another and watch both needles move.
-4. GitHub issues assigned to me as a task source, size from `size:S/M/L` labels.
+4. ~~GitHub issues assigned to me as a task source, size from `size:S/M/L` labels.~~ Shipped, see Sources.
 5. Mood check-in modifier (plus or minus up to 10 points), owner-only.
 6. Slack or Discord bot posting redline alerts.
+
+## Sources
+
+Tasks also come from external sources, not just manual entry. A source is an ICS feed (Brightspace, Canvas, Outlook, any calendar) or a GitHub personal access token, added at `/settings/sources` or in onboarding. Each sync fetches every source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
+
+**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Entries in the next 7 days count, plus deadlines up to 14 days overdue. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); size L for exam, midterm or final, S for quiz, else M. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. On a feed's first sync, its overdue backlog is marked done without venting, and "Mark all overdue done" does the same later.
+
+**GitHub** (read-only fine-grained token: Issues, Pull requests, Actions, Metadata). Open issues assigned to me (size from `size:S/M/L` labels, due at the milestone's due date or in 7 days); PRs with my review requested (S, due in 2 days); my open PRs whose latest Actions run failed ("Fix CI: repo#n", S, due in 1 day); issues assigned to me closed as completed and my PRs merged in the last 48 h count as completed tasks and vent. Rate limits mark the source as errored with the retry time.
+
+**Overrides and health.** Owners can mark source items done or undone and change their size; these live in `source_item_state`, keyed by a SHA-256 of the external id. A failing source is marked `error` with a readable message and skipped; it never fails the sync. Fetches are cached in memory for a few minutes per server instance (best-effort); Refresh bypasses the cache. Team assignment posts do not fetch anyone's sources: they update snapshots with the preview math, and each member's next sync reconciles.
+
+| Table | Key columns | Notes |
+| --- | --- | --- |
+| `sources` | `id`, `user_id`, `kind` (ics, github), `label`, `secret_encrypted`, `coursework`, `last_synced_at`, `status` (ok, error), `error` | Owner-only; the encrypted URL or token is not selectable by clients |
+| `source_item_state` | `user_id`, `source_id`, `item_key`, `done_at`, `size_override` | Owner-only overrides, no titles or dates |
+
+| Method and path | Returns or does |
+| --- | --- |
+| `GET /api/sources`, `POST /api/sources` | List (no secrets); add after validating the URL or token |
+| `DELETE /api/sources/[id]` | Remove a source and its overrides |
+| `POST /api/sources/[id]/test` | Refetch and report the item count |
+| `PATCH /api/sources/items` | Mark done or undone, set a size, or clear overdue items without a vent |
 
 ## Visual direction
 
