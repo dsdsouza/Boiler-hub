@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import type { Status, Zone } from "@/lib/types";
 import { STATUS_META, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
 import { Gauge } from "./Gauge";
@@ -31,6 +31,15 @@ export interface BoilerProps {
 const WIDTH = { sm: 150, lg: 290 } as const;
 const BODY_RIVETS = [112, 134, 156, 178, 200, 222];
 
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+function subscribeMotionPreference(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+const reducedMotionSnapshot = () => window.matchMedia(REDUCED_MOTION).matches;
+const serverMotionSnapshot = () => true;
+
 export function Boiler({
   score,
   zone: zoneProp,
@@ -46,7 +55,7 @@ export function Boiler({
   const s = Math.round(clampScore(score));
   const zone = zoneProp ?? zoneOf(s);
   const v = boilerVisuals(s, zone);
-  const reduced = useReducedMotion();
+  const reduced = useSyncExternalStore(subscribeMotionPreference, reducedMotionSnapshot, serverMotionSnapshot);
   const still = !animate || !!reduced;
   // Off-screen (reported by Steam's IntersectionObserver): CSS loops pause in place and the shake stops.
   const [onScreen, setOnScreen] = useState(true);

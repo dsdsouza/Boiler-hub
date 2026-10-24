@@ -84,7 +84,7 @@ export default function HowPage() {
           <h2 id="formula" className={h2}>
             The formula
           </h2>
-          <Card plate className="overflow-x-auto px-6 py-7 sm:px-8">
+          <Card plate role="region" aria-label="Pressure formula" tabIndex={0} className="overflow-x-auto px-6 py-7 sm:px-8">
             <pre className="m-0 font-mono text-[13px] leading-loose text-fg sm:text-[15px]">
               <code>
                 {"R = Σ events (hours × weight × attendees × organizer × proximity)\n"}

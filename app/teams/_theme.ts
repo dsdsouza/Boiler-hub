@@ -1,4 +1,4 @@
-import type { Counts, Visibility } from "@/lib/types";
+import type { Visibility } from "@/lib/types";
 import { ZONE_INK_VAR } from "@/components/ui/zones";
 
 // Teams styling on top of the ui track's tokens (app/globals.css, components/ui/zones.ts), so the
@@ -42,12 +42,6 @@ export function teamLabels(type: "class" | "work") {
 
 export function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
-}
-
-export function countsLine(c: Counts): string {
-  const parts = [plural(c.meetings, "meeting", "meetings"), plural(c.tasksDue, "due", "due")];
-  if (c.overdue) parts.push(`${c.overdue} overdue`);
-  return parts.join(" · ");
 }
 
 export function initials(name: string): string {
