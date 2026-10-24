@@ -11,7 +11,7 @@
   // Requires Workers Paid. Free's 10 ms cap cannot reliably run Next.js SSR.
   // Bound runaway CPU while allowing rendering, calendar parsing and forecasts.
   "limits": {
-    "cpu_ms": 1000
+    "cpu_ms": 30000
   },
   "assets": {
     "directory": ".open-next/assets",
