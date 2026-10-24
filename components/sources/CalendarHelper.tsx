@@ -66,7 +66,7 @@ export function CalendarHelper({ signedIn }: { signedIn: boolean }) {
       {success && <Card as="section" aria-labelledby="helper-done" className="px-5 py-6 sm:px-7">
         <CardTitle id="helper-done" tabIndex={-1}>Calendar connected</CardTitle>
         <div className="my-4"><Feedback message={success} /></div>
-        <LinkButton href="/boiler" variant="primary">Open My Boiler</LinkButton>
+        <LinkButton href="/boiler" variant="primary" className="bp-button-striped">Open My Boiler</LinkButton>
       </Card>}
       {pending && <Card as="section" aria-labelledby="helper-review" className="px-5 py-6 sm:px-7">
         <CardTitle id="helper-review">Review your calendar link</CardTitle>
