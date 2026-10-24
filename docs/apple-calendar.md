@@ -1,0 +1,11 @@
+# Apple Calendar
+
+## Show Boiler Hub deadlines in Apple Calendar
+
+In My Boiler or Sources, choose **Subscribe in Apple Calendar**. Boiler Hub creates a private subscription URL, then opens its `webcal://` link. Confirm Subscribe in Apple Calendar. If the browser blocks opening another app, the prepared **Open Apple Calendar** link provides a fresh click, and **Copy subscription link** lets you paste the HTTPS URL into Calendar → Add Subscription Calendar. This is a live subscription, not a one-time file import. [Apple’s subscription guide](https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac) describes its confirmation and refresh controls.
+
+The feed contains open, dated tasks created in Boiler Hub and team assignments. Imported calendars and GitHub items are excluded to avoid republishing their existing feeds. Completing, removing, or rescheduling a task changes the next feed response. Each deadline has a stable event ID and a transparent one-minute marker at the actual due time. Apple controls its refresh timing; changes are not pushed instantly. Empty task lists return valid empty calendars; failures return 503 instead of an empty response that could clear downloaded events.
+
+Anyone with the private URL can read its deadlines. **Disable subscription** revokes it immediately for future requests. Apple may retain already downloaded data until the calendar is removed. Creating another subscription generates a new token; repeated clicks while enabled keep the existing link working. The server stores a SHA-256 hash and encrypted token, never the raw token. Authenticated management is scoped to the owner with RLS. Calendar clients read through a narrow SQL function using the feed token; it exposes no source credentials or other users’ tasks and uses no service-role client.
+
+Before enabling this on a hosted environment, manually run [0004_calendar_subscriptions.sql](../supabase/migrations/0004_calendar_subscriptions.sql) in the Supabase SQL editor, as required by CLAUDE.md. Use the existing Supabase and token-encryption environment variables, and deploy the app to a reachable HTTPS origin. No new account credentials are required. The local checkout currently has no live Supabase configuration.
