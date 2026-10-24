@@ -44,7 +44,8 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 - `rpc('team_hidden_count', { team_id })` returns the number of members the caller cannot see.
 - `rpc('create_team', { name, type })` creates the team and the caller's lead membership, and returns the team row with a 6-char `invite_code`.
 - `rpc('join_team', { code })` joins as a hidden member and returns the team id.
-- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, and reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts).
+- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts), and, when an assignment posts, upserting each recipient's `pressure_snapshots` row (score, raw, zone, counts) with the same preview math so the posted result matches the preview. The last one is a teams-track stand-in until the engine's `syncUser` does a full recompute.
+- After a membership check (any role), the Engine Room uses the admin client only to read `memberships.role` for members the caller can already see via `team_boilers`, to tag leads.
 - `google_tokens` is service-role only.
 
 ### Fixture shape (`fixtures/demo.json`)
