@@ -129,3 +129,5 @@ GitHub's protection API returned HTTP 404 to the available non-admin account whe
 Concurrent main reconciliation: preserved the newer revision-based assignment comparison (migration 0007), stable recipient locking and automatic re-read/recompute after concurrency conflicts. The live database already has this migration installed. Preserved deployment asset recovery and its two browser regressions. The required QA gate and stricter no-flaky policy remain in place.
 
 Revision-based main reconciliation passes 298 unit/database tests. The public suite now has 198 cases, including deployment recovery; the final combined run is recorded by the PR checks.
+
+The deployment recovery guard ignores canceled assets from departing documents. All 18 targeted asset/recovery cases passed across six browser configurations after the WebKit navigation fix. The repository owner will enable the required-status rule later, as agreed.
