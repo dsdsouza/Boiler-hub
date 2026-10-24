@@ -87,9 +87,6 @@ export function CreateTeamForm() {
               </button>
             ))}
           </div>
-          <p className="m-0 text-xs" style={{ color: C.muted }}>
-            {type === "class" ? "You'll be the Teacher; people who join are Students." : "You'll be the Lead; people who join are Members."}
-          </p>
         </div>
         <button type="submit" disabled={busy || !name.trim()} className={primary} style={primaryStyle}>
           {busy ? "Creating…" : "Create team"}
@@ -146,9 +143,6 @@ export function JoinTeamForm() {
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
             placeholder="K7Q2MX"
           />
-          <p className="m-0 text-xs" style={{ color: C.muted }}>
-            You join hidden. Nobody sees your boiler until you change it.
-          </p>
         </div>
         <button type="submit" disabled={busy || code.length !== 6} className={primary} style={primaryStyle}>
           {busy ? "Joining…" : "Join team"}

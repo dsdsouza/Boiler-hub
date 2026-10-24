@@ -19,11 +19,11 @@ const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },
   { key: "teams", href: "/teams", label: "Teams" },
   { key: "sources", href: "/settings/sources", label: "Sources" },
-  { key: "how", href: "/how", label: "How it works" },
+  { key: "how", href: "/how", label: "Help" },
 ];
 
 const MARKETING_NAV: { key: NavKey; href: string; label: string }[] = [
-  { key: "how", href: "/how", label: "How it works" },
+  { key: "how", href: "/how", label: "Help" },
   { key: "demo", href: "/demo", label: "Demo" },
 ];
 
@@ -42,8 +42,8 @@ function NavLink({ href, label, current }: { href: string; label: string; curren
 }
 
 /**
- * `app` is the signed-in shell (My Boiler / Teams / Sources / How, avatar);
- * `marketing` is the landing and demo shell (How / Demo, sign-in).
+ * `app` is the signed-in shell (My Boiler / Teams / Sources / Help, avatar);
+ * `marketing` is the landing and demo shell (Help / Demo, sign-in).
  * On phones the app nav moves to <MobileTabBar>, unless mobileNavigation is "header".
  */
 export function SiteHeader({
@@ -166,7 +166,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
     {
       key: "how",
       href: "/how",
-      label: "How",
+      label: "Help",
       icon: (
         <>
           <circle cx="12" cy="12" r="9" />
