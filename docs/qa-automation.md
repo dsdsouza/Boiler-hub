@@ -64,7 +64,6 @@ To regenerate and test every account together:
 ```sh
 PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm qa:session --all
 PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json QA_AUTH_WORKERS=4 pnpm test:e2e:auth
-PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json pnpm test:e2e:auth:known --project=class-member-03
 ```
 
 The current 32-account bank and browser states were provisioned and verified in the live project, and copied into the primary local checkout's ignored `.qa` directory. The local `.env.qa.local` contains only the public project URL/anon key for future session refreshes. The temporary admin-key copy was removed after provisioning.
@@ -120,3 +119,8 @@ Migrations **0005 and 0006 were applied through the Supabase SQL editor** to the
 Repository administration is separate from pushing code. The available GitHub CLI accounts lack admin permission, and the signed-in browser shows “You don't have access to repository options.” The owner setup command above is provided so required-check enforcement can be completed without changing credentials. Do not treat the workflow's presence as proof that branch protection is enabled.
 
 A concurrent staging update added live QA-account verification and Apple Calendar setup. These changes were preserved in the integration; the final combined checks and signed-in privacy assertions are recorded below.
+
+
+Final combined staging verification (including the concurrent Apple Calendar and live-QA changes): production build, lint and typecheck passed; **291/291** unit/database tests, **186/186** public browser cases and **64/64** signed-in cases across all 32 accounts passed, with zero retries or skips. Public and authenticated runners now use separate output directories. This prevents one suite from deleting the other suite's traces during teardown; an earlier concurrent run exposed that collision. A separate earlier trace also captured `ERR_NETWORK_CHANGED`. Both suites passed together after the runner fix. The single-session authenticated command passed its two checks as well.
+
+GitHub's protection API returned HTTP 404 to the available non-admin account when applying the prepared rule. Main's required-check enforcement still needs the repository owner; the CI workflow and `qa:protect-main` helper are ready.

@@ -118,6 +118,6 @@ The following findings are retained from the earlier October 24 production/main 
 
 - Fixed demo status propagation, undated task entry/display, strict task timestamps, database-level hidden aggregates and atomic assignment recovery. Retained the remaining-work fix for completed-task resizing and strengthened its reopen regression.
 - Removed all expected-failure quarantines. The Privacy asset check now verifies its intentional 404.
-- Production build, typecheck and lint pass; 274 unit/database tests and 186 browser cases pass without retries or skips.
+- Production build, typecheck and lint pass; 291 unit/database tests, 186 public browser cases and 64 signed-in cases pass without retries or skips.
 - Applied migrations 0005–0006 in the live SQL editor and verified role-sensitive hidden counts plus the posting RPC grants without changing user data.
 - GitHub Actions now runs every regression and emits a fail-closed `QA gate`. Main branch enforcement requires repository-admin access; see `pnpm qa:protect-main` and `docs/qa-automation.md`.
