@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeToggle } from "./Toggles";
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
@@ -43,7 +42,7 @@ function NavLink({ href, label, current }: { href: string; label: string; curren
 }
 
 /**
- * `app` is the signed-in shell (My Boiler / Teams / How, theme toggle, avatar);
+ * `app` is the signed-in shell (My Boiler / Teams / Sources / How, avatar);
  * `marketing` is the landing and demo shell (How / Demo, sign-in).
  * On phones the app nav moves to <MobileTabBar>.
  */
@@ -71,10 +70,7 @@ export function SiteHeader({
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          {account}
-        </div>
+        {account && <div className="flex items-center gap-2">{account}</div>}
         {variant === "marketing" && (
           <nav aria-label="Main" className="flex w-full flex-wrap gap-1 border-t border-line pt-1 md:hidden">
             {nav.map((n) => (
