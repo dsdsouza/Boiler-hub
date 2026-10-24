@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { readStorage, writeStorage } from "@/components/ui/theme";
+import { readStorage, writeStorage } from "@/components/ui/storage";
 import { PIP_ACCESSORY_KEY, parseAccessory, type AccessoryId } from "./wardrobe";
 
 // The user's chosen accessory, saved in this browser. Every Pip on the page
