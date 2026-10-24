@@ -6,6 +6,7 @@ import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "./boilerState";
 import type { MyBoilerData, NewTask } from "./boilerState";
 import { mayaBoiler } from "./fixture";
+import { OptimisticQueue } from "./optimisticQueue";
 import { clearItemsBody, eventWeightBody, newTaskBody, sourceItemBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
 
 export type DataSource = "fixture" | "api";
@@ -41,6 +42,12 @@ export function useMyBoiler(source: DataSource = SOURCE) {
   const seq = useRef(0);
   const dataRef = useRef(data);
   dataRef.current = data;
+  const queue = useRef<OptimisticQueue<MyBoilerData> | null>(null);
+  if (!queue.current) queue.current = new OptimisticQueue(
+    (fresh) => { dataRef.current = fresh; setData(fresh); },
+    async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")),
+    setError,
+  );
 
   const load = useCallback(async () => {
     if (source === "fixture") {
@@ -48,7 +55,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
       return;
     }
     try {
-      setData(toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")));
+      queue.current!.replace(toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load your boiler");
@@ -62,21 +69,16 @@ export function useMyBoiler(source: DataSource = SOURCE) {
   /** Optimistic local update, then the remote call. A returned BoilerResponse replaces local state. */
   const mutate = useCallback(
     async (local: (d: MyBoilerData) => MyBoilerData, remote?: () => Promise<BoilerResponse | null>) => {
-      setData((d) => (d ? local(d) : d));
-      if (source === "fixture" || !remote) return true;
-      try {
-        const fresh = await remote();
-        if (fresh) setData(toMyBoilerData(fresh));
-        setError(null);
+      if (source === "fixture" || !remote) {
+        setData((d) => (d ? local(d) : d));
         return true;
-      } catch (e) {
-        await load();
-        // Reload the server state to undo the optimistic change, then retain the failure message.
-        setError(e instanceof Error ? e.message : "Something went wrong");
-        return false;
       }
+      return queue.current!.enqueue(local, async () => {
+        const fresh = await remote();
+        return fresh ? toMyBoilerData(fresh) : null;
+      });
     },
-    [source, load],
+    [source],
   );
 
   const addTask = useCallback(
@@ -198,8 +200,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
         await new Promise((r) => setTimeout(r, 600));
         setData((d) => (d ? { ...d, syncedAt: new Date().toISOString() } : d));
       } else {
-        setData(toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
-        setError(null);
+        await queue.current!.enqueue((d) => d, async () => toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sync failed");

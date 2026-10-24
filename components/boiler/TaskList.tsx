@@ -42,6 +42,7 @@ export function TaskList({
   sourcesHref,
   compact,
   className = "",
+  pendingTaskIds,
 }: {
   items: LoadItem[];
   contributions: Contribution[];
@@ -59,6 +60,7 @@ export function TaskList({
   sourcesHref?: string;
   compact?: boolean;
   className?: string;
+  pendingTaskIds?: ReadonlySet<string>;
 }) {
   const [title, setTitle] = useState("");
   const [adding, setAdding] = useState(false);
@@ -120,6 +122,7 @@ export function TaskList({
   const openTasks = tasks.filter((t) => !t.doneAt);
   const completedTasks = tasks.filter((t) => !!t.doneAt);
   const renderTask = (t: LoadItem) => {
+    const saving = pendingTaskIds?.has(t.id) ?? false;
     const done = !!t.doneAt;
     const pts = points.get(t.id);
     const m = meta[t.id];
@@ -146,7 +149,8 @@ export function TaskList({
             if (done) setFocusNext(t.id);
             onToggle(t.id, !done);
           }}
-          disabled={!!m?.completedInSource}
+          disabled={saving || !!m?.completedInSource}
+          aria-busy={saving}
           aria-label={`${m?.completedInSource ? "Completed in source" : done ? "Mark not done" : "Complete"}: ${t.title}`}
           className={`bp-control flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 ${
             done ? "border-zone-cool bg-zone-cool text-soot disabled:cursor-default" : "border-control bg-transparent hover:border-brass"
@@ -181,7 +185,7 @@ export function TaskList({
                 {t.source === "manual" ? "Older overdue — complete or remove" : "Older overdue — review"}
               </span>
             ) : (
-              <span>{done ? completedLabel : t.due ? capitalize(dueText(t.due, now)) : "No due date"}</span>
+              <span>{saving ? "Saving…" : done ? completedLabel : t.due ? capitalize(dueText(t.due, now)) : "No due date"}</span>
             )}
             {!done && t.due && Date.parse(t.due) > now.getTime() + TASK_LOOKAHEAD_DAYS * 86_400_000 && <span>Outside {TASK_LOOKAHEAD_DAYS}-day score</span>}
             {removable && (
@@ -201,6 +205,7 @@ export function TaskList({
             (sizeEditable ? (
             <select
               aria-label={`Size: ${t.title}`}
+              disabled={saving}
               value={sizeDraft[t.id] ?? t.size}
               onChange={(e) => changeSize(t.id, e.target.value as Size)}
               className="bp-field min-h-11 w-12 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-base font-bold text-body hover:border-brass"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Status } from "@/lib/types";
 import { Eyebrow } from "@/components/ui/Card";
 import { StatusDot } from "@/components/ui/StatusPill";
@@ -15,25 +15,47 @@ export function StatusPicker({
 }: {
   status: Status;
   note: string;
-  onChange: (status: Status, note: string) => void;
+  onChange: (status: Status, note: string) => boolean | void | Promise<boolean | void>;
   labelledBy?: string;
 }) {
   // Unique per instance: My Boiler renders one picker per breakpoint.
   const uid = useId();
   const [draft, setDraft] = useState(note);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const dirty = useRef(false);
+  const draftRef = useRef(note);
+  const saveVersion = useRef(0);
 
-  useEffect(() => setDraft(note), [note]);
+  useEffect(() => {
+    if (!dirty.current) { draftRef.current = note; setDraft(note); }
+  }, [note]);
   useEffect(() => {
     if (!saved) return;
     const t = setTimeout(() => setSaved(false), 1800);
     return () => clearTimeout(t);
   }, [saved]);
 
+  const save = async (next: Status) => {
+    const snapshot = draftRef.current;
+    const version = ++saveVersion.current;
+    setSaved(false); setFailed(false); setSaving(true);
+    try {
+      const accepted = await onChange(next, snapshot.trim());
+      if (version !== saveVersion.current) return;
+      if (accepted === false) { setFailed(true); return; }
+      if (draftRef.current === snapshot) {
+        dirty.current = false;
+        draftRef.current = snapshot.trim();
+        setDraft(snapshot.trim()); setSaved(true);
+      }
+    } catch { if (version === saveVersion.current) setFailed(true); }
+    finally { if (version === saveVersion.current) setSaving(false); }
+  };
   const commitNote = () => {
     if (draft.trim() === note) return;
-    onChange(status, draft.trim());
-    setSaved(true);
+    void save(status);
   };
 
   return (
@@ -47,7 +69,7 @@ export function StatusPicker({
               key={s}
               type="button"
               aria-pressed={on}
-              onClick={() => onChange(s, draft.trim())}
+              onClick={() => { if (!on || draft.trim() !== note) void save(s); }}
               className={`bp-control flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-2.5 text-left text-[13px] font-semibold text-fg ${
                 on ? "border-brass bg-surface-2" : "border-control bg-transparent hover:border-brass"
               }`}
@@ -68,7 +90,7 @@ export function StatusPicker({
         maxLength={80}
         value={draft}
         placeholder="e.g. Launch week, back to normal Fri"
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => { dirty.current = true; draftRef.current = e.target.value; setDraft(e.target.value); setSaved(false); setFailed(false); }}
         onBlur={commitNote}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -80,7 +102,7 @@ export function StatusPicker({
       />
       <p className="m-0 flex justify-between text-xs text-muted">
         <span>Status never changes your score.</span>
-        <span aria-live="polite">{saved ? "Saved" : <span aria-hidden="true">{draft.length}/80</span>}</span>
+        <span aria-live="polite">{saving ? "Saving…" : failed ? "Not saved. Try again." : saved ? "Saved" : <span aria-hidden="true">{draft.length}/80</span>}</span>
       </p>
     </div>
   );

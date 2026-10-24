@@ -2,7 +2,7 @@ name: Boilerplate QA
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, 'staging-*', 'staging/**']
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -57,6 +57,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm build
       - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
+      - run: pnpm test:components --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -67,7 +68,9 @@ jobs:
         if: failure()
         with:
           name: browser-failures-${{ matrix.shard }}
-          path: test-results
+          path: |
+            test-results
+            .qa/component-artifacts
           retention-days: 14
 
   report:
