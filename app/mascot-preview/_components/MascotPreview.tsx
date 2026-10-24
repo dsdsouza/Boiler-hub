@@ -21,6 +21,7 @@ import {
   type Reaction,
 } from "./companion";
 import { chip, Companion, EmptyScene, GaugeCard, NotificationsScene, OnboardingScene, TasksCard, TeamScene, WeekCard } from "./scenes";
+import { HeroCompare } from "./HeroCompare";
 import { WardrobeSheet } from "./WardrobeSheet";
 
 type Scenario = "onboarding" | "insight" | "complete" | "high" | "team" | "empty" | "notify";
@@ -381,6 +382,7 @@ export function MascotPreview() {
         )}
       </section>
 
+      <HeroCompare still={still} />
       <CharacterSheet still={still} />
       <WardrobeSheet still={still} />
     </div>
