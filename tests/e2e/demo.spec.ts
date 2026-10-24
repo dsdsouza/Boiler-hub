@@ -18,7 +18,8 @@ test('add, complete and reopen a task restores its pressure', async ({ page }) =
   const added = await score(page);
   expect(added).toBeGreaterThan(before);
   await page.getByRole('button', { name: 'Complete: QA task lifecycle', exact: true }).click();
-  expect(await score(page)).toBeLessThan(before);
+  expect(await score(page)).toBe(before);
+  await page.locator('summary').filter({ hasText: 'Completed or cleared' }).click();
   await page.getByRole('button', { name: 'Mark not done: QA task lifecycle', exact: true }).click();
   expect(await score(page)).toBe(added);
 });
@@ -143,4 +144,18 @@ test('Pip accessory is exclusive and hide/show survives a reload', async ({ page
   await page.getByRole('button', { name: 'Show Pip', exact: true }).click();
   await pip.getByRole('button', { name: 'Dress up', exact: true }).click();
   await expect(pip.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
+});
+
+
+test('resizing a completed task leaves other assignments at their original pressure', async ({ page }) => {
+  const before = await score(page);
+  await addTask(page, 'QA completed resize', 'L');
+  await page.getByRole('button', { name: 'Complete: QA completed resize', exact: true }).click();
+  expect(await score(page)).toBe(before);
+  await page.locator('summary').filter({ hasText: 'Completed or cleared' }).click();
+  await page.getByRole('combobox', { name: 'Size: QA completed resize', exact: true }).selectOption('S');
+  await expect.poll(() => score(page)).toBe(before);
+  const row = page.getByRole('region', { name: 'Tasks', exact: true }).getByRole('listitem').filter({ has: page.getByRole('button', { name: 'Mark not done: QA completed resize', exact: true }) });
+  await expect(row).toContainText('Completed or cleared');
+  await expect(row).not.toContainText('−');
 });

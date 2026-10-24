@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { addTask, openDemo } from './helpers';
-import { COMPLETED_RELEASE, SIZE_POINTS } from '../../lib/pressure/config';
-import { formatPoints } from '../../components/boiler/format';
+import { openDemo } from './helpers';
 
 test.beforeEach(async ({ page }) => { await openDemo(page); });
 
@@ -19,12 +17,4 @@ test('QA-001 @known-issue personal status propagates to the demo team card', asy
 test('QA-002 @known-issue manual tasks offer an undated option', async ({ page }) => {
   const due = page.getByRole('region', { name: 'Tasks', exact: true }).getByRole('combobox', { name: 'Due', exact: true });
   expect(await due.locator('option').allTextContents()).toContain('No due date');
-});
-
-test('QA-004 @known-issue resizing a completed demo task recalculates its release', async ({ page }) => {
-  await addTask(page, 'QA completed resize', 'L');
-  await page.getByRole('button', { name: 'Complete: QA completed resize', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Size: QA completed resize', exact: true }).selectOption('S');
-  const row = page.getByRole('region', { name: 'Tasks', exact: true }).getByRole('listitem').filter({ has: page.getByRole('button', { name: 'Mark not done: QA completed resize', exact: true }) });
-  await expect(row).toContainText(formatPoints(-COMPLETED_RELEASE * SIZE_POINTS.S));
 });

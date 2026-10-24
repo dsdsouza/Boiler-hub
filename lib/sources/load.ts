@@ -4,7 +4,7 @@ import { decrypt } from "@/lib/crypto";
 import type { SourceInfo } from "@/lib/pressure/api-types";
 import { githubAdapter } from "./github";
 import { icsAdapter } from "./ics";
-import { applyItemState, overdueOpen, silentDoneAt } from "./state";
+import { applyItemState } from "./state";
 import {
   SOURCE_COLUMNS,
   SourceError,
@@ -170,19 +170,6 @@ export async function loadSources(
     }),
   );
 
-  // A new source's first good sync: its backlog of past-due items (handed-in coursework, issues
-  // with long-past milestones) was most likely dealt with already, so mark it done without a vent.
-  const backlog = results.flatMap(({ row, items, error }) =>
-    !error && !row.last_synced_at ? overdueOpen(applyItemState(items, state, now), now) : [],
-  );
-  if (backlog.length > 0) {
-    const done_at = silentDoneAt(now);
-    const marks = backlog.map((i) => ({ user_id: userId, source_id: i.sourceId, item_key: i.itemKey, done_at }));
-    const { error } = await admin.from("source_item_state").upsert(marks, { onConflict: "user_id,source_id,item_key" });
-    if (error) console.error("[sources] backlog marking failed", error.message);
-    else for (const m of marks) state.push({ source_id: m.source_id, item_key: m.item_key, done_at, size_override: null });
-  }
-
   const syncedAt = now.toISOString();
   const summaries = await Promise.all(
     results.map(async ({ row, cached, error }) => {
@@ -200,5 +187,6 @@ export async function loadSources(
     }),
   );
 
-  return { items: applyItemState(results.flatMap((r) => r.items), state, now), sources: summaries };
+  // Keep completed/cleared feed items reviewable, including earlier automatic backlog clears.
+  return { items: applyItemState(results.flatMap((r) => r.items), state, now, { includeCompleted: true }), sources: summaries };
 }

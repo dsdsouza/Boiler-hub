@@ -729,7 +729,7 @@
             },
             {
               "type": "assert",
-              "title": "Verify the full breakdown shows positive event/task contributions, negative release contributions, and operable Light/Normal/Heavy and Apply to series controls."
+              "title": "Verify the full breakdown shows positive unfinished event/task contributions, no negative completion credits, and operable Light/Normal/Heavy and Apply to series controls."
             },
             {
               "type": "act",
