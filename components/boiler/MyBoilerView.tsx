@@ -180,6 +180,7 @@ export function MyBoilerView({
             onRemove={(id) => void boiler.removeTask(id)}
             onClearOverdue={() => void boiler.clearOverdue()}
             meta={data.taskMeta}
+            courses={data.courses}
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
 
