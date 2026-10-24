@@ -1,5 +1,5 @@
 import "server-only";
-import { generateText, jsonSchema, Output } from "ai";
+import { generateText, jsonSchema, Output, streamText } from "ai";
 import {
   createGoogle,
   type GoogleLanguageModelInteractionsOptions,
@@ -9,15 +9,15 @@ import type { PipContext } from "./context";
 import { verifiedCourseReply } from "./study";
 
 /** Course questions share Pip's server key, retry policy and non-stored Interactions API. */
-export async function askCourseGemini(
+function courseOptions(
   messages: PipMessage[],
   context: PipContext,
   signal?: AbortSignal,
-): Promise<string> {
+) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error("Gemini not configured");
   const google = createGoogle({ apiKey });
-  const result = await generateText({
+  return {
     model: google.interactions(
       process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash",
     ),
@@ -34,10 +34,9 @@ export async function askCourseGemini(
       } satisfies GoogleLanguageModelInteractionsOptions,
     },
     output: Output.object({
-      schema: jsonSchema({
+      schema: jsonSchema<{ answer: string; citations: { sourceId: string; quote: string }[] }>({
         type: "object",
         properties: {
-          answer: { type: "string" },
           citations: {
             type: "array",
             maxItems: 3,
@@ -50,10 +49,46 @@ export async function askCourseGemini(
               required: ["sourceId", "quote"],
             },
           },
+          answer: { type: "string" },
         },
         required: ["answer", "citations"],
       }),
     }),
-  });
+  };
+}
+
+export async function askCourseGemini(messages: PipMessage[], context: PipContext, signal?: AbortSignal): Promise<string> {
+  const result = await generateText(courseOptions(messages, context, signal));
   return verifiedCourseReply(result.output, context.study?.sources ?? []);
+}
+
+export async function* streamCourseGemini(messages: PipMessage[], context: PipContext, signal?: AbortSignal): AsyncGenerator<string> {
+  const options = courseOptions(messages, context, signal);
+  const result = streamText({ ...options, onError: () => {},
+    instructions: options.instructions + "\nReturn the citations array before the answer field, so sources can be checked before the answer is displayed.",
+  });
+  const sources = context.study?.sources ?? [];
+  let sent = "";
+  let checkedCitations: string | undefined;
+  for await (const partial of result.partialOutputStream) {
+    // An answer after the citations field means the preceding JSON array is complete.
+    // If the model sends fields in another order, hold the answer for final validation.
+    const keys = Object.keys(partial);
+    if (!Array.isArray(partial.citations) || keys.indexOf("citations") > keys.indexOf("answer") || typeof partial.answer !== "string" || !partial.answer.trim()) continue;
+    verifiedCourseReply(partial, sources);
+    const citations = JSON.stringify(partial.citations);
+    if (checkedCitations !== undefined && citations !== checkedCitations) throw new Error("Course citations changed during generation");
+    checkedCitations = citations;
+    const answer = partial.answer.trim();
+    if (!answer.startsWith(sent)) throw new Error("Course answer changed during generation");
+    const delta = answer.slice(sent.length);
+    sent = answer;
+    if (delta) yield delta;
+  }
+  const output = await result.output;
+  if (await result.finishReason !== "stop") throw new Error("Incomplete course reply");
+  const reply = verifiedCourseReply(output, sources);
+  if (!reply.startsWith(sent)) throw new Error("Course answer changed during generation");
+  if (checkedCitations !== undefined && JSON.stringify(output.citations) !== checkedCitations) throw new Error("Course citations changed during generation");
+  if (reply.length > sent.length) yield reply.slice(sent.length);
 }
