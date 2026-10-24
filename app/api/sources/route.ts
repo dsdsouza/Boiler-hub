@@ -20,6 +20,8 @@ export async function GET() {
 // POST { kind: 'ics', url, label?, coursework? } | { kind: 'github', token, label? }
 // Validates by fetching before saving; a source that cannot be read is not saved (400 with the reason).
 // Encrypts the URL or token, inserts, resyncs. Returns { source, itemCount, tasks, events, boiler }.
+// The source is saved once inserted: if only the resync fails, it still returns 201, with
+// `boiler: null` and a `warning`, so a retry does not add it twice.
 export async function POST(request: Request) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
@@ -81,6 +83,15 @@ export async function POST(request: Request) {
     const source = boiler.sources.find((s) => s.id === id) ?? toSummary(data);
     return NextResponse.json({ source, ...counts, boiler }, { status: 201 });
   } catch (e) {
-    return serverError("POST /api/sources resync", e);
+    console.error("POST /api/sources resync failed", e);
+    return NextResponse.json(
+      {
+        source: toSummary(data),
+        ...counts,
+        boiler: null,
+        warning: "Saved, but your boiler could not refresh right now. It will pick this source up on the next sync.",
+      },
+      { status: 201 },
+    );
   }
 }

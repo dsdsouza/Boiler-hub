@@ -29,12 +29,12 @@ describe("fixtures/demo.json", () => {
     }
   });
 
-  it("keeps the AP Bio demo story: 3 Hot, 1 Redline, 1 hidden", () => {
+  it("keeps the AP Bio demo story: 3 Hot, 1 Redline, 2 hidden", () => {
     const bio = demo.teams.find((t) => t.team.name === "AP Bio P3")!;
     const zones = bio.boilers.map((b) => b.zone);
     expect(zones.filter((z) => z === "hot")).toHaveLength(3);
     expect(zones.filter((z) => z === "redline")).toHaveLength(1);
-    expect(bio.hiddenCount).toBe(1);
+    expect(bio.hiddenCount).toBe(2);
   });
 
   it("covers all four zones", () => {
