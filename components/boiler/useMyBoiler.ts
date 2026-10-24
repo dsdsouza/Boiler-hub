@@ -63,14 +63,17 @@ export function useMyBoiler(source: DataSource = SOURCE) {
   const mutate = useCallback(
     async (local: (d: MyBoilerData) => MyBoilerData, remote?: () => Promise<BoilerResponse | null>) => {
       setData((d) => (d ? local(d) : d));
-      if (source === "fixture" || !remote) return;
+      if (source === "fixture" || !remote) return true;
       try {
         const fresh = await remote();
         if (fresh) setData(toMyBoilerData(fresh));
         setError(null);
+        return true;
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
         await load();
+        // Reload the server state to undo the optimistic change, then retain the failure message.
+        setError(e instanceof Error ? e.message : "Something went wrong");
+        return false;
       }
     },
     [source, load],

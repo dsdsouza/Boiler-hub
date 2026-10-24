@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
@@ -67,8 +68,15 @@ export function MyBoilerView({
 
   if (!data) {
     return (
-      <div role="status" className="py-24 text-center text-muted">
-        {error ? <span className="text-redline-ink">{error}</span> : "Lighting the boiler…"}
+      <div className="flex flex-col items-center gap-4 py-24 text-center text-muted">
+        {error ? (
+          <>
+            <p role="alert" className="m-0 text-redline-ink">{error}</p>
+            <Button aria-disabled={syncing} aria-busy={syncing} onClick={() => !syncing && void boiler.refresh()}>
+              {syncing ? "Retrying…" : "Try again"}
+            </Button>
+          </>
+        ) : <span role="status">Lighting the boiler…</span>}
       </div>
     );
   }
@@ -173,7 +181,7 @@ export function MyBoilerView({
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}
-            onAdd={(t) => void boiler.addTask(t)}
+            onAdd={(t) => boiler.addTask(t)}
             onSize={(id, size) => void boiler.setTaskSize(id, size)}
             onRemove={(id) => void boiler.removeTask(id)}
             onClearOverdue={() => void boiler.clearOverdue()}

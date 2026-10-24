@@ -6,8 +6,8 @@ export function SiteFooter() {
     <footer className="border-t border-line">
       <div className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 px-4 pt-7 pb-24 text-sm text-muted sm:px-8 sm:pb-7">
         <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
-          <Link href="/how">How it works</Link>
-          <Link href="/demo">Try the demo</Link>
+          <Link href="/how" className="inline-flex min-h-11 items-center">How it works</Link>
+          <Link href="/demo" className="inline-flex min-h-11 items-center">Try the demo</Link>
         </nav>
       </div>
     </footer>

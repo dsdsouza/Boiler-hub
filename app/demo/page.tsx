@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function DemoPage() {
   return (
     <div className="min-h-screen">
-      <div role="note" className="bg-brass text-sm font-semibold text-soot">
+      <aside aria-label="Demo mode" className="bg-brass text-sm font-semibold text-soot">
         <div className="mx-auto flex max-w-[1320px] flex-wrap justify-between gap-2 px-4 py-2.5 sm:px-8">
           <span>You are viewing demo data. Nothing you do here is saved.</span>
           {/* Route handler: plain anchor so Next does not prefetch it. */}
@@ -20,7 +20,7 @@ export default function DemoPage() {
             Sign in with Google to see your own boiler
           </a>
         </div>
-      </div>
+      </aside>
 
       <SiteHeader
         variant="marketing"
