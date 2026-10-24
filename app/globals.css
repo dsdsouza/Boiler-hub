@@ -299,6 +299,17 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
 .bp-field[aria-invalid="true"] { border-color: var(--redline-ink); }
 .bp-field:disabled { border-color: var(--line); opacity: 0.6; }
 
+.bp-task-form { container-type: inline-size; }
+.bp-task-fields { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 12px; }
+.bp-task-title, .bp-task-submit { grid-column: 1 / -1; }
+@container (min-width: 312px) {
+  .bp-task-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 680px) {
+  .bp-task-fields { grid-template-columns: minmax(0, 1fr) 160px 160px auto; }
+  .bp-task-title, .bp-task-submit { grid-column: auto; }
+}
+
 .bp-button {
   -webkit-tap-highlight-color: transparent;
   transition: background-color 100ms var(--ease-ui), border-color 100ms var(--ease-ui), color 100ms var(--ease-ui), opacity 100ms ease-out;

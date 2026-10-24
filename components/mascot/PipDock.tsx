@@ -15,9 +15,10 @@ import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
 // Pip in the corner of signed-in pages. Reads the caller's own stored snapshot
 // (owner-only RLS), so moving between pages never triggers a calendar fetch.
-// My Boiler and /demo have the full strip instead; onboarding has its own Pip.
+// My Boiler keeps chat in this dock alongside its hero and inline wardrobe.
+// The demo and onboarding provide their own Pip.
 
-const HIDE_ON = ["/boiler", "/demo", "/onboarding", "/mascot-preview", "/auth"];
+const HIDE_ON = ["/demo", "/onboarding", "/mascot-preview", "/auth"];
 
 type Load = { kind: "none" } | { kind: "ready"; snapshot: Snapshot | null };
 

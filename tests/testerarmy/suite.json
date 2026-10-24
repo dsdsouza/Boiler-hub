@@ -176,11 +176,11 @@
           "steps": [
             {
               "type": "act",
-              "title": "Open the homepage and follow How it works from the header."
+              "title": "Open the homepage and follow Help from the header."
             },
             {
               "type": "assert",
-              "title": "Verify the page shows The formula, Weights, Zones, and Our privacy promise."
+              "title": "Verify the page shows The formula, Weights, Zones, and Choose who sees your boiler."
             },
             {
               "type": "act",
@@ -188,7 +188,7 @@
             },
             {
               "type": "assert",
-              "title": "Verify the removed site-wide footer and Privacy link are absent. The privacy promise remains available in How it works."
+              "title": "Verify the removed site-wide footer and Privacy link are absent. The visibility options remain available under Choose who sees your boiler in Help."
             },
             {
               "type": "act",
@@ -637,7 +637,7 @@
             },
             {
               "type": "act",
-              "title": "Use the visible How it works navigation."
+              "title": "Use the visible Help navigation."
             },
             {
               "type": "assert",

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { AccountControls, getViewer } from "@/components/ui/Account";
+import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
+import { SiteHeader } from "@/components/ui/SiteHeader";
 import { VisibilityList } from "@/components/ui/VisibilityList";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONES, ZONE_DESCRIPTION, ZONE_RANGE } from "@/components/ui/zones";
@@ -24,8 +27,10 @@ import {
   WINDOW_DAYS,
 } from "@/lib/pressure/config";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
-  title: "How it works · Boilerplate",
+  title: "Help · Boilerplate",
   description: "The pressure formula, its weights, and what teams can and cannot see.",
 };
 
@@ -66,11 +71,22 @@ const SKIPPED = [
 
 const h2 = "m-0 font-display text-[40px] font-normal leading-none tracking-[0.02em] sm:text-[48px]";
 
-export default function HowPage() {
+export default async function HelpPage() {
+  const viewer = await getViewer();
+
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="app" current="how" />
-      <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-28 sm:px-8 sm:pb-20">
+      <SiteHeader
+        variant={viewer ? "app" : "marketing"}
+        current="how"
+        mobileNavigation="header"
+        account={viewer ? <AccountControls viewer={viewer} /> : (
+          <span className="hidden sm:inline-flex"><GoogleSignInButton href="/auth/signin?next=%2Fhow" size="md" /></span>
+        )}
+      />
+      {/* Match the landing page's streamed-content hydration boundary. */}
+      <Suspense fallback={null}>
+      <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-20 sm:px-8">
         <header className="flex flex-col gap-4">
           <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure tracks the work still ahead.</h1>
           <p className="m-0 max-w-[680px] text-[17px] leading-relaxed text-body">
@@ -164,23 +180,12 @@ export default function HowPage() {
 
         <section aria-labelledby="privacy" className="flex flex-col gap-5">
           <h2 id="privacy" className={h2}>
-            Our privacy promise
+            Choose who sees your boiler
           </h2>
-          <Card plate emphasis className="px-6 py-7 sm:px-8">
-            <p className="m-0 font-display text-[28px] leading-tight tracking-[0.02em] sm:text-[34px]">
-              We never store what is on your calendar. Teams see a number, a zone and your status, only if you choose. You can hide from any team at any
-              time.
-            </p>
-          </Card>
-          <p className="m-0 leading-relaxed text-body">
-            Events are read live from Google each time you sync and are never saved. Only your score, zone, category counts (such as “9 meetings, 3
-            deadlines”) and forecast are stored. The breakdown of which events add pressure is visible to you alone. Choose who sees your boiler, per
-            team:
-          </p>
           <VisibilityList />
         </section>
       </main>
-      <MobileTabBar current="how" />
+      </Suspense>
     </div>
   );
 }
