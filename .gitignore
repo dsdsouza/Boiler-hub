@@ -49,3 +49,5 @@ next-env.d.ts
 /blob-report/
 /all-blob-reports/
 /output/playwright/
+
+/qa-runs/

@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest';
+import { parseOptions, browserArgs, healthyStats, renderReport } from './army.mjs';
+import { summarizeTests } from './army-reporter.mjs';
+
+it('defaults to an isolated local run with two workers', () => {
+  expect(parseOptions([])).toMatchObject({ workers: 2, repeat: 1, accounts: false, url: null });
+});
+it('supports explicit parallel repetitions and the trusted live account bank', () => {
+  expect(parseOptions(['--workers=8', '--repeat', '3', '--url', 'https://boilerhub.work/', '--accounts']))
+    .toMatchObject({ workers: 8, repeat: 3, url: 'https://boilerhub.work', accounts: true });
+});
+it.each([
+  ['--workers', '0'], ['--workers', '17'], ['--workers', 'NaN'], ['--repeat', '0'], ['--repeat', '101'],
+  ['--url'], ['--url', 'file:///tmp/test'], ['--url', 'https://user:password@example.com'],
+  ['--url', 'https://example.com?key=private'], ['--url', 'https://example.com/path'], ['--unknown'],
+  ['--quick=true'], ['--accounts'], ['--accounts', '--url', 'https://other.vercel.app'],
+  ['--accounts', '--url', 'https://boilerhub.work', '--ui'],
+])('rejects unsafe or invalid options %j', (...argv) => { expect(() => parseOptions(argv)).toThrow(); });
+it('runs the requested instances and keeps authenticated evidence private', () => {
+  const options = parseOptions(['--workers', '16', '--repeat', '2', '--url', 'https://boilerhub.work', '--accounts']);
+  const pub = browserArgs(options, '/tmp/qa-run');
+  expect(pub).toContain('--workers=16');
+  expect(pub).toContain('--repeat-each=2');
+  expect(pub).toContain('--retries=0');
+  const auth = browserArgs(options, '/tmp/qa-run', true);
+  expect(auth).toContain('--workers=4');
+  expect(auth.find((arg: string) => arg.startsWith('--reporter='))).not.toContain('html');
+});
+it('keeps the interactive dashboard bound to localhost', () => {
+  expect(browserArgs(parseOptions(['--ui']), '/tmp/run')).toContain('--ui-host=127.0.0.1');
+});
+
+const fake = (outcome: string, expectedStatus = 'passed') => ({ outcome: () => outcome, expectedStatus,
+  titlePath: () => ['synthetic test'], location: { file: 'fixture.spec.ts', line: 1 },
+  results: [{ errors: [{ message: 'not-for-private-report' }] }] });
+describe('honest run outcomes', () => {
+  it('does not count flaky, skipped or quarantined cases as passes', () => {
+    const result = summarizeTests([fake('expected'), fake('unexpected'), fake('flaky'), fake('skipped'), fake('expected', 'failed')]);
+    expect(result).toMatchObject({ total: 5, passed: 1, failed: 2, flaky: 1, skipped: 1 });
+    expect(healthyStats(result)).toBe(false);
+    expect(healthyStats(summarizeTests([]))).toBe(false);
+    expect(healthyStats(summarizeTests([fake('expected')]))).toBe(true);
+  });
+  it('never copies authenticated failure contents into an artifact', () => {
+    const result = summarizeTests([fake('unexpected')], true);
+    expect(result.failed).toBe(1);
+    expect(result.failures).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain('not-for-private-report');
+  });
+  it('escapes report text from targets and failure messages', () => {
+    const report = renderReport({ status: 'failed', workers: 2, repeat: 1, target: '<img onerror=bad>',
+      commit: 'fixture', startedAt: 'fixture', error: '<script>bad</script>', quick: false,
+      stages: [{ name: 'Browser checks', status: 'failed', stats: { total: 1, passed: 0, failed: 1, failures: [{ title: 'bad <title>', error: '<script>bad</script>' }] } }] });
+    expect(report).toContain('&lt;script&gt;');
+    expect(report).not.toContain('<script>');
+    expect(report).not.toContain('<img onerror');
+  });
+});

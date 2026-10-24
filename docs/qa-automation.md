@@ -2,6 +2,37 @@
 
 The automated suite covers the public site, seeded demo, signed-out route/API boundaries, and the shipped PostgreSQL row-level security policies. Authenticated deployment checks are a separate, explicit command. A public-demo pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
 
+## Local QA army
+
+TesterArmy is optional. The repository can run its browser instances on this computer with no TesterArmy account or run quota:
+
+```sh
+pnpm qa:army
+```
+
+This runs type checks, lint, unit/database contracts, a production build, and all six browser configurations. It picks an unused local port and uses synthetic demo data; the SQL contracts run in ephemeral PostgreSQL. It writes a separate dashboard and browser evidence to `qa-runs/<run>/index.html`. Each run reports failures, skips and flaky cases explicitly and exits unsuccessfully if any occur. Nothing is installed or purchased by this command.
+
+```sh
+pnpm qa:army --quick                    # Desktop Chromium only
+pnpm qa:army --workers 4 --repeat 3      # Repeat every browser case three times
+pnpm qa:ui                              # Select and watch public/demo tests interactively
+pnpm qa:army --plan                     # Preview the selected work without starting it
+```
+
+On this Mac, double-click `Open QA Dashboard.command` in the QA checkout to open the interactive dashboard.
+
+Two workers are the default for this laptop. `--workers` supports 1 to 16, and `--repeat` supports 1 to 100; higher concurrency needs more memory and may be slower on a busy computer. One runner owns the local build at a time; its workers are the parallel instances. Ctrl+C stops its child processes and marks the run interrupted. The interactive dashboard binds to localhost; it does not expose a control server to the network. Quick mode skips the separate unit/lint/type stages, while the production build still performs its standard checks.
+
+To run locally controlled browsers against the deployed app, including all 32 existing synthetic accounts:
+
+```sh
+pnpm qa:army --url https://boilerhub.work --accounts
+```
+
+This mode uses the private `.qa/credentials-regression.json` bank and `.env.qa.local` already provisioned on this computer. It refreshes sessions through the existing account helper and caps account workers at four. Account checks are restricted to the verified app origin to avoid sending session cookies to another host. They use the live Supabase project, and opening a boiler performs its normal snapshot sync. Account failure contents, browser states, traces, videos and screenshots are excluded from the generated report. No new accounts or calendar grants are created.
+
+This replaces the browser execution, parallel runs, repetition and reporting parts of TesterArmy. The scenarios are scripted: discovering new journeys still requires exploration and adding cases. `tests/e2e` holds the browser scenarios, and the historical cloud suite remains in `tests/testerarmy/suite.json`. Ordinary local runs don't contact TesterArmy or require an AI API key.
+
 ## Run locally
 
 Use Node 24 and pnpm 11.25.0.
@@ -14,7 +45,8 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 28 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (168 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
+There are 43 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (258 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
+
 
 The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
@@ -70,9 +102,10 @@ The current 32-account bank and browser states were provisioned and verified in 
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 186 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
+`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 258 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
 
-The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the single required status check for `main`. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.
+
+The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the check intended for required-status enforcement on `main`; the owner will enable that setting separately. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.
 
 GitHub must also enforce this check in repository settings. After the first successful staging run, a repository administrator can run `pnpm qa:protect-main` while authenticated through `gh`. The script verifies admin permission, finds the successful Actions check, pins its GitHub App, and requires an up-to-date PR plus **QA gate**, including for administrators. Force pushes and branch deletion are disabled. A workflow file alone cannot prevent merging; verify the server-side protection separately. The script intentionally changes only this repository's `main` branch.
 
@@ -95,11 +128,11 @@ The manual `TesterArmy cloud regression` workflow is ready to queue a saved grou
 | QA-003 | Migration 0005 restricts the hidden-count RPC to leads and suppresses counts below two in SQL itself. | All 32 SQL identities, positive lead aggregates, outsiders, direct RPCs and legacy SQL contract |
 | QA-004 | The newer staging model already removes completion credit. Completed-task resizing preserves other work, and reopening uses the new size. | Normal demo lifecycle regression |
 | QA-005 | Manual and team task dates require ISO date-times with explicit timezones and real calendar dates. Numeric, ambiguous, impossible and timezone-free inputs are rejected. | `tests/contracts/task-dates.test.ts` |
-| QA-006 | Migration 0006 posts the draft, recipient tasks and snapshots in one transaction. A failed snapshot update leaves no partial post; retry succeeds once. Stale snapshots or changed membership roll back instead of overwriting newer work. | Real helper calling migrated PostgreSQL, injected trigger failure, duplicate retry, hidden/never-synced recipients, service-role and client authorization |
+| QA-006 | Migrations 0006 and 0007 post the draft, recipient tasks and snapshots in one transaction with revision checks and bounded conflict retries. A failed snapshot update leaves no partial post; retry succeeds once. Stale snapshots or changed membership roll back instead of overwriting newer work. | Real helper calling migrated PostgreSQL, injected trigger failure, duplicate retry, hidden/never-synced recipients, service-role and client authorization |
 | Stale Privacy check | Public asset smoke covers the current routes and separately requires `/privacy` to return 404. | All six browser configurations |
 | QA-007 (historic rollout) | Prior live loads briefly referenced missing assets; no infrastructure cause was established. Asset and runtime checks remain in the blocking browser suite. | Sanitized historic evidence: `tests/evidence/deployment-assets-20261024.json` |
 
-Migrations 0005 and 0006 must be applied through the Supabase SQL editor before deploying the new assignment API, per `CLAUDE.md`. They preserve existing tables, event privacy, recipient freshness and forecasts. They prevent new partial posts; recipients of any historic interrupted post reconcile through their normal sync.
+Migrations 0005, 0006 and 0007 must be applied through the Supabase SQL editor before deploying the new assignment API, per `CLAUDE.md`. They preserve existing tables, event privacy, recipient freshness and forecasts. They prevent new partial posts; recipients of any historic interrupted post reconcile through their normal sync.
 
 Two earlier cloud findings were not substantiated: the completion report compared nonlinear displayed score points with raw pressure points, and the recurring-event report treated a rolling seven-day forecast change as a series leak. Neither is counted as a confirmed defect here. A reduced-motion development hydration warning was also observed; the stylesheet includes a reduced-motion fallback, so it is a diagnostic observation rather than a claimed animation failure.
 

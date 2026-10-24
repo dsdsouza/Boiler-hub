@@ -42,3 +42,25 @@ test('QA-007 persistent missing assets show a retry without a reload loop', asyn
   await expect(page.getByRole('link', { name: 'Reload Boilerplate', exact: true })).toBeVisible();
   expect(documents).toBe(2);
 });
+
+test('cancelled asset requests do not reload a healthy page', async ({ page }) => {
+  let probes = 0;
+  let documents = 0;
+  page.on('request', (request) => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
+  await page.route('**/_next/static/qa-cancelled.js', (route) => {
+    if (route.request().method() === 'HEAD') { probes++; return route.fulfill({ status: 200, body: '' }); }
+    return route.abort('aborted');
+  });
+  await page.goto('/');
+  await expect(page.getByRole('slider')).toBeEnabled();
+  await page.evaluate(() => {
+    const script = document.createElement('script');
+    script.src = '/_next/static/qa-cancelled.js';
+    document.head.append(script);
+  });
+  await expect.poll(() => probes).toBe(1);
+  await page.goto('/demo');
+  await expect(page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img')).toBeVisible();
+  expect(documents).toBe(2);
+  expect(page.url()).not.toContain('__boiler_reload');
+});
