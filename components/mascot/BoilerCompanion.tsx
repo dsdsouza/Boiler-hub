@@ -12,12 +12,12 @@ import { PipWardrobe } from "./PipWardrobe";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
-// What Pip says on My Boiler. Composed beside MyBoilerView by the page; actions jump to its
+// What Pip says inside MyBoilerView; actions jump to its
 // existing headings. No avatar here: the big Pip hero on the page is the one speaking.
 
 const VENT_MESSAGE_MS = 8000;
 
-/** Breakdown renders one copy per breakpoint; focus the visible copy. */
+/** Focus the rendered section after following Pip’s suggestion. */
 const TARGET_SELECTOR: Record<CompanionTarget, string> = { forecast: "#fc", breakdown: '[data-boiler-section="breakdown"] h2' };
 
 function jumpTo(target: CompanionTarget) {
@@ -74,7 +74,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
         <button
           type="button"
           onClick={() => setHide(false)}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
+          className="bp-button inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
         >
           <Mascot score={result.score} size={24} accessory={accessory} />
           Show {MASCOT_NAME}
@@ -85,7 +85,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
 
   return (
     <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-4 sm:pl-5">
-      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+      <div className="grid min-w-0 flex-1 gap-x-6 gap-y-1.5 py-0.5 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
           {MASCOT_NAME} <span className="text-muted">· {ZONE_LABEL[result.zone]} {result.score}</span>
         </div>
@@ -93,12 +93,12 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           <p className="m-0 text-base leading-snug font-semibold text-fg">{message.headline}</p>
           <p className="m-0 mt-0.5 text-sm leading-normal text-body">{message.body}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:items-center">
           {message.action && (
             <button
               type="button"
               onClick={() => jumpTo(message.action!.target)}
-              className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass"
+              className="bp-button inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass"
             >
               {message.action.label}
             </button>
@@ -108,14 +108,14 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
             ref={wardrobeButton}
             onClick={() => setDressing((d) => !d)}
             aria-expanded={dressing}
-            className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
+            className="bp-button inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
           >
             Dress up
           </button>
         </div>
         {dressing && (
           <div
-            className="mt-1 max-w-[360px] border-t border-line pt-3"
+            className="col-span-full mt-1 max-w-[360px] border-t border-line pt-3"
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 e.stopPropagation();

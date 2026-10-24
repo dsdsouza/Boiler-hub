@@ -28,7 +28,7 @@ function dueFor(choice: DueChoice, now = new Date()) {
 }
 
 const field =
-  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
+  "bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 
 export function TaskList({
   items,
@@ -129,7 +129,7 @@ export function TaskList({
     const stale = !done && isStaleOverdue(t.due, now);
     const removable = stale && t.source === "manual" && !!onRemove;
     return (
-      <li key={t.id} className="flex items-center gap-3.5 border-t border-line py-2.5">
+      <li key={t.id} className="flex items-center gap-3 border-t border-line py-3">
         <button
           type="button"
           ref={(el) => {
@@ -148,12 +148,12 @@ export function TaskList({
           }}
           disabled={!!m?.completedInSource}
           aria-label={`${m?.completedInSource ? "Completed in source" : done ? "Mark not done" : "Complete"}: ${t.title}`}
-          className={`flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 ${
-            done ? "border-zone-cool bg-zone-cool disabled:cursor-default" : "border-rivet bg-transparent hover:border-brass"
+          className={`bp-control flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 ${
+            done ? "border-zone-cool bg-zone-cool text-soot disabled:cursor-default" : "border-control bg-transparent hover:border-brass"
           }`}
         >
           {done && (
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#15120E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12l5 5 9-10" />
             </svg>
           )}
@@ -196,13 +196,14 @@ export function TaskList({
             )}
           </div>
         </div>
-        {!compact &&
-          (sizeEditable ? (
+        <div className="flex shrink-0 flex-col items-end justify-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+          {!compact &&
+            (sizeEditable ? (
             <select
               aria-label={`Size: ${t.title}`}
               value={sizeDraft[t.id] ?? t.size}
               onChange={(e) => changeSize(t.id, e.target.value as Size)}
-              className="min-h-11 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-base font-bold text-body hover:border-brass"
+              className="bp-field min-h-11 w-12 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-base font-bold text-body hover:border-brass"
             >
               {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
                 <option key={s} value={s}>
@@ -216,11 +217,12 @@ export function TaskList({
               {t.size}
             </span>
           ))}
-        {pts !== undefined && (
-          <span className={`min-w-12 text-right font-mono text-sm font-bold ${pts < 0 ? "text-cool-ink" : "text-brass-ink"}`}>
-            {formatPoints(pts)}
-          </span>
-        )}
+          {pts !== undefined && (
+            <span className={`min-w-0 text-right font-mono text-[13px] sm:min-w-12 sm:text-sm font-bold ${pts < 0 ? "text-cool-ink" : "text-brass-ink"}`}>
+              {formatPoints(pts)}
+            </span>
+          )}
+        </div>
       </li>
     );
   };
@@ -228,7 +230,7 @@ export function TaskList({
   return (
     <Card as="section" aria-labelledby="tasks" className={`px-5 py-6 sm:px-7 ${className}`}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <CardTitle id="tasks">Tasks</CardTitle>
+        <div className="flex items-center gap-3"><CardTitle id="tasks">Tasks</CardTitle><span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-muted tabular-nums">{openTasks.length} open</span></div>
         {sourcesHref && (
           <Link href={sourcesHref} className="text-[13px] font-medium">
             {Object.keys(meta).length > 0 ? "Manage sources" : "Connect coursework or GitHub"}

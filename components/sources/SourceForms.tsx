@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { Feedback } from "@/components/ui/Feedback";
 import { Button } from "@/components/ui/Button";
 import { defaultFeedLabel, isAppleCalendarUrl, isCourseworkUrl } from "@/lib/sources/hints";
 import { foundLine, sourcesCall, type AddedSource } from "./api";
 
 export const fieldClass =
-  "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
+  "bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 const labelClass = "text-[13px] font-medium text-body";
 
 /** Paste an ICS link (Apple Calendar, coursework, or another feed). Shared with onboarding. */
@@ -20,6 +21,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
 }) {
   const [provider, setProvider] = useState<CalendarProvider>(initialProvider);
   const [url, setUrl] = useState("");
+  const urlField = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState("");
   // Follows the URL (on for Brightspace and Canvas) until the user sets it.
   const [coursework, setCoursework] = useState<boolean | null>(null);
@@ -53,6 +55,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
       setLabel("");
       setCoursework(null);
       onAdded?.(r);
+      urlField.current?.focus();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -89,11 +92,12 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             {isApple ? "iCloud public calendar link" : isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}
           </label>
           <input
+            ref={urlField}
             id={`${idPrefix}-url`}
             type="url"
             inputMode="url"
             required
-            disabled={busy}
+            readOnly={busy}
             maxLength={2048}
             autoComplete="off"
             spellCheck={false}
@@ -119,7 +123,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             <input
               id={`${idPrefix}-label`}
               maxLength={60}
-              disabled={busy}
+              readOnly={busy}
               placeholder={isApple ? "Apple Calendar" : url ? defaultFeedLabel(url) : "Brightspace"}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -138,13 +142,10 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
           </label>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" disabled={busy || !url.trim()} aria-busy={busy}>
+          <Button type="submit" variant="primary" disabled={!url.trim()} aria-disabled={busy || !url.trim()} aria-busy={busy}>
             {busy ? "Checking the feed…" : isApple ? "Connect Apple Calendar" : isBrightspace ? "Import schedule" : "Add feed"}
           </Button>
-          <p aria-live="polite" className="m-0 text-sm">
-            {done && <span className="text-cool-ink">{done}</span>}
-            {error && <span id={`${idPrefix}-error`} className="text-redline-ink">{error}</span>}
-          </p>
+          <Feedback message={error ?? done} tone={error ? "error" : "success"} id={error ? `${idPrefix}-error` : undefined} />
         </div>
       </form>
 
@@ -174,7 +175,9 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
 
 function BrightspaceHelp() {
   return (
-    <div className="text-sm text-body">
+    <details className="rounded-[10px] border border-line px-3 text-sm text-body">
+      <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">Find your Brightspace link</summary>
+      <div className="pb-3">
       <ol className="mt-0 mb-3 list-decimal space-y-1.5 pl-5">
         <li>In Brightspace, open <strong>Calendar → Settings</strong>.</li>
         <li>Turn on <strong>Enable Calendar Feeds</strong> and save.</li>
@@ -183,7 +186,8 @@ function BrightspaceHelp() {
       <p className="mt-0 mb-2">Classes on that calendar appear in your schedule; assignment deadlines appear in Tasks. Refresh My Boiler to pick up changes.</p>
       <p className="mt-0 mb-2 text-muted">Missing class times? Brightspace only includes events posted there. For Purdue’s official timetable, check myPurdue → Academic Profile → Student Profile → My Courses. You can also connect a timetable calendar feed below.</p>
       <a href="https://community.d2l.com/brightspace/kb/articles/18042-manage-course-events-with-the-calendar-tool" target="_blank" rel="noreferrer" className="underline underline-offset-2">Brightspace’s calendar guide</a>
-    </div>
+      </div>
+    </details>
   );
 }
 
@@ -219,12 +223,14 @@ const TOKEN_DOCS_URL =
 /** Paste a read-only GitHub personal access token. Used on /settings/sources and in onboarding. */
 export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: AddedSource) => void; idPrefix?: string }) {
   const [token, setToken] = useState("");
+  const tokenField = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     setDone(null);
@@ -233,6 +239,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
       setDone(`GitHub connected. Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}.${r.warning ? ` ${r.warning}` : ""}`);
       setToken("");
       onAdded?.(r);
+      tokenField.current?.focus();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -242,7 +249,9 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-sm text-body">
+      <details className="rounded-[10px] border border-line px-3 text-sm text-body">
+        <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">Create a read-only GitHub token</summary>
+        <div className="pb-3">
         <p className="mt-0 mb-2">
           Create a{" "}
           <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
@@ -272,15 +281,18 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
             How tokens work
           </a>
         </p>
-      </div>
+        </div>
+      </details>
       <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
           <label htmlFor={`${idPrefix}-token`} className={labelClass}>
             Personal access token
           </label>
           <input
+            ref={tokenField}
             id={`${idPrefix}-token`}
             type="password"
+            readOnly={busy}
             required
             autoComplete="off"
             spellCheck={false}
@@ -290,15 +302,12 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
             className={`${fieldClass} font-mono text-base`}
           />
         </div>
-        <Button type="submit" variant="primary" disabled={busy || !token.trim()}>
+        <Button type="submit" variant="primary" disabled={!token.trim()} aria-disabled={busy || !token.trim()} aria-busy={busy}>
           {busy ? "Checking…" : "Connect GitHub"}
         </Button>
       </form>
       <p className="-mt-2 mb-0 text-xs text-muted">Stored encrypted and never shown again. Revoke it on GitHub any time.</p>
-      <p aria-live="polite" className="m-0 text-sm">
-        {done && <span className="text-cool-ink">{done}</span>}
-        {error && <span className="text-redline-ink">{error}</span>}
-      </p>
+      <Feedback message={error ?? done} tone={error ? "error" : "success"} />
     </div>
   );
 }

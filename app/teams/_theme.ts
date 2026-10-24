@@ -12,6 +12,7 @@ export const C = {
   surface2: "var(--surface-2)",
   line: "var(--line)",
   rivet: "var(--rivet)",
+  control: "var(--control)",
   muted: "var(--muted)",
   text2: "var(--text-2)",
   text: "var(--text)",
