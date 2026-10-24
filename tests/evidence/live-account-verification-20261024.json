@@ -1,0 +1,21 @@
+{
+  "observedAtUTC": "2026-10-24",
+  "target": "https://boilerhub.work",
+  "namespace": "regression",
+  "syntheticUsersCreated": 32,
+  "qaTeamsCreated": 2,
+  "syntheticTasksCreated": 96,
+  "passwordSignInsPassed": 32,
+  "ownerProfileAndTaskChecksPassed": 32,
+  "teamVisibilityChecksPassed": 32,
+  "authenticatedBrowserSmokeTestsPassed": 32,
+  "knownPrivacyFinding": {
+    "id": "QA-003",
+    "nonLeadRpcExposures": 27,
+    "ordinaryMemberEngineRoomHiddenCount": 11,
+    "ordinaryMemberTeamListHiddenCount": 11,
+    "expectedNonLeadCount": 0
+  },
+  "googleAccountsOrCalendarGrantsCreated": 0,
+  "credentials": "Private local bank and encrypted GitHub repository secrets; no passwords or tokens in this evidence file."
+}

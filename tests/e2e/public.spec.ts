@@ -53,3 +53,20 @@ test('sign-in return path cannot point at another site', async ({ page }) => {
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) expect(href).toBe('/auth/signin?next=%2Fonboarding');
 });
+
+test('public routes load their assets without missing chunks or runtime errors', async ({ page }) => {
+  const failures: { path: string; status: number }[] = [];
+  const errors: string[] = [];
+  page.on('response', (response) => {
+    const path = new URL(response.url()).pathname;
+    if (path.startsWith('/_next/static/') && response.status() >= 400) failures.push({ path, status: response.status() });
+  });
+  page.on('pageerror', (error) => errors.push(error.message));
+  for (const path of ['/', '/demo', '/how']) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(200);
+    await expect(page.getByRole('main')).toBeVisible();
+  }
+  expect(failures, 'HTML must reference assets available on the same deployment').toEqual([]);
+  expect(errors).toEqual([]);
+});

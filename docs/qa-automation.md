@@ -14,9 +14,9 @@ pnpm test:e2e
 pnpm exec playwright show-report
 ```
 
-There are 27 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (162 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads.
+There are 28 public/demo scenarios across six configurations: Chromium, Firefox, WebKit, 390px mobile Chromium, 768px tablet Chromium, and 320px narrow Chromium (168 cases). Each case gets an isolated browser context. Local execution uses four workers; GitHub uses three shards with two workers each. These are desktop engines and viewport emulation, not real phones or iPads. The asset check covers the homepage, demo and formula pages, including failed Next.js chunks/styles and runtime exceptions.
 
-The default command starts its own local server on port 3100. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
+The default command starts its own local server on port 3100; set `PLAYWRIGHT_PORT=3117` (or another free port) to run alongside another checkout. It refuses to reuse an unrelated running server. The placeholder Supabase URL/key support signed-out checks only; they do not access a real database. To check a production build, build with the same public environment values and set `PLAYWRIGHT_PRODUCTION=1`. To test an existing deployment without starting a server:
 
 ```sh
 PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm test:e2e
@@ -57,11 +57,25 @@ PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_STORAGE_STATE=.qa/auth/class-lead-
 pnpm exec playwright open --load-storage=.qa/auth/class-lead-01.json https://boilerhub.work/boiler
 ```
 
-Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `outsider`; the plan lists all 32. Session generation verifies the authenticated user ID and saves real Supabase SSR cookies privately. Run it with the same target host used by the browser. The separate authenticated smoke test reads the user's teams and opens their boiler; opening a boiler performs the app's normal sync. It has no traces/video/screenshots enabled by default. Authenticated provisioning and smoke tests have **not** been run unless the execution record explicitly says so.
+Other keys include `class-member-03`, `work-lead-01`, `work-member-03`, and `outsider`; the plan lists all 32. Session generation verifies the authenticated user ID and saves real Supabase SSR cookies privately. Run it with the same target host used by the browser. The separate authenticated smoke test checks each user's team membership and visible teammate IDs, then opens their boiler and teams; opening a boiler performs the app's normal sync. It has no traces/video/screenshots enabled by default.
+
+To regenerate and test every account together:
+
+```sh
+PLAYWRIGHT_BASE_URL=https://boilerhub.work pnpm qa:session --all
+PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json QA_AUTH_WORKERS=4 pnpm test:e2e:auth
+PLAYWRIGHT_BASE_URL=https://boilerhub.work QA_ACCOUNT_BANK=.qa/credentials-regression.json pnpm test:e2e:auth:known --project=class-member-03
+```
+
+The current 32-account bank and browser states were provisioned and verified in the live project, and copied into the primary local checkout's ignored `.qa` directory. The local `.env.qa.local` contains only the public project URL/anon key for future session refreshes. The temporary admin-key copy was removed after provisioning.
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 162 regular browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. The `known-issues` job is deliberately nonblocking and uploads red assertions as evidence. A green overall workflow does not mean these defects are fixed.
+`Boilerplate QA` runs on main pushes, pull requests and manual dispatch. It checks types, lint, unit/database contracts and all 168 regular browser cases. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots. The `known-issues` job is deliberately nonblocking and uploads red assertions as evidence. A green overall workflow does not mean these defects are fixed.
+
+`Authenticated QA` is a separate manual workflow against `https://boilerhub.work`. It checks out trusted main, prepares private sessions, and verifies all 32 live QA identities with four workers. `QA_ACCOUNT_BANK_JSON` and `QA_SUPABASE_ANON_KEY` are encrypted repository secrets; no Supabase admin key is used by this workflow. It also reproduces the known aggregate-count defect in a nonblocking step. It uploads no authenticated traces, screenshots, sessions or password files and removes `.qa` before finishing. Fork pull requests never receive these credentials.
+
+Open [GitHub Actions](https://github.com/dsdsouza/Boiler-hub/actions) to run either workflow and inspect the exact results for the selected commit.
 
 Vitest uses `it.fails` for the database/date/recovery defects below. Its summary reports them as **expected fail**, separate from passed tests; an unexpected pass makes that contract fail so the quarantine must be removed when the product is fixed. Browser defects use `@known-issue` and are excluded from the regular gate. Run them explicitly with:
 
@@ -81,15 +95,22 @@ The manual `TesterArmy cloud regression` workflow is ready to queue a saved grou
 | --- | --- | --- |
 | QA-001 | In `/demo`, change Maya's personal status to Away and save a note, then inspect Maya in Product Squad: the team card keeps the original status/note. | Browser assertion in `known-issues.spec.ts`; demo state synchronization only. No evidence that live accounts share the defect. |
 | QA-002 | The task form offers Today, Tomorrow, In 3 days and In a week, with no undated choice, although the API accepts null and formula documentation describes undated tasks. | Browser assertion; UI capability gap. The original cloud task run substituted Tomorrow and its pass does not cover this requirement. |
-| QA-003 | An authenticated member can call `team_hidden_count` directly and get a count; a lead can get an exact count of one. The PRD reserves anonymous aggregates for leads and suppresses counts below two. | Two expected failures against the shipped SQL function and grants. The API's safer presentation does not protect the direct Supabase RPC. Production schema deployment was not inspected. A repair needs a new migration, applied by a human per repository policy. |
+| QA-003 | An authenticated member can call `team_hidden_count` directly and get a count; a lead can get an exact count of one. The Engine Room and team-list APIs also return hidden counts to non-leads. The PRD reserves anonymous aggregates for leads and suppresses counts below two. | Two expected failures against the shipped SQL function/grants; live RPC checks confirmed exposure for all 27 QA members. The authenticated HTTP regression also reproduces a positive count for an ordinary member. SQL repair needs a new migration, applied by a human per repository policy; the API role restriction also needs repair. |
 | QA-004 — resolved | Completed tasks now add no load or negative credit. Resizing a completed task leaves other assignments unchanged. | Promoted to the normal demo regression suite with the completed-task review disclosure. |
 | QA-005 | `parseDue('1')` becomes January 2001 and `parseDue('01/02/2030')` is accepted with a locale-ambiguous interpretation despite the API promising an ISO date-time. | Two expected-failure date contract tests. Wrong-date risk, not a demonstrated security exploit. |
 | QA-006 | When recipient tasks save but the following snapshot write fails, retrying the same assignment draft finds the duplicate and returns without repairing scores. | Fault-injection contract test calls the real `createAssignment` helper twice. No production outage is claimed; this demonstrates the recovery path. |
+| QA-007 | During a live rollout, a homepage load referenced seven missing CSS/JavaScript assets. The slider reached 69 while the gauge remained at 62 because the client code did not load. | Live run: 161/162 passed, one failed. The trace contains seven HTTP 404 responses; the same case passed 3/3 immediately afterward. This was an observed transient deployment asset mismatch; its infrastructure cause is unconfirmed. Sanitized evidence is in `tests/evidence/deployment-assets-20261024.json`. |
 
 Two earlier cloud findings were not substantiated: the completion report compared nonlinear displayed score points with raw pressure points, and the recurring-event report treated a rolling seven-day forecast change as a series leak. Neither is counted as a confirmed defect here. A reduced-motion development hydration warning was also observed; the stylesheet includes a reduced-motion fallback, so it is a diagnostic observation rather than a claimed animation failure.
 
-Still unverified without real project access: live account creation, Google OAuth/calendar refresh and revocation, real recurring event isolation, authenticated API authorization end-to-end, and the cloud webhook. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control.
+Still unverified: Google OAuth/calendar refresh and revocation, real recurring event isolation, and the cloud webhook. The synthetic password accounts have no Google calendar grants. Keep service credentials, QA passwords and browser states out of GitHub artifacts and source control; the dedicated encrypted repository secrets hold only synthetic user credentials and the public project key.
 
 ## Execution record
 
 On 2026-10-24, against main baseline `c635a3c`: the production build, type check and lint passed; Vitest reported 178 passed and five expected failures; all 162 regular browser cases passed with zero retries, skips or flaky cases. The three browser defects above were reproduced separately with failing assertions and saved screenshots/traces. Thirty-two SQL identities were created in the ephemeral database; no live Supabase users were provisioned. The repository had no Supabase credentials, no accessible connected Supabase project, and no TesterArmy webhook secret.
+
+After pushing `d0e5145`, the live deployment run passed 161/162 cases and exposed QA-007. The failed gauge boundary passed three sequential rechecks after the rollout. An additional asset-health scenario was then added and passed across all six configurations against the production build, bringing the regular suite to 168 cases. Treat the rollout failure as a real captured deployment problem, not an additional successful run.
+
+Subsequently, the existing signed-in Supabase dashboard provided access to the project confirmed by the app's sign-in redirect. Thirty-two real Auth users, two teams and 96 synthetic tasks were created. All 32 password sign-ins, owner-only profile/task reads, and cross-team/visibility RPC checks passed; all 27 non-lead members reproduced QA-003. All 32 authenticated browser smoke tests passed. The original authenticated run deliberately included the privacy assertion and reported 27 failures/5 passes; the privacy contract now has its own explicit known-issue command.
+
+The setup then incorporated main's calendar/interface merge `36fd888`. The production build passed and the unit/database suite expanded to 229 passed plus five expected failures, including the calendar-subscription SQL contract. A WebKit asset check exposed a local test-origin mismatch (127.0.0.1 versus localhost); the server and browser origins were aligned, and all six asset checks passed afterward. The refreshed full browser suite has 168 cases; GitHub reports the complete results for each subsequent commit. The live HTTP privacy recheck returned hidden counts `[11, 11]` from Engine Room/team-list endpoints for `class-member-03`, where the contract expects `[0, 0]`.
