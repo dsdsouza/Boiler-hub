@@ -13,7 +13,7 @@ export default function DemoPage() {
     <div className="min-h-screen">
       <aside aria-label="Demo mode" className="bg-brass text-sm font-semibold text-soot">
         <div className="mx-auto flex max-w-[1320px] flex-wrap justify-between gap-2 px-4 py-2.5 sm:px-8">
-          <span>You are viewing demo data. Nothing you do here is saved.</span>
+          <span>You are viewing demo data. Task changes reset on reload. Focus commitments stay in your browser extension.</span>
           {/* Route handler: plain anchor so Next does not prefetch it. */}
           <a href="/auth/signin?next=/boiler" className="text-soot underline hover:text-soot">
             Sign in with Google to see your own boiler

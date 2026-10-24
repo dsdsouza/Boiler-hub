@@ -19,7 +19,7 @@ test('tab navigation keeps the owner boiler ready and Refresh still fetches fres
   await page.goto('/boiler');
   const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
   await expect(gauge).toBeVisible();
-  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['How it works', '/how'], ['My Boiler', '/boiler']]) {
+  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how'], ['My Boiler', '/boiler']]) {
     await page.getByRole('banner').getByRole('link', { name, exact: true }).click();
     await page.waitForURL(url => url.pathname === path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -86,7 +86,7 @@ test('a task save finishing after navigation reaches the returning boiler', asyn
     await tasks.getByRole('combobox', { name: 'Due', exact: true }).selectOption('none');
     await tasks.getByRole('button', { name: 'Add task', exact: true }).click();
     await expect.poll(() => saving).toBe(true);
-    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/how');
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
@@ -115,7 +115,7 @@ test('a status save finishing after navigation reaches the returning boiler', as
     const status = page.getByRole('button', { name: label, exact: true });
     await status.click();
     await expect.poll(() => saving).toBe(true);
-    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/how');
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
@@ -259,21 +259,27 @@ test('a confirmed subscription recovers from a failed request without creating e
 });
 
 
-test('signed-in home keeps app navigation at the top across screen sizes', async ({ page }) => {
-  for (const width of [320, 390, 768, 1280]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
-    const header = page.getByRole('banner');
-    const nav = header.getByRole('navigation', { name: 'Main', exact: true });
-    await expect(nav).toHaveCount(1);
-    for (const [name, href] of [['My Boiler', '/boiler'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['How it works', '/how']]) {
-      const link = nav.getByRole('link', { name, exact: true });
-      await expect(link).toBeVisible();
-      await expect(link).toHaveAttribute('href', href);
+test('signed-in home and Help keep the account and app navigation across screen sizes', async ({ page }) => {
+  for (const path of ['/', '/how']) {
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      const header = page.getByRole('banner');
+      const nav = header.getByRole('navigation', { name: 'Main', exact: true });
+      await expect(nav).toHaveCount(1);
+      for (const [name, href] of [['My Boiler', '/boiler'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how']]) {
+        const link = nav.getByRole('link', { name, exact: true });
+        await expect(link).toBeVisible();
+        await expect(link).toHaveAttribute('href', href);
+      }
+      if (path === '/how') {
+        await expect(nav.getByRole('link', { name: 'Help', exact: true })).toHaveAttribute('aria-current', 'page');
+      }
+      await expect(header.getByRole('img', { name: /^Signed in as / })).toBeVisible();
+      await expect(header.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
+      await expect(header.getByRole('link', { name: 'Sign in with Google', exact: true })).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
-    await expect(header.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
-    await expect(header.getByRole('link', { name: 'Sign in with Google', exact: true })).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await page.getByRole('banner').getByRole('link', { name: 'Teams', exact: true }).click();
   await expect(page).toHaveURL(/\/teams$/);

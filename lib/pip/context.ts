@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadSources } from "@/lib/sources/load";
+import type { StudyContext } from "./study";
 
 export interface PipAssignment {
   title: string;
@@ -11,6 +12,7 @@ export interface PipAssignment {
   course: string | null;
 }
 export interface PipContext {
+  study?: StudyContext;
   asOf: string;
   timeZone: string;
   assignments: PipAssignment[];

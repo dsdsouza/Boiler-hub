@@ -27,13 +27,13 @@ export function PipWardrobe({ score, onDone, autoFocus }: { score: number; onDon
           <span className="text-xs text-muted">Just for looks, one at a time. Saved in this browser.</span>
         </div>
       </div>
-      <fieldset ref={groupRef} className="m-0 border-0 p-0">
+      <fieldset ref={groupRef} className="m-0 min-w-0 border-0 p-0">
         <legend className="sr-only">{MASCOT_NAME}’s accessory</legend>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {ACCESSORIES.map((a) => (
             <label
               key={a.id}
-              className="flex cursor-pointer flex-col items-center gap-0.5 rounded-lg border border-line bg-bg px-1 pt-1.5 pb-1 text-center text-[11px] leading-tight font-medium text-body hover:border-rivet has-[:checked]:border-brass has-[:checked]:text-fg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brass-ink"
+              className="flex max-w-24 flex-[1_1_68px] cursor-pointer flex-col items-center gap-0.5 rounded-lg border border-line bg-bg px-1 pt-1.5 pb-1 text-center text-[11px] leading-tight font-medium text-body hover:border-rivet has-[:checked]:border-brass has-[:checked]:text-fg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brass-ink"
             >
               <input type="radio" name={name} value={a.id} checked={current === a.id} onChange={() => setPipAccessory(a.id)} className="sr-only" />
               <Mascot score={score} size={56} accessory={a.id} />
@@ -44,7 +44,7 @@ export function PipWardrobe({ score, onDone, autoFocus }: { score: number; onDon
       </fieldset>
       {onDone && (
         <div>
-          <Button onClick={onDone}>Done</Button>
+          <Button onClick={onDone} className="w-full">Done</Button>
         </div>
       )}
     </div>

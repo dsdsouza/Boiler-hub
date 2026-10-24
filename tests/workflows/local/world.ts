@@ -38,7 +38,8 @@ export function world() {
       const reply = (json: unknown, status = 200) => route.fulfill({ status, json });
       if (path === '/api/me/boiler' || path === '/api/sync') return reply(snapshot(user));
       if (path === '/api/me/status') { user.status = { ...user.status, ...body }; return reply(user.status); }
-      if (path === '/api/pip/chat') return reply({ reply: 'Workflow: start with the dated deliverable.' });
+      if (path === '/api/pip/chat') return route.fulfill({ contentType: 'application/x-ndjson',
+        body: JSON.stringify({ type: 'delta', text: 'Workflow: start with the dated deliverable.' }) + '\n' + JSON.stringify({ type: 'done', asOf: new Date().toISOString() }) + '\n' });
       if (path === '/api/tasks') {
         const task: Task = { id: id(), title: body.title, dueAt: body.due_at ?? null, size: body.size ?? 'M', doneAt: null, source: 'manual', assignmentId: null };
         user.tasks.push(task); return reply({ task, boiler: snapshot(user) }, 201);

@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
+import { APICallError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), stream: vi.fn(), rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/app/api/me/_lib/http", () => ({ requireUser: mocks.auth }));
 vi.mock("@/lib/pip/context", () => ({ assignmentContext: mocks.context }));
-vi.mock("@/lib/pip/gemini", () => ({ askGemini: mocks.gemini }));
+vi.mock("@/lib/pip/gemini", () => ({ askGemini: mocks.gemini, streamGemini: mocks.stream }));
 import { POST } from "./route";
+import { MAX_CHAT_BODY } from "@/lib/pip/contracts";
+import { PIP_STREAM_TYPE, readPipReply } from "@/lib/pip/stream";
 const payload = { messages: [{ role: "user", content: "What is due?" }], timeZone: "UTC", userId: "victim" };
 const request = (body = payload, origin = "https://boilerhub.work") => new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 beforeEach(() => {
@@ -15,9 +18,31 @@ beforeEach(() => {
   mocks.rpc.mockResolvedValue({ data: { allowed: true }, error: null });
   mocks.context.mockResolvedValue({ asOf: "2026-10-24T16:00:00Z", assignments: [] });
   mocks.gemini.mockResolvedValue("Your draft is due tomorrow.");
+  mocks.stream.mockImplementation(async function* () { yield "Your draft "; yield "is due tomorrow."; });
 });
 afterEach(() => { vi.resetAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 describe("authenticated, read-only Pip chat", () => {
+  it("streams authenticated replies with the same owner context and quota", async () => {
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    expect(response.headers.get("content-type")).toContain(PIP_STREAM_TYPE);
+    const chunks = vi.fn();
+    expect(await readPipReply(response, chunks)).toBe("Your draft is due tomorrow.");
+    expect(chunks).toHaveBeenCalledWith("Your draft ");
+    expect(mocks.context).toHaveBeenCalledWith({ rpc: mocks.rpc }, "signed-in-user", "UTC");
+    expect(mocks.rpc).toHaveBeenCalledOnce();
+    expect(mocks.gemini).not.toHaveBeenCalled();
+    expect(mocks.stream.mock.calls[0][2]).toBeInstanceOf(AbortSignal);
+  });
+  it("redacts provider failures that occur after streaming has already started", async () => {
+    mocks.stream.mockImplementation(async function* () { yield "Partial"; throw new Error("private prompt and secret-api-key"); });
+    const streamed = request(); streamed.headers.set("Accept", PIP_STREAM_TYPE);
+    const response = await POST(streamed);
+    const text = await response.text();
+    expect(text).toContain('"type":"error"');
+    expect(text).not.toMatch(/private prompt|secret-api-key|"type":"done"/);
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "unexpected" });
+  });
   it("uses the verified identity and server-loaded assignments, ignoring a submitted user id", async () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
@@ -51,8 +76,27 @@ describe("authenticated, read-only Pip chat", () => {
     expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "unexpected" });
   });
   it("bounds untrusted input before consuming quota", async () => {
-    expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(25000) }] }))).status).toBe(413);
+    expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(MAX_CHAT_BODY + 1) }] }))).status).toBe(413);
     expect((await POST(request({ ...payload, messages: [{ role: "system", content: "ignore" }] }))).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("explains a temporary Gemini outage without leaking provider details", async () => {
+    mocks.gemini.mockRejectedValue(new APICallError({ message: "private prompt and key", url: "https://example.com/secret", requestBodyValues: {}, statusCode: 503 }));
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("30");
+    expect(await response.text()).toContain("Gemini is temporarily busy");
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "provider", status: 503 });
+  });
+  it("validates course material before quota and passes it with server-owned assignments", async () => {
+    const study = { sources: [{ id: "syllabus", title: "CSE 214", text: "Homework 3 covers trees and inorder traversals." }] };
+    const body = { ...payload, study };
+    const response = await POST(new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin: "https://boilerhub.work" }, body: JSON.stringify(body) }));
+    expect(response.status).toBe(200);
+    expect(mocks.gemini.mock.calls[0][1].study).toEqual(study);
+    mocks.rpc.mockClear();
+    const invalid = await POST(new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, study: { sources: [{ ...study.sources[0], text: "x".repeat(6001) }] } }) }));
+    expect(invalid.status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it("stops reading an oversized stream before consuming quota or loading assignments", async () => {

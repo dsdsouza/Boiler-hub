@@ -11,9 +11,9 @@ test('navigation responds immediately while the next page is still downloading',
   try {
     await page.goto('/');
     await expect(page.getByRole('slider')).toBeEnabled();
-    const link = page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true });
+    const link = page.getByRole('banner').getByRole('link', { name: 'Help', exact: true });
     await link.click();
-    await expect(link.getByRole('status')).toHaveText('Opening How it works…');
+    await expect(link.getByRole('status')).toHaveText('Opening Help…');
     finish();
     await expect(page).toHaveURL(/\/how$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Pressure tracks');
@@ -27,8 +27,13 @@ test('public home offers a working demo and formula link', async ({ page }) => {
   await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await page.goto('/');
-  await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
   await expect(page).toHaveURL(/\/how$/);
+  const helpHeader = page.getByRole('banner');
+  await expect(page).toHaveTitle('Help · Boilerplate');
+  await expect(helpHeader.getByRole('link', { name: 'Help', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(helpHeader.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true })).toHaveAttribute('href', '/auth/signin?next=%2Fhow');
+  await expect(helpHeader.getByRole('link', { name: 'Teams', exact: true })).toHaveAttribute('href', '/teams');
   await expect(page.getByRole('main')).toContainText('8.5');
   await noOverflow(page);
 });
@@ -44,6 +49,10 @@ for (const [value, zone] of [[0, 'Cool'], [39, 'Cool'], [40, 'Working'], [69, 'W
     await expect(slider).toHaveValue('0');
     for (let i = 0; i < value; i++) await slider.press('ArrowRight');
     await expect(slider).toHaveValue(String(value));
+    await expect(page.locator('.bp-pressure-control')).toHaveAttribute('data-zone', zone.toLowerCase());
+    await expect(page.locator('output[for="pressure"]')).toContainText(`${value}%`);
+    const colors = { Cool: 'rgb(127, 179, 213)', Working: 'rgb(209, 168, 90)', Hot: 'rgb(240, 145, 58)', Redline: 'rgb(242, 92, 69)' };
+    await expect(page.locator('.bp-pressure-fill')).toHaveCSS('background-color', colors[zone]);
     await expect(page.getByRole('img', { name: new RegExp(`^Boiler at pressure ${value}, ${zone}`) })).toBeVisible();
   });
 }
