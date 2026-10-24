@@ -125,3 +125,94 @@ function HowTo({ title, children }: { title: string; children: React.ReactNode }
     </details>
   );
 }
+
+const NEW_TOKEN_URL = "https://github.com/settings/personal-access-tokens/new";
+const TOKEN_DOCS_URL =
+  "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token";
+
+/** Paste a read-only GitHub personal access token. Used on /settings/sources and in onboarding. */
+export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: AddedSource) => void; idPrefix?: string }) {
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setDone(null);
+    try {
+      const r = await sourcesCall<AddedSource>("/api/sources", "POST", { kind: "github", token: token.trim() });
+      setDone(`GitHub connected. Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}.`);
+      setToken("");
+      onAdded?.(r);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="text-sm text-body">
+        <p className="mt-0 mb-2">
+          Create a{" "}
+          <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer">
+            fine-grained personal access token
+          </a>{" "}
+          with <strong>read-only</strong> access. Pick the repositories to include, then under Repository permissions set these to
+          Read-only:
+        </p>
+        <ul className="mt-0 mb-2 pl-5">
+          <li>
+            <strong>Issues</strong>: issues assigned to you
+          </li>
+          <li>
+            <strong>Pull requests</strong>: review requests and your PRs
+          </li>
+          <li>
+            <strong>Actions</strong>: failing CI on your PRs
+          </li>
+          <li>
+            <strong>Metadata</strong>: added automatically
+          </li>
+        </ul>
+        <p className="m-0 text-[13px] text-muted">
+          A fine-grained token only sees the repositories it was granted, so review requests on other organizations&apos; repos may not
+          appear (an org can also require approval for fine-grained tokens).{" "}
+          <a href={TOKEN_DOCS_URL} target="_blank" rel="noreferrer">
+            How tokens work
+          </a>
+        </p>
+      </div>
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+          <label htmlFor={`${idPrefix}-token`} className={labelClass}>
+            Personal access token
+          </label>
+          <input
+            id={`${idPrefix}-token`}
+            type="password"
+            required
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="github_pat_…"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            className={`${fieldClass} font-mono text-[13px]`}
+          />
+        </div>
+        <Button type="submit" variant="primary" disabled={busy || !token.trim()}>
+          {busy ? "Checking…" : "Connect GitHub"}
+        </Button>
+      </form>
+      <p className="-mt-2 mb-0 text-xs text-muted">Stored encrypted and never shown again. Revoke it on GitHub any time.</p>
+      <p aria-live="polite" className="m-0 text-sm">
+        {done && <span className="text-cool-ink">{done}</span>}
+        {error && <span className="text-redline-ink">{error}</span>}
+      </p>
+    </div>
+  );
+}
