@@ -187,11 +187,23 @@ export function computePressure(items: LoadItem[], now: Date, opts: ComputeOptio
  * instead of turning overdue; tasks already overdue today stay overdue.
  */
 function forecast(items: LoadItem[], now: Date, timeZone: string): ForecastDay[] {
-  const { y, m, d } = ymdIn(now, timeZone);
+  // Formatter construction is expensive on Workers. Reuse one within this
+  // computation, and use native UTC fields when no calendar zone is available.
+  const formatter = timeZone === "UTC" ? null : new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  });
+  const { year: y, month: m, day: d } = partsIn(now, formatter);
   const t = now.getTime();
   const days: ForecastDay[] = [];
   for (let i = 0; i < WINDOW_DAYS; i++) {
-    const at = i === 0 ? now : startOfDay(y, m, d + i, timeZone);
+    const at = i === 0 ? now : startOfDay(y, m, d + i, formatter);
     const date = new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10);
     const ahead = items.filter((item) => {
       if (item.kind !== "task" || item.doneAt || !item.due) return true;
@@ -206,40 +218,30 @@ function forecast(items: LoadItem[], now: Date, timeZone: string): ForecastDay[]
 
 // --- time zone helpers (Intl only, no deps) ---
 
-function ymdIn(date: Date, timeZone: string) {
-  const p = partsIn(date, timeZone);
-  return { y: p.year, m: p.month, d: p.day };
-}
-
-function partsIn(date: Date, timeZone: string) {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  });
+function partsIn(date: Date, formatter: Intl.DateTimeFormat | null) {
+  if (!formatter) return {
+    year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate(),
+    hour: date.getUTCHours(), minute: date.getUTCMinutes(), second: date.getUTCSeconds(),
+  };
   const out: Record<string, number> = {};
-  for (const { type, value } of fmt.formatToParts(date)) {
+  for (const { type, value } of formatter.formatToParts(date)) {
     if (type !== "literal") out[type] = Number(value);
   }
   return out as { year: number; month: number; day: number; hour: number; minute: number; second: number };
 }
 
 /** Offset of `timeZone` from UTC at instant `t`, in ms. */
-function offsetAt(t: number, timeZone: string): number {
-  const p = partsIn(new Date(t), timeZone);
+function offsetAt(t: number, formatter: Intl.DateTimeFormat | null): number {
+  if (!formatter) return 0;
+  const p = partsIn(new Date(t), formatter);
   return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
 }
 
 /** UTC instant of local midnight for y-m-d (d may overflow) in `timeZone`. */
-function startOfDay(y: number, m: number, d: number, timeZone: string): Date {
+function startOfDay(y: number, m: number, d: number, formatter: Intl.DateTimeFormat | null): Date {
   const guess = Date.UTC(y, m - 1, d);
-  let t = guess - offsetAt(guess, timeZone);
-  t = guess - offsetAt(t, timeZone); // second pass handles DST shifts
+  let t = guess - offsetAt(guess, formatter);
+  t = guess - offsetAt(t, formatter); // second pass handles DST shifts
   return new Date(t);
 }
 
