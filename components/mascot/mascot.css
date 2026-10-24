@@ -64,6 +64,18 @@
 .mp-level { transition: transform 900ms cubic-bezier(0.34, 1.3, 0.64, 1); }
 .mp-pop { animation: mp-pop 260ms ease-out both; }
 
+.pip-grab { cursor: grab; -webkit-tap-highlight-color: transparent; }
+.pip-grab[data-dragging="true"] { cursor: grabbing; }
+.pip-grab:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 12px; }
+@keyframes mp-dangle {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mp-dangle { transform-box: view-box; transform-origin: 60px 110px; animation: mp-dangle 1.8s ease-in-out infinite; }
+}
+[data-pip-companion][data-paused] * { animation-play-state: paused; }
+
 [data-still] .mp-blink,
 [data-still] .mp-wave,
 [data-still] .mp-water-r,
