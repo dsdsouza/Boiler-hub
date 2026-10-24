@@ -45,7 +45,7 @@ export function TaskList({
   items: LoadItem[];
   contributions: Contribution[];
   onToggle: (id: string, done: boolean) => void;
-  onAdd: (task: NewTask) => void;
+  onAdd: (task: NewTask) => Promise<boolean>;
   /** Change a task's size. Team assignments keep the size their lead set. */
   onSize?: (id: string, size: Size) => void;
   /** Remove a manual task. */
@@ -60,6 +60,7 @@ export function TaskList({
   className?: string;
 }) {
   const [title, setTitle] = useState("");
+  const [adding, setAdding] = useState(false);
   const [size, setSize] = useState<Size>("M");
   const [due, setDue] = useState<DueChoice>("tomorrow");
   // Completing a task re-sorts it to the end. Focus moves to the task that took its place (or the
@@ -98,12 +99,18 @@ export function TaskList({
     .sort((a, b) => Number(!!a.doneAt) - Number(!!b.doneAt) || (a.due ?? "").localeCompare(b.due ?? ""));
   const overdue = tasks.filter((t) => !t.doneAt && meta[t.id] && t.due && Date.parse(t.due) < now.getTime()).length;
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+    const draft = title;
     const t = title.trim();
-    if (!t) return;
-    onAdd({ title: t, size, due: dueFor(due) });
-    setTitle("");
+    if (!t || adding) return;
+    setAdding(true);
+    try {
+      const saved = await onAdd({ title: t, size, due: dueFor(due) });
+      if (saved) setTitle((current) => current === draft ? "" : current);
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -153,7 +160,6 @@ export function TaskList({
                   }
                   onToggle(t.id, !done);
                 }}
-                aria-pressed={done}
                 aria-label={`${done ? "Mark not done" : "Complete"}: ${t.title}`}
                 className={`flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 ${
                   done ? "border-zone-cool bg-zone-cool" : "border-rivet bg-transparent hover:border-brass"
@@ -261,8 +267,8 @@ export function TaskList({
             ))}
           </select>
         </div>
-        <Button type="submit" variant="primary" className="w-full sm:w-auto">
-          Add task
+        <Button type="submit" variant="primary" aria-disabled={adding} aria-busy={adding} className="w-full sm:w-auto aria-disabled:cursor-wait aria-disabled:opacity-70">
+          {adding ? "Adding…" : "Add task"}
         </Button>
       </form>
     </Card>
