@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Size, Status, Weight } from "@/lib/types";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "./boilerState";
 import type { MyBoilerData, NewTask } from "./boilerState";
 import { mayaBoiler } from "./fixture";
+import { ownerMutations } from "./owner-mutations";
 import { clearItemsBody, eventWeightBody, newTaskBody, sourceItemBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
 import { useBoilerSession } from "./BoilerSession";
 
@@ -47,11 +48,9 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
   const seq = useRef(0);
   const dataRef = useRef(data);
   dataRef.current = data;
-
-  const commit = useCallback((next: MyBoilerData) => {
-    if (source === "api" && userId) session.remember(userId, next, true);
-    setData(next);
-  }, [session, source, userId]);
+  const mutations = useMemo(() => source === "api" && userId
+    ? ownerMutations(session, userId, async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")))
+    : null, [session, source, userId]);
 
   const load = useCallback(async (force = false) => {
     if (source === "fixture") {
@@ -61,7 +60,7 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
     if (!userId) return;
     try {
       const fresh = await session.load(userId, async () => toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")), force);
-      if (fresh) { setData(fresh); setError(null); }
+      if (fresh) { setData(session.read(userId)); setError(null); }
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) { session.clear(); setData(null); }
       setError(e instanceof Error ? e.message : "Could not load your boiler");
@@ -73,13 +72,15 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
   }, [load]);
 
   useEffect(() => {
-    if (source === "api" && userId && data) session.remember(userId, data);
-  }, [data, source, userId, session]);
-
-  useEffect(() => {
     if (source !== "api" || !userId) return;
-    return session.subscribe(() => setData(session.read(userId)));
+    return session.subscribe(() => {
+      const fresh = session.read(userId);
+      dataRef.current = fresh;
+      setData(fresh);
+    });
   }, [source, userId, session]);
+
+  useEffect(() => mutations?.subscribe(setError), [mutations]);
 
   useEffect(() => {
     if (source !== "api") return;
@@ -98,26 +99,19 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
   /** Optimistic local update, then the remote call. A returned BoilerResponse replaces local state. */
   const mutate = useCallback(
     async (local: (d: MyBoilerData) => MyBoilerData, remote?: () => Promise<BoilerResponse | null>) => {
-      setData((d) => (d ? local(d) : d));
-      if (source === "fixture" || !remote) return true;
-      try {
-        const fresh = await remote();
-        if (fresh) commit(toMyBoilerData(fresh));
-        else if (userId) {
-          const current = session.read(userId);
-          if (current) commit(local(current));
-        }
-        window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
-        setError(null);
+      if (source === "fixture" || !remote) {
+        setData((d) => (d ? local(d) : d));
         return true;
-      } catch (e) {
-        await load(true);
-        // Reload the server state to undo the optimistic change, then retain the failure message.
-        setError(e instanceof Error ? e.message : "Something went wrong");
-        return false;
       }
+      if (!mutations) return false;
+      const saved = await mutations.enqueue(local, async () => {
+        const fresh = await remote();
+        return fresh ? toMyBoilerData(fresh) : null;
+      });
+      if (saved) window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
+      return saved;
     },
-    [source, load, commit, session, userId],
+    [source, mutations],
   );
 
   const addTask = useCallback(
@@ -239,9 +233,9 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
         await new Promise((r) => setTimeout(r, 600));
         setData((d) => (d ? { ...d, syncedAt: new Date().toISOString() } : d));
       } else {
-        commit(toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
-        window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
-        setError(null);
+        if (!mutations) return;
+        const saved = await mutations.enqueue((d) => d, async () => toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
+        if (saved) window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "boiler" } }));
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) { session.clear(); setData(null); }
@@ -249,7 +243,7 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
     } finally {
       setSyncing(false);
     }
-  }, [source, commit, session]);
+  }, [source, mutations, session]);
 
   return { source, data, error, syncing, vent, addTask, addDemoAssignment, setTaskDone, setTaskSize, removeTask, clearOverdue, setEventWeight, setStatus, refresh };
 }

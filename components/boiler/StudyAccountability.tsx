@@ -65,6 +65,10 @@ export function StudyAccountability({
   const start = (mode: "now" | "opening" | "demo") => {
     if (!task) return;
     const now = Date.now();
+    if (blocker.session && blocker.session.scope !== study.scope && !blocker.session.outcome && blocker.session.endAt > now) {
+      setError("End your current commitment in its Boilerplate page before starting this demo.");
+      return;
+    }
     const duration = mode === "demo" ? 1 : minutes;
     const startAt =
       mode === "demo"
@@ -459,19 +463,10 @@ export function StudyAccountability({
             Download focus extension
           </LinkButton>
           <Button
-            onClick={async () => {
-              if (!("Notification" in window)) {
-                setError("This browser does not support study notifications.");
-                return;
-              }
-              const permission = await Notification.requestPermission();
-              if (permission !== "granted")
-                setError(
-                  "Notifications aren’t enabled. The focus timer and extension still work; you can enable notifications in your browser’s site settings.",
-                );
-            }}
+            disabled={!blocker.connected || !blocker.remindersSupported}
+            onClick={() => study.enableReminders(true)}
           >
-            Enable study reminders
+            Enable laptop reminders
           </Button>
         </div>
       </details>

@@ -40,9 +40,17 @@ it('selects exploration with a replayable seed and bounded walk sizes', () => {
   const options = parseOptions(['--explore', '--workers=8', '--walks=12', '--steps=100', '--seed=10424']);
   expect(options).toMatchObject({ explore: true, walks: 12, steps: 100, seed: 10424 });
   expect(browserArgs(options, '/tmp/run')).toContain('--config=playwright.explore.config.ts');
-  for (const argv of [['--walks=0'], ['--steps=201'], ['--seed=NaN'], ['--explore', '--accounts', '--url=https://boilerhub.work']]) {
+  for (const argv of [['--walks=0'], ['--steps=201'], ['--seed=NaN']]) {
     expect(() => parseOptions(argv)).toThrow();
   }
+});
+it('routes signed-in exploration through the synthetic bank and private reporter', () => {
+  const options = parseOptions(['--explore', '--accounts', '--url=https://boilerhub.work', '--workers=16']);
+  const args = browserArgs(options, '/tmp/run', true);
+  expect(args).toContain('--workers=16');
+  expect(args).toContain('--config=playwright.signed-explore.config.ts');
+  expect(args).toContain('--reporter=list,./scripts/qa/signed-reporter.mjs');
+  expect(args.join(' ')).not.toContain('html');
 });
 
 const fake = (outcome: string, expectedStatus = 'passed') => ({ outcome: () => outcome, expectedStatus,
@@ -55,6 +63,8 @@ describe('honest run outcomes', () => {
     expect(healthyStats(result)).toBe(false);
     expect(healthyStats(summarizeTests([]))).toBe(false);
     expect(healthyStats(summarizeTests([fake('expected')]))).toBe(true);
+    expect(healthyStats({ total: 2, passed: 1, failed: 0, flaky: 0, skipped: 0 })).toBe(false);
+    expect(healthyStats({ total: 1, passed: 1, failed: 0, flaky: 0, skipped: 0, status: 'interrupted' })).toBe(false);
   });
   it('never copies authenticated failure contents into an artifact', () => {
     const result = summarizeTests([fake('unexpected')], true);

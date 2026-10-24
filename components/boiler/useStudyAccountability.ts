@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MyBoiler } from "./useMyBoiler";
+import { usePipConversation } from "@/components/mascot/PipConversation";
 import {
   focusPhase,
   type CourseMaterial,
@@ -14,11 +15,19 @@ export type BlockerStatus = {
   enforced: boolean;
   session: FocusSession | null;
   error?: string;
+  remindersSupported?: boolean;
+  remindersEnabled?: boolean;
+  notificationPermission?: string;
+  reminderError?: string;
+  version?: string;
 };
 
 export function useStudyAccountability(boiler: MyBoiler) {
   const [session, setSession] = useState<FocusSession | null>(null);
-  const [sources, setSources] = useState<CourseMaterial[]>([]);
+  const conversation = usePipConversation();
+  const [demoSources, setDemoSources] = useState<CourseMaterial[]>([]);
+  const sources = boiler.source === "fixture" ? demoSources : conversation.sources;
+  const setSources = boiler.source === "fixture" ? setDemoSources : conversation.setSources;
   const [blocker, setBlocker] = useState<BlockerStatus>({
     connected: false,
     enforced: false,
@@ -95,22 +104,12 @@ export function useStudyAccountability(boiler: MyBoiler) {
   const end = useCallback(() => {
     if (session) send({ ...session, outcome: "cancelled" });
   }, [send, session]);
-  // Optional native browser notification; permission is requested only by its own button.
-  const previous = useRef<string | null>(null);
-  useEffect(() => {
-    if (
-      phase === "active" &&
-      previous.current === "scheduled" &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
-      new Notification("Pip: time to come back", {
-        body: session?.goal || session?.title,
-        tag: "boilerplate-focus",
-      });
-    }
-    previous.current = phase;
-  }, [phase, session?.goal, session?.title]);
+  const enableReminders = useCallback((enabled: boolean) => {
+    window.postMessage({ type: "bp-focus:notifications", enabled }, location.origin);
+  }, []);
+  const testReminder = useCallback(() => {
+    window.postMessage({ type: "bp-focus:test-notification" }, location.origin);
+  }, []);
   const context: StudyContext = useMemo(
     () => ({
       sources,
@@ -138,6 +137,8 @@ export function useStudyAccountability(boiler: MyBoiler) {
     end,
     context,
     scope,
+    enableReminders,
+    testReminder,
   };
 }
 export type StudyAccountability = ReturnType<typeof useStudyAccountability>;

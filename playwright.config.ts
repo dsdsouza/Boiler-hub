@@ -39,7 +39,9 @@ export default defineConfig({
     { name: 'narrow-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 740 } } },
   ],
   webServer: external ? undefined : {
-    command: process.env.PLAYWRIGHT_PRODUCTION === '1'
+    command: process.env.PLAYWRIGHT_CLOUDFLARE === '1'
+      ? `pnpm exec opennextjs-cloudflare preview -- --local --ip 127.0.0.1 --port ${port}`
+      : process.env.PLAYWRIGHT_PRODUCTION === '1'
       ? `pnpm start --hostname 127.0.0.1 --port ${port}`
       : `pnpm dev --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,

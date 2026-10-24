@@ -8,6 +8,7 @@ import { checkPipScope } from "@/lib/pip/scope";
 import { PIP_REFUSAL } from "@/lib/pip/policy";
 import { MAX_PIP_REPLY, PIP_STREAM_TYPE } from "@/lib/pip/stream";
 import { pipStreamResponse } from "@/lib/pip/stream-response";
+import type { StudyProposal } from "@/lib/pip/planning";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -71,22 +72,28 @@ export async function POST(request: Request) {
       return pipStreamResponse(async function* (streamSignal) {
         // Never display provider deltas before reviewing the entire bounded reply.
         let draft = "";
+        let proposal: StudyProposal | undefined;
         for await (const part of streamGemini(chat.messages, context, streamSignal)) {
+          if (typeof part !== "string") { proposal = part.proposal; continue; }
           draft += part;
           if (draft.length > MAX_PIP_REPLY) throw new Error("Oversized model reply");
         }
         if (!draft.trim()) throw new Error("Empty model reply");
         stage = "review";
-        yield (await checkPipScope(chat.messages, streamSignal, draft)).allowed ? draft : PIP_REFUSAL;
+        const approved = (await checkPipScope(chat.messages, streamSignal, proposal ? JSON.stringify({ reply: draft, proposal }) : draft)).allowed;
+        if (approved && proposal) yield { proposal };
+        yield approved ? draft : PIP_REFUSAL;
       }, {
         signal, asOf: context.asOf,
         onError: (failure) => failureMessage(stage, failure).message,
       });
     }
-    const draft = await askGemini(chat.messages, context, signal);
+    let proposal: StudyProposal | undefined;
+    const draft = await askGemini(chat.messages, context, signal, (value) => { proposal = value; });
     stage = "review";
-    const reply = (await checkPipScope(chat.messages, signal, draft)).allowed ? draft : PIP_REFUSAL;
-    return NextResponse.json({ reply, asOf: context.asOf }, { headers: { ...headers, Vary: "Accept" } });
+    const approved = (await checkPipScope(chat.messages, signal, proposal ? JSON.stringify({ reply: draft, proposal }) : draft)).allowed;
+    const reply = approved ? draft : PIP_REFUSAL;
+    return NextResponse.json({ reply, asOf: context.asOf, ...(approved && proposal ? { proposal } : {}) }, { headers: { ...headers, Vary: "Accept" } });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
     const failureInfo = failureMessage(stage, failure);

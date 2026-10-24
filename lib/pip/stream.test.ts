@@ -8,6 +8,17 @@ const options = () => ({ signal: new AbortController().signal, asOf: "2026-10-24
 const wire = (parts: Uint8Array[]) => new Response(new ReadableStream({ start(c) { for (const part of parts) c.enqueue(part); c.close(); } }), { headers: { "Content-Type": PIP_STREAM_TYPE } });
 
 describe("Pip streaming transport", () => {
+  it("publishes a proposed commitment only after the whole response succeeds", async () => {
+    const proposal = { taskId: "mine", title: "Lab", goal: "Outline", startAt: 1793000000000, endAt: 1793001500000, tentative: true };
+    const received = vi.fn();
+    const response = pipStreamResponse(async function* () { yield { proposal }; yield "Please review your plan."; }, options());
+    expect(await readPipReply(response, () => {}, received)).toContain("review");
+    expect(received).toHaveBeenCalledWith(proposal);
+    received.mockClear();
+    const failed = pipStreamResponse(async function* () { yield { proposal }; yield "Partial"; throw new Error("Provider stopped"); }, options());
+    await expect(readPipReply(failed, () => {}, received)).rejects.toThrow();
+    expect(received).not.toHaveBeenCalled();
+  });
   it("delivers text to the UI before generation is allowed to finish", async () => {
     let finish!: () => void;
     const gate = new Promise<void>((resolve) => { finish = resolve; });
