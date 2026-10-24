@@ -73,6 +73,35 @@ jobs:
             .qa/component-artifacts
           retention-days: 14
 
+  cloudflare-build:
+    name: Cloudflare build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://qa-project.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon-placeholder
+      WRANGLER_SEND_METRICS: 'false'
+      PLAYWRIGHT_CLOUDFLARE: '1'
+      PLAYWRIGHT_PORT: '3240'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm cf-typegen
+      - run: pnpm build:cloudflare
+      - run: pnpm exec wrangler deploy --dry-run
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify the Workers runtime and static cache
+        run: |
+          pnpm test:e2e --project=desktop-chromium --workers=2 --retries=0 --reporter=list 2>&1 | tee cloudflare-runtime.log
+          node -e 'const log = require("node:fs").readFileSync("cloudflare-runtime.log", "utf8"); if (/StaticAssetsIncrementalCache: Failed to (set|delete)/.test(log)) throw new Error("Read-only static cache write regression");'
+
   report:
     if: ${{ !cancelled() }}
     needs: browsers
@@ -103,7 +132,7 @@ jobs:
   qa-gate:
     name: QA gate
     if: ${{ always() }}
-    needs: [contracts, browsers, report]
+    needs: [contracts, browsers, cloudflare-build, report]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -112,7 +141,9 @@ jobs:
           CONTRACTS: ${{ needs.contracts.result }}
           BROWSERS: ${{ needs.browsers.result }}
           REPORT: ${{ needs.report.result }}
+          CLOUDFLARE_BUILD: ${{ needs.cloudflare-build.result }}
         run: |
           test "$CONTRACTS" = success
           test "$BROWSERS" = success
           test "$REPORT" = success
+          test "$CLOUDFLARE_BUILD" = success

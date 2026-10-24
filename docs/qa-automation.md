@@ -66,7 +66,7 @@ Signed-in screenshots, videos and traces are disabled. Detailed seeds, selected 
 
 `pnpm test:components` renders the actual application components in a disposable local copy, with fictional responses and controlled request delays/failures. It checks privacy-save serialization, draft preservation, long names, status acknowledgements, ordered owner writes and pending task identities in four browser configurations. The temporary QA route exists only in that copy; it is never added to the deployed app. No environment files or account bank are copied. Full `qa:army`/`qa:explore` runs and GitHub's browser shards include this suite.
 
-Feature branches matching `staging-*` or `staging/**` run the credential-free QA gate on push. Wait for that gate and both preview build statuses to pass before opening a PR; then require the PR checks to pass before merging. The authenticated GitHub workflow continues to check trusted main only and never exposes account credentials to branch or fork code.
+Feature branches matching `staging-*` or `staging/**` run the credential-free QA gate on push. The gate includes the Cloudflare build, a dry run and 48 public cases against the local Workers runtime, preserving the newer main deployment setup. Wait for that gate and both preview build statuses to pass before opening a PR; then require the PR checks to pass before merging. The authenticated GitHub workflow continues to check trusted main only and never exposes account credentials to branch or fork code.
 
 ## Run locally
 
@@ -137,7 +137,7 @@ The current 32-account bank and browser states were provisioned and verified in 
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on main/staging and `staging-*`/`staging/**` pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts, 288 public/demo browser cases and 48 component cases across Chromium, Firefox, WebKit and small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Public reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
+`Boilerplate QA` runs on main/staging and `staging-*`/`staging/**` pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts, 288 public/demo browser cases, 48 component cases and 48 cases on the Workers runtime. It also builds and bundles the Cloudflare Worker without deploying or receiving deployment credentials. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Public reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
 
 
 The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the check intended for required-status enforcement on `main`; the owner will enable that setting separately. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.
