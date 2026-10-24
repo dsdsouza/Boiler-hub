@@ -222,7 +222,7 @@ export function StudyAccountability({
         <>
           <p className="mt-0 mb-4 text-sm leading-relaxed text-body">
             {phase === "completed"
-              ? session?.demo
+              ? study.scope === "demo"
                 ? "Demo commitment completed and focus released. Demo task changes reset when you reload."
                 : "You followed through. Your task is marked done and the focus block is released."
               : phase === "cancelled"
