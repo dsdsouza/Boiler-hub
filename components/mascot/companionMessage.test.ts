@@ -60,7 +60,7 @@ describe("companionMessage", () => {
 
   it("falls back to the zone line, and to a clear week with no items", () => {
     expect(companionMessage(base)!.headline).toBe(ZONE_LINE.working.headline);
-    expect(companionMessage({ ...base, itemCount: 0 })!.headline).toBe("Your next 7 days look clear.");
+    expect(companionMessage({ ...base, itemCount: 0 })!.headline).toBe("No counted work right now.");
   });
 
   it("never uses guilt or nagging phrases", () => {

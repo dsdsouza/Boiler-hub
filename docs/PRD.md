@@ -113,9 +113,9 @@ The MVP is six screens plus a demo mode; everything else is stretch.
 
 Tasks also come from external sources, not just manual entry. A source is an ICS feed (Brightspace, Canvas, Outlook, any calendar) or a GitHub personal access token, added at `/settings/sources` or in onboarding. Each sync fetches every source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
 
-**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Entries in the next 7 days count. Deadlines up to 60 days overdue are listed; past 14 days they add no pressure (overdue aging) and show as stale. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. On a source's first sync (ICS or GitHub), its overdue backlog is marked done without venting, and "Mark all overdue done" does the same later.
+**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Events in the next 7 days count. Deadlines in the next 14 days count, with another 7 days fetched for forecast preparation. Deadlines up to 60 days overdue are listed; past 14 overdue days they keep a reduced backlog weight and remain counted. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. A first sync never guesses that overdue work is done. Owners review overdue assignments before bulk completion, and completed or cleared feed items remain available for individual restoration while present in the feed.
 
-**GitHub** (read-only fine-grained token: Issues, Pull requests, Actions, Metadata). Open issues assigned to me (size from `size:S/M/L` labels, due at the milestone's due date or in 7 days); PRs with my review requested (S, due in 2 days); my open PRs whose latest Actions run failed ("Fix CI: repo#n", S, due in 1 day); issues assigned to me closed as completed and my PRs merged in the last 48 h count as completed tasks and vent. Rate limits mark the source as errored with the retry time.
+**GitHub** (read-only fine-grained token: Issues, Pull requests, Actions, Metadata). Open issues assigned to me (size from `size:S/M/L` labels, due at the milestone's due date or in 7 days); PRs with my review requested (S, due in 2 days); my open PRs whose latest Actions run failed ("Fix CI: repo#n", S, due in 1 day); issues assigned to me closed as completed and my PRs merged in the last 48 h count as completed tasks with no remaining load or negative credit. Rate limits mark the source as errored with the retry time.
 
 **Overrides and health.** Owners can mark source items done or undone and change their size; these live in `source_item_state`, keyed by a SHA-256 of the external id. A failing source is marked `error` with a readable message and skipped; it never fails the sync. Fetches are cached in memory for a few minutes per server instance (best-effort); Refresh bypasses the cache. Team assignment posts do not fetch anyone's calendar or sources: they update existing snapshots with the preview math (keeping each snapshot's original `computed_at`, and creating none for members who never synced), and each member's next sync reconciles.
 
@@ -156,14 +156,14 @@ The boiler is the product, so the UI track gets the most design time: a warm, ta
 
 ## Pressure engine
 
-Pressure is a pure, deterministic function of load items over the next 7 days, mapped to 0 to 100. It lives in `lib/pressure`, has no I/O, and is unit tested. All constants sit in one `config.ts` so they can be tuned in minutes.
+Pressure is a pure, deterministic function of events over the next 7 days and tasks due over the next 14 days, plus unfinished overdue work, mapped to 0 to 100. It lives in `lib/pressure`, has no I/O, and is unit tested. All constants sit in one `config.ts` so they can be tuned in minutes.
 
 **Inputs.** Every source (Google events, in-app tasks, team assignments, later ICS and GitHub) is normalized to one `LoadItem` shape before it reaches the engine.
 
 **Event filtering (from Google Calendar fields)**
 
 - Skip: declined (`responseStatus: declined`), marked Free (`transparency: transparent`), all-day events, events already ended.
-- Release instead of pressure: `eventType: focusTime` and `outOfOffice`.
+- Exclude from pressure: `eventType: focusTime` and `outOfOffice`; calendar availability never cancels unfinished tasks.
 - Ignore: `eventType: workingLocation`.
 
 **Weights**
@@ -178,9 +178,9 @@ Pressure is a pure, deterministic function of load items over the next 7 days, m
 | Proximity (days from now, d) | 1 / (1 + 0.35 × d) |
 | Task urgency | 1 / max(days until due, 0.25), capped at 3; overdue = 3 |
 | Task with no due date | Treated as due 7 days from now (urgency 1/7) |
-| Overdue aging | Overdue by more than 14 days: urgency 0. The task adds no pressure and is not counted as overdue; it stays on the owner's list as stale until marked done or removed |
-| Completed task (last 48 h) | Release of 0.5 × size points, fading to 0 over 48 h |
-| Focus time or OOO | Release of 0.5 × hours × proximity |
+| Overdue aging | After 14 overdue days: urgency 0.5. Still counted as overdue until marked complete; manual items can also be removed |
+| Completed task | Its own load is removed. It cannot cancel other unfinished tasks |
+| Focus time or OOO | Excluded; no negative credit |
 | Scale constant K | 8.5 |
 
 These are the shipped values; `lib/pressure/config.ts` is the source of truth and every other number (UI, `/how`, teams preview) imports from it. Two were tuned from the original plan so the targets below hold: Light 0.5 → 0.25, so recurring rituals weigh well below one-off meetings, and K 25 → 8.5, so a typical student week lands near 55 and a 25-meeting-hour manager week near 78.
@@ -190,7 +190,6 @@ These are the shipped values; `lib/pressure/config.ts` is the source of truth an
 ```
 R = Σ_events (hours × weight × attendeeFactor × organizerFactor × proximity)
   + Σ_tasks  (sizePoints × urgency)
-  − Σ_releases (release)
 
 score = round(100 × (1 − e^(−max(R, 0) / K)))
 ```
@@ -443,8 +442,8 @@ Read docs/PRD.md and CLAUDE.md. You own: lib/pressure, lib/google, app/api/me, a
 
 Build:
 1. lib/pressure/config.ts with every constant from the PRD "Pressure engine" section.
-2. lib/pressure/compute.ts: computePressure(items: LoadItem[], now: Date): PressureResult. Pure, no I/O. Implement filtering, weights, proximity, urgency, releases, the exponential mapping, zones, contributions with human reasons ("2h review, 9 people, Heavy"), counts, and a 7-day forecast (score as of the start of each day).
-3. Vitest tests: empty week is 0 and cool; declined and transparent events ignored; focus time lowers score; completing a task lowers score; a typical student week is 40 to 60; a 25-meeting-hour manager week is 75 to 85; score never exceeds 100.
+2. lib/pressure/compute.ts: computePressure(items: LoadItem[], now: Date): PressureResult. Pure, no I/O. Implement filtering, weights, proximity, urgency, completion, the exponential mapping, zones, contributions with human reasons ("2h review, 9 people, Heavy"), counts, and a 7-day forecast (score as of the start of each day).
+3. Vitest tests: empty week is 0 and cool; declined and transparent events ignored; focus time cannot erase pending tasks; completing a task removes only its own load; a typical student week is 40 to 60; a 25-meeting-hour manager week is 75 to 85; score never exceeds 100.
 4. lib/google: token refresh, fetch primary calendar for now to now+7d (singleEvents=true), normalize to LoadItem (attendees count, organizer.self, recurringEventId to seriesKey via SHA-256, eventType focusTime/outOfOffice to release, skip workingLocation).
 5. Routes: GET /api/me/boiler (live compute plus tasks plus status), POST /api/sync (compute and upsert pressure_snapshots), POST and PATCH /api/tasks (complete sets done_at, then resync), PUT /api/event-weights (single event or series), PATCH /api/me/status.
 6. Export a helper lib/pressure/preview.ts: applyTaskToRaw(raw: number, task: {due: string; size: Size}, now: Date) returning the new score and zone, for the teams track.

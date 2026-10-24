@@ -35,5 +35,5 @@ export async function sourcesCall<T>(path: string, method: string, body?: unknow
 export function foundLine(r: { tasks: number; events: number }) {
   const t = `${r.tasks} ${r.tasks === 1 ? "deadline" : "deadlines"}`;
   const e = `${r.events} ${r.events === 1 ? "event" : "events"}`;
-  return `Found ${t} and ${e} in the next week`;
+  return `Found ${t} and ${e} in this feed`;
 }

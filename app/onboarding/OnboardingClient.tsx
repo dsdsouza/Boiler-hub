@@ -128,7 +128,7 @@ export function OnboardingClient() {
             </div>
             <div className="col-span-2 sm:col-span-1">
               {connected ? <FirstReadingPip score={boiler.result.score} zone={boiler.result.zone} /> : (
-                <p className="m-0 text-sm text-muted">Tasks only, not shared until your calendar is connected.</p>
+                <p className="m-0 text-sm text-muted">Tasks and connected sources count here. Your team’s score updates when Google Calendar reconnects.</p>
               )}
             </div>
           </div>
@@ -150,9 +150,9 @@ export function OnboardingClient() {
         )}
       </Step>
 
-      <Step n={4} title="Connect your coursework or GitHub (optional)">
+      <Step n={4} title="Connect more calendars or GitHub (optional)">
         <p className="mt-0 mb-3 text-sm text-body">
-          Pull deadlines in from Brightspace, Canvas or any calendar feed, and issues and reviews from GitHub, so you do not have to type
+          Bring in events from Apple Calendar (iCloud), deadlines from Brightspace, Canvas or other feeds, and issues and reviews from GitHub, so you do not have to type
           them. Titles and dates are fetched live and never stored.
         </p>
         {sources.length > 0 && (
@@ -161,7 +161,7 @@ export function OnboardingClient() {
         <div className="flex flex-col gap-1 border-t border-line pt-1">
           <details className="text-sm">
             <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">
-              Add a calendar feed (Brightspace, Canvas, Outlook)
+              Add Apple Calendar or another calendar feed
             </summary>
             <div className="pt-2 pb-4">
               <CalendarFeedForm onAdded={sourceAdded} idPrefix="ob-feed" />

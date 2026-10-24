@@ -22,6 +22,8 @@ export interface Task {
   url?: string;
   /** Course label from the feed, only visible to its owner. */
   courseName?: string;
+  /** Completion reported by the source itself, rather than the owner's local mark. */
+  completedInSource?: boolean;
   /** Class, repo or team name shown as a label; absent when unknown. */
   course?: string;
 }
@@ -45,11 +47,14 @@ export interface OwnerEvent {
   end: string;
   /** Resolved tag (override or default). */
   weight: Weight;
+  /** Factors needed to reproduce the owner's score during optimistic edits. */
+  attendees?: number;
+  isOrganizer?: boolean;
   /** Where `weight` came from: a single-event override, a series override, or the default. */
   override: "event" | "series" | null;
   seriesKey: string;
   isRecurring: boolean;
-  /** Focus time or out of office: vents pressure, not taggable. */
+  /** Focus time or out of office: excluded from pressure, not taggable. */
   release: boolean;
   /** Class, repo or team name shown as a label; absent when unknown. */
   course?: string;
@@ -63,8 +68,10 @@ export interface OwnerEvent {
 export type CalendarState = "ok" | "reconnect" | "unavailable";
 
 export interface BoilerResponse {
+  /** Calendar zone used for forecast boundaries and optimistic recomputes. */
+  timeZone?: string;
   result: PressureResult;
-  /** Open tasks plus tasks completed in the last 48 hours. */
+  /** Open tasks, recent completed manual tasks, and reviewable completed source tasks. */
   tasks: Task[];
   events: OwnerEvent[];
   status: { status: Status; note: string | null };

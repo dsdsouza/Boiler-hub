@@ -48,8 +48,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               You can see everyone’s calendar. You can’t see their pressure.
             </h1>
             <p className="m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
-              Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finished tasks and
-              free time vent it. Teams see who is near the red line, only with their permission.
+              Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finishing work
+              lowers it. Teams see who is near the red line, only with their permission.
             </p>
             <div className="flex flex-wrap gap-3.5 pt-2">
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
@@ -72,13 +72,13 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 title="Pressure in"
                 icon={<path d="M20 34V8M11 17l9-9 9 9" />}
                 color="#F0913A"
-                text="Connect Google Calendar and add tasks. Meetings, deadlines and homework over the next 7 days build the score from 0 to 100."
+                text="Connect Google Calendar and add tasks. Meetings over the next week and deadlines over two weeks build the score from 0 to 100."
               />
               <Step
                 title="Steam out"
                 icon={<path d="M10 28c0-6 6-6 6-12M20 28c0-6 6-6 6-12M30 28c0-6-4-6-4-10" />}
                 color="#7FB3D5"
-                text="Finished tasks, focus time and days off open the release valve. Complete a task and watch the needle drop."
+                text="Complete a task and its load leaves your boiler. The work still due keeps its weight."
               />
               <Step
                 title="Shared on your terms"

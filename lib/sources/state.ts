@@ -6,9 +6,9 @@ const HOUR_MS = 60 * 60 * 1000;
 /**
  * Apply the owner's overrides (source_item_state) to live items: size_override replaces the size,
  * done_at marks a task done (a source's own completion, e.g. a closed GitHub issue, wins).
- * Done tasks older than the completed-release window are dropped, like manual tasks.
+ * Completed items are normally retained briefly; includeCompleted keeps legacy cleared items reviewable.
  */
-export function applyItemState(items: SourceItem[], rows: ItemStateRow[], now: Date): SourceItem[] {
+export function applyItemState(items: SourceItem[], rows: ItemStateRow[], now: Date, opts: { includeCompleted?: boolean } = {}): SourceItem[] {
   const state = new Map(rows.map((r) => [`${r.source_id}:${r.item_key}`, r]));
   const cutoff = now.getTime() - COMPLETED_RELEASE_HOURS * HOUR_MS;
   const out: SourceItem[] = [];
@@ -22,16 +22,17 @@ export function applyItemState(items: SourceItem[], rows: ItemStateRow[], now: D
       ...item,
       ...(s?.size_override ? { size: s.size_override } : {}),
       doneAt: item.doneAt ?? s?.done_at ?? null,
+      ...(item.doneAt ? { completedInSource: true } : {}),
     };
-    if (next.doneAt && Date.parse(next.doneAt) <= cutoff) continue;
+    if (!opts.includeCompleted && next.doneAt && Date.parse(next.doneAt) <= cutoff) continue;
     out.push(next);
   }
   return out;
 }
 
 /**
- * done_at for items cleared without a vent (a new feed's backlog, "Mark all overdue done"):
- * exactly at the end of the release window, so the completed-task release is already 0.
+ * Legacy completion timestamp used by older bulk-clear versions.
+ * Kept for compatibility with stored marks; new completion writes use the actual time.
  */
 export function silentDoneAt(now: Date): string {
   return new Date(now.getTime() - COMPLETED_RELEASE_HOURS * HOUR_MS).toISOString();

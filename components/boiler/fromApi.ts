@@ -12,6 +12,7 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     status: res.status.status,
     statusNote: res.status.note ?? "",
     syncedAt: res.computedAt,
+    ...(res.timeZone ? { timeZone: res.timeZone } : {}),
     calendar: res.calendar,
     sources: res.sources ?? [],
     taskMeta: taskMeta(res.tasks),
@@ -23,7 +24,7 @@ function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
   const out: Record<string, TaskMeta> = {};
   for (const t of tasks) {
     if (!t.sourceId || !t.itemKey) continue;
-    out[t.id] = { sourceId: t.sourceId, itemKey: t.itemKey, ...(t.sourceLabel ? { label: t.sourceLabel } : {}), ...(t.url ? { url: t.url } : {}), ...(t.courseName ? { courseName: t.courseName } : {}) };
+    out[t.id] = { sourceId: t.sourceId, itemKey: t.itemKey, ...(t.sourceLabel ? { label: t.sourceLabel } : {}), ...(t.url ? { url: t.url } : {}), ...(t.courseName ? { courseName: t.courseName } : {}), ...(t.completedInSource ? { completedInSource: true } : {}) };
   }
   return out;
 }
@@ -37,6 +38,8 @@ function eventItem(e: OwnerEvent, sources: BoilerResponse["sources"]): LoadItem 
     start: e.start,
     end: e.end,
     weight: e.weight,
+    attendees: e.attendees,
+    isOrganizer: e.isOrganizer,
     seriesKey: e.seriesKey,
     isRecurring: e.isRecurring,
     release: e.release,

@@ -140,7 +140,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     [mutate],
   );
 
-  /** "Mark all overdue done": clears every overdue source task without a vent. */
+  /** Mark reviewed overdue source tasks complete, retaining them for restoration. */
   const clearOverdue = useCallback(() => {
     const current = dataRef.current;
     if (!current) return Promise.resolve();
