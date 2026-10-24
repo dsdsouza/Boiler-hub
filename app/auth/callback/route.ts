@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encrypt } from "@/lib/crypto";
-import { safeNext } from "@/lib/auth";
+import { NEXT_COOKIE, safeNext } from "@/lib/auth";
 
 // Google access tokens last 1 hour; Supabase does not expose Google's expires_in.
 const GOOGLE_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -10,7 +10,7 @@ const GOOGLE_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = safeNext(searchParams.get("next"));
+  const next = safeNext(request.cookies.get(NEXT_COOKIE)?.value);
 
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=auth`);
@@ -39,5 +39,7 @@ export async function GET(request: NextRequest) {
     if (tokenError) console.error("google_tokens upsert failed", tokenError.message);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  const response = NextResponse.redirect(`${origin}${next}`);
+  response.cookies.delete({ name: NEXT_COOKIE, path: "/auth" });
+  return response;
 }
