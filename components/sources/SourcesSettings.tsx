@@ -7,6 +7,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { timeAgo } from "@/components/boiler/format";
 import { foundLine, sourcesCall, type TestResult } from "./api";
 import { CalendarFeedForm, GitHubTokenForm } from "./SourceForms";
+import { CalendarSubscription } from "./CalendarSubscription";
 
 const KIND_LABEL: Record<SourceInfo["kind"], string> = { ics: "Calendar feed", github: "GitHub" };
 
@@ -18,13 +19,14 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <CalendarSubscription />
       <Card as="section" aria-labelledby="yours" className="px-5 py-6 sm:px-7">
         <CardTitle id="yours" className="mb-3">
           Your sources
         </CardTitle>
         {sources.length === 0 ? (
           <p className="m-0 border-t border-line py-3 text-sm text-muted">
-            Nothing connected yet. Add a calendar feed or GitHub below and their deadlines join your boiler.
+            Nothing connected yet. Add Apple Calendar, a coursework feed or GitHub below to include their events and deadlines.
           </p>
         ) : (
           <ul className="m-0 list-none p-0">
@@ -43,10 +45,10 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
 
       <Card as="section" aria-labelledby="add-feed" className="px-5 py-6 sm:px-7">
         <CardTitle id="add-feed" className="mb-1">
-          Add a calendar feed
+          Connect a calendar
         </CardTitle>
         <p className="mt-0 mb-4 text-sm text-muted">
-          Deadlines (anything due, quizzes, exams, labs, projects) become tasks. Other timed entries count as events. Titles and dates are
+          Apple Calendar (iCloud), Brightspace, Canvas, Outlook and other calendar feeds. Deadlines become tasks; other timed entries count as events. Titles and dates are
           fetched live on each sync and never stored.
         </p>
         <CalendarFeedForm onAdded={(r) => upsert(r.source)} />
