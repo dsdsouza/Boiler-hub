@@ -20,6 +20,8 @@ export interface Task {
   sourceLabel?: string;
   /** Link to the item (GitHub). */
   url?: string;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /** A connected source as the owner sees it. Never includes the secret. */
@@ -47,6 +49,8 @@ export interface OwnerEvent {
   isRecurring: boolean;
   /** Focus time or out of office: vents pressure, not taggable. */
   release: boolean;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /**
