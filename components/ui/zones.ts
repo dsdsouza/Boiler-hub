@@ -22,10 +22,10 @@ export const ZONE_RANGE = Object.fromEntries(
 ) as Record<Zone, string>;
 
 export const ZONE_DESCRIPTION: Record<Zone, string> = {
-  cool: "Light workload, with room to recharge.",
-  working: "A manageable load. Keep time for breaks.",
-  hot: "Heavy workload. Stress may be building.",
-  redline: "An intense load may feel overwhelming. Ask for support.",
+  cool: "Light workload, with room to recharge",
+  working: "A manageable load, keep time for breaks",
+  hot: "Heavy workload, stress may be building",
+  redline: "An intense load may feel overwhelming, ask for support",
 };
 
 /** Fill color, constant across themes. Pair with dark text. */
