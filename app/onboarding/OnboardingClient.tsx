@@ -15,6 +15,7 @@ import { ZONE_INK } from "@/components/ui/zones";
 import { WINDOW_DAYS } from "@/lib/pressure/config";
 import { CalendarFeedForm, GitHubTokenForm } from "@/components/sources/SourceForms";
 import type { AddedSource } from "@/components/sources/api";
+import { FirstReadingPip } from "@/components/mascot/OnboardingPip";
 
 async function call<T>(path: string, method: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -129,6 +130,7 @@ export function OnboardingClient() {
               <p className="m-0 text-sm text-muted">
                 {connected ? "Saved. Teams only see this if you choose." : "Tasks only, not shared until your calendar is connected."}
               </p>
+              {connected && <FirstReadingPip score={boiler.result.score} zone={boiler.result.zone} />}
             </div>
           </div>
         )}

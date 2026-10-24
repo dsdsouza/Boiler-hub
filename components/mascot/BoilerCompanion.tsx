@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { MyBoilerData } from "@/components/boiler/boilerState";
+import type { VentEvent } from "@/components/boiler/useMyBoiler";
+import { Card } from "@/components/ui/Card";
+import { readStorage, writeStorage } from "@/components/ui/theme";
+import { ZONE_LABEL } from "@/components/ui/zones";
+import { companionMessage, type CompanionTarget } from "./companionMessage";
+import { Mascot } from "./Mascot";
+import { PipWardrobe } from "./PipWardrobe";
+import { usePipAccessory } from "./useAccessory";
+import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
+
+// Pip's strip on My Boiler. Composed beside MyBoilerView by the page, so the
+// boiler components stay untouched; actions jump to their existing headings.
+
+const CELEBRATE_MS = 1600;
+const VENT_MESSAGE_MS = 8000;
+
+/** Heading ids rendered by MyBoilerView (forecast card) and Breakdown. */
+const TARGET_ID: Record<CompanionTarget, string> = { forecast: "fc", breakdown: "why" };
+
+function jumpTo(target: CompanionTarget) {
+  const el = document.getElementById(TARGET_ID[target]);
+  if (!el) return;
+  if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  el.focus({ preventScroll: true });
+}
+
+export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; vent: VentEvent }) {
+  const [hidden, setHidden] = useState(false);
+  const [recentVent, setRecentVent] = useState<number | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [dressing, setDressing] = useState(false);
+  const accessory = usePipAccessory();
+
+  useEffect(() => setHidden(readStorage(PIP_HIDDEN_KEY) === "1"), []);
+
+  useEffect(() => {
+    if (!vent.key) return;
+    setRecentVent(vent.amount);
+    setCelebrating(true);
+    const a = setTimeout(() => setCelebrating(false), CELEBRATE_MS);
+    const b = setTimeout(() => setRecentVent(null), VENT_MESSAGE_MS);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [vent.key, vent.amount]);
+
+  if (!data) return null;
+  const { result } = data;
+  const message = companionMessage({
+    score: result.score,
+    zone: result.zone,
+    forecast: result.forecast,
+    contributions: result.contributions,
+    itemCount: data.items.length,
+    calendar: data.calendar,
+    vented: recentVent,
+  });
+  if (!message) return null;
+
+  const setHide = (h: boolean) => {
+    setHidden(h);
+    writeStorage(PIP_HIDDEN_KEY, h ? "1" : "0");
+  };
+
+  if (hidden) {
+    return (
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setHide(false)}
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
+        >
+          <Mascot score={result.score} size={24} accessory={accessory} />
+          Show {MASCOT_NAME}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-3 sm:gap-4 sm:pl-4">
+      <div className="flex-none pt-0.5">
+        <Mascot score={result.score} size={56} reaction={celebrating ? "celebrate" : message.reaction} accessory={accessory} />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+        <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
+          {MASCOT_NAME} <span className="text-muted">· {ZONE_LABEL[result.zone]} {result.score}</span>
+        </div>
+        <div>
+          <p className="m-0 text-base leading-snug font-semibold text-fg">{message.headline}</p>
+          <p className="m-0 mt-0.5 text-sm leading-normal text-body">{message.body}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {message.action && (
+            <button
+              type="button"
+              onClick={() => jumpTo(message.action!.target)}
+              className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-rivet bg-surface-2 px-[18px] text-sm font-semibold text-fg hover:border-brass"
+            >
+              {message.action.label}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setDressing((d) => !d)}
+            aria-expanded={dressing}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
+          >
+            Dress up
+          </button>
+        </div>
+        {dressing && (
+          <div className="mt-1 max-w-[360px] border-t border-line pt-3">
+            <PipWardrobe score={result.score} onDone={() => setDressing(false)} autoFocus />
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => setHide(true)}
+        aria-label={`Hide ${MASCOT_NAME}`}
+        title={`Hide ${MASCOT_NAME}`}
+        className="inline-flex min-h-11 min-w-11 flex-none cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </Card>
+  );
+}
