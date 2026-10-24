@@ -247,8 +247,8 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
 
 // Creates the assignment, fans out one `team` task per recipient, then bumps each
 // recipient's snapshot with the same math the preview used, so the posted result
-// matches the preview.
-// TODO(merge): once the engine's syncUser does a full recompute, the bump is redundant.
+// matches the preview. Recipients are not resynced here (no external calls); their
+// own next sync does the full recompute.
 export async function createAssignment(
   admin: SupabaseClient,
   teamId: string,

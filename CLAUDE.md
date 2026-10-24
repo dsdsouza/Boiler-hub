@@ -10,7 +10,7 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 2. **Stay inside your track's owned folders** (table below). If you need something outside them, stub it locally with the same signature and leave a `TODO(merge)` comment.
 3. **Use `fixtures/demo.json`** when real data is not wired yet.
 4. **Run `pnpm typecheck && pnpm test` before every commit.** Both must pass.
-5. **Small commits with a track prefix:** `engine:`, `ui:`, `teams:` (Foundation and Integration use `foundation:` / `integration:`).
+5. **Small commits with a track prefix:** `engine:`, `ui:`, `teams:`, `sources:` (Foundation and Integration use `foundation:` / `integration:`).
 6. **The admin client bypasses RLS.** Every route that uses `createAdminClient()` from `lib/supabase/admin.ts` MUST first get the caller with the user client (`lib/supabase/server.ts`) and verify their membership or role for the specific team or resource before reading or writing. Never return another user's raw data, tasks, calendar or tokens.
 7. **Never store calendar event contents.** Events are fetched live, and only snapshots are persisted.
 8. **Do not change the schema** (`supabase/migrations/0001_init.sql`) without the human's approval. New migrations are numbered `0002_…` and must be applied by hand in the Supabase SQL editor.
@@ -22,6 +22,7 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 | engine | `lib/pressure`, `lib/google`, `app/api/me`, `app/api/sync`, `app/api/tasks`, `app/api/event-weights` |
 | ui | `components/boiler`, `components/ui`, `app/page.tsx`, `app/boiler`, `app/how`, `app/demo`, `app/layout.tsx`, `app/globals.css` |
 | teams | `app/teams`, `app/api/teams`, `lib/data/teams.ts` |
+| sources | `lib/sources`, `app/api/sources`, `app/settings`, `components/sources` |
 | foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `app/privacy`, `middleware.ts`, `supabase/`, `fixtures/`, `scripts/`, config files |
 
 ## Visual source of truth (ui track)
@@ -44,9 +45,10 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 - `rpc('team_hidden_count', { team_id })` returns the number of members the caller cannot see.
 - `rpc('create_team', { name, type })` creates the team and the caller's lead membership, and returns the team row with a 6-char `invite_code`.
 - `rpc('join_team', { code })` joins as a hidden member and returns the team id.
-- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts), and, when an assignment posts, upserting each recipient's `pressure_snapshots` row (score, raw, zone, counts) with the same preview math so the posted result matches the preview. The route then runs the engine's `syncUser` (`lib/google/sync.ts`) for each recipient for a full recompute; members whose calendar needs a reconnect keep the preview-math snapshot.
+- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts), and, when an assignment posts, upserting each recipient's `pressure_snapshots` row (score, raw, zone, counts) with the same preview math so the posted result matches the preview. Posting makes no external calls (no calendar or source fetch per recipient), so the posted result matches the preview exactly; each member's own next `syncUser` (`lib/google/sync.ts`) does the full recompute.
 - After a membership check (any role), the Engine Room uses the admin client only to read `memberships.role` for members the caller can already see via `team_boilers`, to tag leads.
 - `google_tokens` is service-role only.
+- `sources` and `source_item_state` (0002) are owner-only. Clients cannot select `sources.secret_encrypted` (column grants); only the server reads it, after an ownership check, via the admin client. Status writes during sync also use the admin client, scoped to the user. Source item titles and dates are fetched live in `syncUser` and never stored.
 
 ### Fixture shape (`fixtures/demo.json`)
 

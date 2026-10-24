@@ -13,6 +13,8 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { WINDOW_DAYS } from "@/lib/pressure/config";
+import { CalendarFeedForm, GitHubTokenForm } from "@/components/sources/SourceForms";
+import type { AddedSource } from "@/components/sources/api";
 
 async function call<T>(path: string, method: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -27,7 +29,7 @@ async function call<T>(path: string, method: string, body?: unknown): Promise<T>
 
 const field = "min-h-11 w-full rounded-lg border border-line bg-field px-3 font-mono text-[17px] tracking-[0.2em] text-fg uppercase placeholder:text-muted";
 
-/** Onboarding (PRD): confirm calendar connected, first sync, pick status, optional join code, then /boiler. */
+/** Onboarding (PRD): confirm calendar connected, first sync, pick status, optional sources and join code, then /boiler. */
 export function OnboardingClient() {
   const [boiler, setBoiler] = useState<BoilerResponse | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -81,6 +83,9 @@ export function OnboardingClient() {
   }
 
   const connected = boiler?.calendar === "ok";
+  const sources = boiler?.sources ?? [];
+  // A new source resyncs on the server; show its effect on the first-sync gauge.
+  const sourceAdded = (r: AddedSource) => setBoiler(r.boiler);
 
   return (
     <div className="flex flex-col gap-5">
@@ -141,7 +146,34 @@ export function OnboardingClient() {
         )}
       </Step>
 
-      <Step n={4} title="Join a team (optional)">
+      <Step n={4} title="Connect your coursework or GitHub (optional)">
+        <p className="mt-0 mb-3 text-sm text-body">
+          Pull deadlines in from Brightspace, Canvas or any calendar feed, and issues and reviews from GitHub, so you do not have to type
+          them. Titles and dates are fetched live and never stored.
+        </p>
+        {sources.length > 0 && (
+          <p className="mt-0 mb-3 text-sm text-cool-ink">Connected: {sources.map((s) => s.label).join(", ")}.</p>
+        )}
+        <div className="flex flex-col gap-1 border-t border-line pt-1">
+          <details className="text-sm">
+            <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg marker:text-brass-ink">
+              Add a calendar feed (Brightspace, Canvas, Outlook)
+            </summary>
+            <div className="pt-2 pb-4">
+              <CalendarFeedForm onAdded={sourceAdded} idPrefix="ob-feed" />
+            </div>
+          </details>
+          <details className="text-sm">
+            <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg marker:text-brass-ink">Connect GitHub</summary>
+            <div className="pt-2 pb-4">
+              <GitHubTokenForm onAdded={sourceAdded} idPrefix="ob-gh" />
+            </div>
+          </details>
+        </div>
+        <p className="mt-2 mb-0 text-[13px] text-muted">Skip this for now if you like: it is always under Sources.</p>
+      </Step>
+
+      <Step n={5} title="Join a team (optional)">
         <p className="mt-0 mb-3 text-sm text-body">
           Got an invite code from a teacher or lead? You join as <strong>Hidden</strong>: nobody sees your boiler until you choose who
           can in Teams.

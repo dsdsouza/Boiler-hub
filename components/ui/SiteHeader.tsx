@@ -14,11 +14,12 @@ export function Logo({ size = 30 }: { size?: number }) {
   );
 }
 
-export type NavKey = "boiler" | "teams" | "how" | "demo";
+export type NavKey = "boiler" | "teams" | "sources" | "how" | "demo";
 
 const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },
   { key: "teams", href: "/teams", label: "Teams" },
+  { key: "sources", href: "/settings/sources", label: "Sources" },
   { key: "how", href: "/how", label: "How it works" },
 ];
 
