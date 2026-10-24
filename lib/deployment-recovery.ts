@@ -2,6 +2,21 @@
 // One cache-bypassing reload per five minutes, then an explicit retry link.
 export const deploymentRecovery = `(() => {
   let recovering = false;
+  let leaving = false;
+  const inspecting = new Set();
+  addEventListener('beforeunload', () => { leaving = true; });
+  addEventListener('pagehide', () => { leaving = true; });
+  addEventListener('pageshow', () => { leaving = false; });
+  function inspect(src) {
+    const url = new URL(src, location.href);
+    if (leaving || recovering || inspecting.has(url.href) || url.origin !== location.origin || !url.pathname.startsWith('/_next/static/')) return;
+    inspecting.add(url.href);
+    // Firefox also emits resource errors when navigation cancels a request.
+    // Confirm an HTTP failure before replacing a page that may be healthy.
+    fetch(url.href, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' })
+      .then((response) => { if (!leaving && response.status >= 400) recover(); })
+      .catch(() => {});
+  }
   function recover() {
     if (recovering) return;
     recovering = true;
@@ -32,10 +47,10 @@ export const deploymentRecovery = `(() => {
   addEventListener('error', (event) => {
     const element = event.target;
     const src = element && (element.src || element.href);
-    if (src && new URL(src, location.href).pathname.startsWith('/_next/static/') &&
-        (element.tagName === 'SCRIPT' || (element.tagName === 'LINK' && element.rel === 'stylesheet'))) recover();
+    if (src && (element.tagName === 'SCRIPT' || (element.tagName === 'LINK' && element.rel === 'stylesheet'))) inspect(src);
   }, true);
   addEventListener('unhandledrejection', (event) => {
-    if (/ChunkLoadError|Loading (?:CSS )?chunk .+ failed/.test(String(event.reason && (event.reason.message || event.reason)))) recover();
+    const reason = event.reason;
+    if (reason && reason.request && /ChunkLoadError|Loading (?:CSS )?chunk .+ failed/.test(String(reason.message || reason))) inspect(reason.request);
   });
 })();`;
