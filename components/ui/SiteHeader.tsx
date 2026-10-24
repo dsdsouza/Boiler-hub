@@ -44,35 +44,40 @@ function NavLink({ href, label, current }: { href: string; label: string; curren
 /**
  * `app` is the signed-in shell (My Boiler / Teams / Sources / How, avatar);
  * `marketing` is the landing and demo shell (How / Demo, sign-in).
- * On phones the app nav moves to <MobileTabBar>.
+ * On phones the app nav moves to <MobileTabBar>, unless mobileNavigation is "header".
  */
 export function SiteHeader({
   variant,
   current,
   account,
   maxWidth = "max-w-[1240px]",
+  mobileNavigation = "bottom",
 }: {
   variant: "app" | "marketing";
   current?: NavKey;
   /** Right-most slot: avatar or sign-in link. */
   account?: React.ReactNode;
   maxWidth?: string;
+  /** Keep app links in the header on public pages, including phones and tablets. */
+  mobileNavigation?: "header" | "bottom";
 }) {
   const nav = variant === "app" ? APP_NAV : MARKETING_NAV;
+  const headerNavigation = mobileNavigation === "header";
+  const desktopVisibility = headerNavigation ? "hidden lg:flex" : variant === "app" ? "hidden sm:flex" : "hidden md:flex";
   return (
     <header className={`border-b border-line ${variant === "app" ? "bg-bg-2" : ""}`}>
       <div className={`mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-8 ${maxWidth}`}>
         <div className="flex flex-wrap items-center gap-5">
           <Logo />
-          <nav aria-label="Main" className={`${variant === "app" ? "hidden sm:flex" : "hidden md:flex"} flex-wrap gap-1`}>
+          <nav aria-label="Main" className={`${desktopVisibility} flex-wrap gap-1`}>
             {nav.map((n) => (
               <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} />
             ))}
           </nav>
         </div>
         {account && <div className="flex items-center gap-2">{account}</div>}
-        {variant === "marketing" && (
-          <nav aria-label="Main" className="flex w-full flex-wrap gap-1 border-t border-line pt-1 md:hidden">
+        {(variant === "marketing" || headerNavigation) && (
+          <nav aria-label="Main" className={`w-full gap-1 border-t border-line pt-1 ${headerNavigation ? "grid grid-cols-2 sm:flex sm:flex-wrap lg:hidden" : "flex flex-wrap md:hidden"}`}>
             {nav.map((n) => (
               <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} />
             ))}
