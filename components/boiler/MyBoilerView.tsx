@@ -93,7 +93,7 @@ export function MyBoilerView({
   const { result } = data;
   const fire = fireFromForecast(result.forecast.map((d) => d.score));
   const statusPicker = (
-    <StatusPicker status={data.status} note={data.statusNote} onChange={(s, n) => void boiler.setStatus(s, n)}>
+    <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus}>
       <PipDressUp score={result.score} />
     </StatusPicker>
   );
@@ -196,6 +196,7 @@ export function MyBoilerView({
           </Card>
 
           <TaskList
+            pendingTaskIds={boiler.source === "api" ? new Set(data.items.filter((i) => i.id.startsWith("local-")).map((i) => i.id)) : undefined}
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}

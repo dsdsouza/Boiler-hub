@@ -69,8 +69,7 @@ export function CalendarSubscription() {
       returnFocus.current = true;
       setLinks(next);
       setConfirmation(null);
-      setNotice("Confirm Subscribe in Apple Calendar to finish. If it did not open, use Open Apple Calendar or copy the link.");
-      window.location.assign(next.webcal);
+      setNotice("Your private link is ready. Choose Open Apple Calendar to subscribe, or copy the link below.");
     } catch (e) {
       setError((e as Error).message);
     } finally {

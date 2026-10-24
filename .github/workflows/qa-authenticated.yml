@@ -14,7 +14,7 @@ concurrency:
 jobs:
   accounts:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       PLAYWRIGHT_BASE_URL: https://boilerplate.zhomander.workers.dev
       QA_EXPECTED_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
@@ -33,7 +33,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Prepare private QA sessions
         env:
           QA_ACCOUNT_BANK_JSON: ${{ secrets.QA_ACCOUNT_BANK_JSON }}
@@ -43,6 +43,18 @@ jobs:
           pnpm qa:session --all
       - name: Verify all 32 accounts and privacy contracts
         run: pnpm test:e2e:auth
+      - name: Finish live personal workflows and verify restoration
+        run: pnpm test:workflows:live --workers=4
+        env:
+          QA_WORKFLOW_REPORT_DIR: qa-runs/live-workflows
+          QA_WORKFLOW_RUN_ID: ci-live-${{ github.run_id }}
+          QA_WORKFLOW_COVERAGE: Live Cloudflare personal workflows using the existing synthetic identities; task and status restoration verified.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-workflow-summary
+          path: qa-runs/live-workflows
+          retention-days: 7
       - name: Remove private browser sessions
         if: always()
         run: node -e "for (const path of ['.qa', 'test-results-auth']) require('node:fs').rmSync(path, { recursive:true, force:true })"

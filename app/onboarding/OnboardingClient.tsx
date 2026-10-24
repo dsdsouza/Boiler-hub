@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Status } from "@/lib/types";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import { Boiler } from "@/components/boiler/Boiler";
@@ -8,6 +8,7 @@ import { CalendarUnavailableBanner, ReconnectBanner } from "@/components/boiler/
 import { StatusPicker } from "@/components/boiler/StatusPicker";
 import { CountBadges } from "@/components/boiler/CountBadges";
 import { statusBody } from "@/components/boiler/fromApi";
+import { OptimisticQueue } from "@/components/boiler/optimisticQueue";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
@@ -36,6 +37,7 @@ export function OnboardingClient() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ status: Status; note: string } | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const statusQueue = useRef<OptimisticQueue<{ status: Status; note: string }> | null>(null);
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState<string | null>(null);
@@ -57,15 +59,18 @@ export function OnboardingClient() {
   }, []);
 
   async function changeStatus(next: Status, note: string) {
-    const prev = status;
-    setStatus({ status: next, note });
-    setStatusError(null);
-    try {
-      await call("/api/me/status", "PATCH", statusBody(next, note));
-    } catch (e) {
-      setStatus(prev);
-      setStatusError((e as Error).message);
+    if (!status) return false;
+    if (!statusQueue.current) {
+      statusQueue.current = new OptimisticQueue(setStatus, async () => {
+        const fresh = await call<BoilerResponse>("/api/me/boiler", "GET");
+        return { status: fresh.status.status, note: fresh.status.note ?? "" };
+      }, setStatusError);
+      statusQueue.current.replace(status);
     }
+    return statusQueue.current.enqueue(() => ({ status: next, note }), async () => {
+      await call("/api/me/status", "PATCH", statusBody(next, note));
+      return null;
+    });
   }
 
   async function join(e: FormEvent) {
@@ -143,7 +148,7 @@ export function OnboardingClient() {
       <Step n={4} title="Your status">
         {status ? (
           <>
-            <StatusPicker status={status.status} note={status.note} labelledBy="step-4" onChange={(s, n) => void changeStatus(s, n)} />
+            <StatusPicker status={status.status} note={status.note} labelledBy="step-4" onChange={changeStatus} />
             {statusError && (
               <p role="alert" className="mt-2 mb-0 text-sm text-redline-ink">
                 {statusError}
