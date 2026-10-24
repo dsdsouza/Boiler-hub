@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Boiler Hub Calendar Finder",
+  "version": "1.0.0",
+  "description": "Find a school calendar subscription link on the page you choose, then review it in Boiler Hub.",
+  "minimum_chrome_version": "102",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_title": "Find a school calendar link",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'"
+  }
+}

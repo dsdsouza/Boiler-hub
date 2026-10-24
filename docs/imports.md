@@ -25,3 +25,7 @@ Eight fictional before/after feeds from the investigation are checked into `lib/
 The import reads only what the feed supplies. Grades, school-side submission status, catalog data and syllabus extraction require separate integrations. Synthetic fixtures do not establish compatibility with every school or prove a live school's refresh interval.
 
 Official setup references: [Brightspace](https://community.d2l.com/brightspace/kb/articles/18042-manage-course-events-with-the-calendar-tool), [Canvas](https://community.instructure.com/en/kb/articles/662804-how-do-i-view-the-calendar-ical-feed-to-subscribe-to-an-external-calendar), [Moodle](https://docs.moodle.org/500/en/Using_Calendar), [Blackboard](https://help.anthology.com/blackboard/student/en/getting-started/calendar.html).
+
+## Finding the school link
+
+The optional [Calendar Finder](browser-helper.md) checks the page chosen by the user and hands a found subscription link to Boiler Hub for review. Sources links to its setup/download page. It does not enable school feeds or replace the existing import parser.

@@ -13,14 +13,16 @@ const labelClass = "text-[13px] font-medium text-body";
 /** Paste an ICS link (Apple Calendar, coursework, or another feed). Shared with onboarding. */
 type CalendarProvider = "other" | "apple" | "brightspace";
 
-export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider = "other", showProvider = true }: {
+export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider = "other", showProvider = true, initialUrl = "", onBusyChange }: {
   onAdded?: (r: AddedSource) => void;
   idPrefix?: string;
   initialProvider?: CalendarProvider;
   showProvider?: boolean;
+  initialUrl?: string;
+  onBusyChange?: (busy: boolean) => void;
 }) {
-  const [provider, setProvider] = useState<CalendarProvider>(initialProvider);
-  const [url, setUrl] = useState("");
+  const [provider, setProvider] = useState<CalendarProvider>(() => isAppleCalendarUrl(initialUrl) ? "apple" : initialProvider);
+  const [url, setUrl] = useState(initialUrl);
   const urlField = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState("");
   // Follows the URL (on for Brightspace and Canvas) until the user sets it.
@@ -41,6 +43,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
       return;
     }
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     setDone(null);
     try {
@@ -60,6 +63,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
       setError((err as Error).message);
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
 
