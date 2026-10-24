@@ -5,19 +5,18 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { LinkButton } from "@/components/ui/Button";
-import { readStorage } from "@/components/ui/storage";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
 import { PipChat } from "./PipChat";
 import { usePipAccessory } from "./useAccessory";
-import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
+import { MASCOT_NAME } from "./voice";
 
 // Pip in the corner of signed-in pages. Reads the caller's own stored snapshot
 // (owner-only RLS), so moving between pages never triggers a calendar fetch.
 // My Boiler keeps chat in this dock alongside its hero and inline wardrobe.
 // The demo and onboarding provide their own Pip.
 
-const HIDE_ON = ["/demo", "/onboarding", "/mascot-preview", "/auth"];
+const HIDE_ON = ["/boiler", "/demo", "/onboarding", "/mascot-preview", "/auth"];
 
 type Load = { kind: "none" } | { kind: "ready"; snapshot: Snapshot | null };
 
@@ -27,7 +26,6 @@ export function PipDock() {
   // The Engine Room has a lead-only sticky "New assignment" button in this corner (EngineRoom.tsx): sit above it.
   const raised = /^\/teams\/[^/]+/.test(pathname);
   const [load, setLoad] = useState<Load>({ kind: "none" });
-  const [hidden, setHidden] = useState(true);
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(0);
   const accessory = usePipAccessory();
@@ -39,7 +37,6 @@ export function PipDock() {
 
   useEffect(() => {
     setOpen(false);
-    setHidden(readStorage(PIP_HIDDEN_KEY) === "1");
     if (routeHidden || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let cancelled = false;
     const supabase = createClient();
@@ -57,7 +54,7 @@ export function PipDock() {
         .maybeSingle();
       if (cancelled) return;
       if (error) {
-        setLoad({ kind: "none" });
+        setLoad({ kind: "ready", snapshot: null });
         return;
       }
       setNow(Date.now());
@@ -95,7 +92,7 @@ export function PipDock() {
     };
   }, [open]);
 
-  if (routeHidden || hidden || load.kind !== "ready") return null;
+  if (routeHidden || load.kind !== "ready") return null;
 
   const snap = load.snapshot;
   const message = dockMessage(snap, now);
@@ -158,9 +155,10 @@ export function PipDock() {
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         aria-label={open ? `Close ${MASCOT_NAME}` : `Chat with ${MASCOT_NAME}`}
-        className="relative flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border border-rivet bg-surface shadow-lg hover:border-brass"
+        className="relative flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border border-rivet bg-surface px-4 py-2 text-sm font-semibold text-fg shadow-lg hover:border-brass"
       >
-        <Mascot score={snap?.score ?? 0} size={44} reaction={message.reaction} empty={message.empty} accessory={accessory} />
+        <Mascot score={snap?.score ?? 0} size={32} reaction={message.reaction} empty={message.empty} accessory={accessory} />
+        <span>{open ? "Close Pip" : "Chat with Pip"}</span>
         {message.attention && !open && <span aria-hidden="true" className="absolute top-1 right-1 h-3 w-3 rounded-full bg-hot-ink ring-2 ring-bg" />}
       </button>
     </div>

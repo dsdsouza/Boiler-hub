@@ -3,8 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadSources } from "@/lib/sources/load";
 import type { StudyContext } from "./study";
+import { scheduleContext } from "./schedule-context";
+import type { PipSchedule } from "./planning";
 
 export interface PipAssignment {
+  id?: string;
   title: string;
   dueAt: string | null;
   size: string;
@@ -12,6 +15,7 @@ export interface PipAssignment {
   course: string | null;
 }
 export interface PipContext {
+  schedule?: PipSchedule;
   study?: StudyContext;
   asOf: string;
   timeZone: string;
@@ -20,12 +24,12 @@ export interface PipContext {
   unavailableSources: number;
   truncated: boolean;
 }
-type TaskRow = { title: string; due_at: string | null; size: string; source: string };
+type TaskRow = { id?: string; title: string; due_at: string | null; size: string; source: string };
 
 /** userId MUST come from requireUser(). No teammate lookups or client-supplied identity. */
 export async function assignmentContext(supabase: SupabaseClient, userId: string, timeZone: string, now = new Date()): Promise<PipContext> {
   const [tasks, ownedSources] = await Promise.all([
-    supabase.from("tasks").select("title,due_at,size,source", { count: "exact" })
+    supabase.from("tasks").select("id,title,due_at,size,source", { count: "exact" })
       .eq("owner_id", userId).is("done_at", null).order("due_at", { nullsFirst: false }).limit(201).returns<TaskRow[]>(),
     supabase.from("sources").select("id").eq("user_id", userId),
   ]);
@@ -38,11 +42,12 @@ export async function assignmentContext(supabase: SupabaseClient, userId: string
   if (sources.sources.length !== (ownedSources.data?.length ?? 0)) throw new Error("Sources unavailable");
   const imported = sources.items.filter((item) => item.kind === "task" && !item.doneAt && !item.completedInSource);
   const assignments: PipAssignment[] = [
-    ...(tasks.data ?? []).map((task) => ({ title: task.title.slice(0, 200), dueAt: task.due_at, size: task.size, source: task.source, course: null })),
-    ...imported.map((item) => ({ title: item.title.slice(0, 200), dueAt: item.due ?? null, size: item.size ?? "M", source: item.source, course: item.courseName?.slice(0, 100) ?? null })),
+    ...(tasks.data ?? []).map((task) => ({ id: task.id, title: task.title.slice(0, 200), dueAt: task.due_at, size: task.size, source: task.source, course: null })),
+    ...imported.map((item) => ({ id: item.id, title: item.title.slice(0, 200), dueAt: item.due ?? null, size: item.size ?? "M", source: item.source, course: item.courseName?.slice(0, 100) ?? null })),
   ].sort((a, b) => (a.dueAt ?? "9999").localeCompare(b.dueAt ?? "9999"));
   const totalOpen = (tasks.count ?? tasks.data?.length ?? 0) + imported.length;
   return {
+    schedule: await scheduleContext(userId, timeZone, sources.items, now),
     asOf: now.toISOString(), timeZone, assignments: assignments.slice(0, 100), totalOpen,
     unavailableSources: sources.sources.filter((source) => source.status === "error").length,
     truncated: totalOpen > 100,
