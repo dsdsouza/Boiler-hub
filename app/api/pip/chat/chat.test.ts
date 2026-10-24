@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { APICallError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -54,6 +55,14 @@ describe("authenticated, read-only Pip chat", () => {
     expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(25000) }] }))).status).toBe(413);
     expect((await POST(request({ ...payload, messages: [{ role: "system", content: "ignore" }] }))).status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("explains a temporary Gemini outage without leaking provider details", async () => {
+    mocks.gemini.mockRejectedValue(new APICallError({ message: "private prompt and key", url: "https://example.com/secret", requestBodyValues: {}, statusCode: 503 }));
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("30");
+    expect(await response.text()).toContain("Gemini is temporarily busy");
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "provider", status: 503 });
   });
   it("stops reading an oversized stream before consuming quota or loading assignments", async () => {
     const cancel = vi.fn();
