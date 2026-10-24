@@ -60,7 +60,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                 Try the demo
               </LinkButton>
               {viewer ? (
-                <LinkButton href="/boiler" variant="ghost" size="lg" className="border-rivet font-semibold text-fg max-sm:w-full">
+                <LinkButton href="/boiler" variant="primary" size="lg" className="max-sm:w-full">
                   Open My Boiler
                 </LinkButton>
               ) : (
