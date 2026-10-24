@@ -8,12 +8,13 @@ import { readStorage, writeStorage } from "@/components/ui/theme";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { companionMessage, type CompanionTarget } from "./companionMessage";
 import { Mascot } from "./Mascot";
-import { MASCOT_NAME } from "./voice";
+import { PipWardrobe } from "./PipWardrobe";
+import { usePipAccessory } from "./useAccessory";
+import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
 // Pip's strip on My Boiler. Composed beside MyBoilerView by the page, so the
 // boiler components stay untouched; actions jump to their existing headings.
 
-const HIDDEN_KEY = "bp-pip-hidden";
 const CELEBRATE_MS = 1600;
 const VENT_MESSAGE_MS = 8000;
 
@@ -33,8 +34,10 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   const [hidden, setHidden] = useState(false);
   const [recentVent, setRecentVent] = useState<number | null>(null);
   const [celebrating, setCelebrating] = useState(false);
+  const [dressing, setDressing] = useState(false);
+  const accessory = usePipAccessory();
 
-  useEffect(() => setHidden(readStorage(HIDDEN_KEY) === "1"), []);
+  useEffect(() => setHidden(readStorage(PIP_HIDDEN_KEY) === "1"), []);
 
   useEffect(() => {
     if (!vent.key) return;
@@ -63,7 +66,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
 
   const setHide = (h: boolean) => {
     setHidden(h);
-    writeStorage(HIDDEN_KEY, h ? "1" : "0");
+    writeStorage(PIP_HIDDEN_KEY, h ? "1" : "0");
   };
 
   if (hidden) {
@@ -74,7 +77,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           onClick={() => setHide(false)}
           className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
         >
-          <Mascot score={result.score} size={24} />
+          <Mascot score={result.score} size={24} accessory={accessory} />
           Show {MASCOT_NAME}
         </button>
       </div>
@@ -84,7 +87,7 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
   return (
     <Card as="aside" aria-label={`${MASCOT_NAME}, your pressure companion`} className="flex items-start gap-3 py-3 pr-2 pl-3 sm:gap-4 sm:pl-4">
       <div className="flex-none pt-0.5">
-        <Mascot score={result.score} size={56} reaction={celebrating ? "celebrate" : message.reaction} />
+        <Mascot score={result.score} size={56} reaction={celebrating ? "celebrate" : message.reaction} accessory={accessory} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
         <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
@@ -94,8 +97,8 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
           <p className="m-0 text-base leading-snug font-semibold text-fg">{message.headline}</p>
           <p className="m-0 mt-0.5 text-sm leading-normal text-body">{message.body}</p>
         </div>
-        {message.action && (
-          <div>
+        <div className="flex flex-wrap gap-2">
+          {message.action && (
             <button
               type="button"
               onClick={() => jumpTo(message.action!.target)}
@@ -103,6 +106,19 @@ export function BoilerCompanion({ data, vent }: { data: MyBoilerData | null; ven
             >
               {message.action.label}
             </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setDressing((d) => !d)}
+            aria-expanded={dressing}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
+          >
+            Dress up
+          </button>
+        </div>
+        {dressing && (
+          <div className="mt-1 max-w-[360px] border-t border-line pt-3">
+            <PipWardrobe score={result.score} onDone={() => setDressing(false)} autoFocus />
           </div>
         )}
       </div>
