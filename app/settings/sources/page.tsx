@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AccountMenu } from "@/components/ui/Account";
 import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 import { SourcesSettings } from "@/components/sources/SourcesSettings";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { toSummary } from "@/lib/sources/load";
 import { SOURCE_COLUMNS, type SourceRow } from "@/lib/sources/types";
 
@@ -11,9 +11,8 @@ export const metadata: Metadata = { title: "Sources · Boilerplate" };
 export const dynamic = "force-dynamic";
 
 export default async function SourcesPage() {
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/?next=/settings/sources");
+  const { supabase, user } = await getCurrentUser();
+  if (!user) redirect("/?next=/settings/sources");
 
   // RLS and column grants: own rows only, never the secret.
   const { data, error } = await supabase.from("sources").select(SOURCE_COLUMNS).order("created_at").returns<SourceRow[]>();

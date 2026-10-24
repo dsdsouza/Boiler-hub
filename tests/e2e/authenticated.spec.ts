@@ -1,4 +1,101 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import type { BoilerResponse } from '@/lib/pressure/api-types';
+
+async function ownerBoiler(request: APIRequestContext): Promise<BoilerResponse> {
+  // A private synthetic response supports local UI checks without a service key.
+  if (process.env.QA_NAV_BOILER_FIXTURE) return JSON.parse(readFileSync(process.env.QA_NAV_BOILER_FIXTURE, 'utf8'));
+  const response = await request.get('/api/me/boiler');
+  expect(response.status()).toBe(200);
+  return response.json();
+}
+
+test('tab navigation keeps the owner boiler ready and Refresh still fetches fresh data', async ({ page, request }) => {
+  const payload = await ownerBoiler(request);
+  let reads = 0;
+  let refreshes = 0;
+  await page.route('**/api/me/boiler', route => { reads++; return route.fulfill({ json: payload }); });
+  await page.route('**/api/sync', route => { refreshes++; return route.fulfill({ json: payload }); });
+  await page.goto('/boiler');
+  const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
+  await expect(gauge).toBeVisible();
+  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['How it works', '/how'], ['My Boiler', '/boiler']]) {
+    await page.getByRole('banner').getByRole('link', { name, exact: true }).click();
+    await page.waitForURL(url => url.pathname === path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  }
+  await expect(gauge).toBeVisible();
+  expect(reads).toBe(1);
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect.poll(() => refreshes).toBe(1);
+  await expect(page.getByRole('button', { name: 'Refresh', exact: true })).toBeEnabled();
+});
+
+test('connecting a source invalidates the saved boiler on the next tab visit', async ({ page, request }) => {
+  const payload = await ownerBoiler(request);
+  const updated = { ...payload, tasks: [...payload.tasks, { id: 'navigation-deadline', title: 'Freshly imported deadline',
+    dueAt: null, size: 'S', doneAt: null, source: 'ics', assignmentId: null }] };
+  let reads = 0;
+  await page.route('**/api/me/boiler', route => route.fulfill({ json: ++reads === 1 ? payload : updated }));
+  await page.route('**/api/sources', route => route.request().method() === 'POST'
+    ? route.fulfill({ status: 201, json: { source: { id: '00000000-0000-4000-8000-000000000001', kind: 'ics',
+      label: 'Navigation test calendar', coursework: true, status: 'ok', error: null, lastSyncedAt: new Date().toISOString() },
+      boiler: updated, itemCount: 1, tasks: 1, events: 0 } }) : route.continue());
+  await page.goto('/boiler');
+  await expect(page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img')).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Sources', exact: true }).click();
+  await page.getByLabel('Brightspace subscription link', { exact: true }).fill('https://school.brightspace.com/d2l/le/calendar/feed/user/test.ics');
+  await page.getByRole('button', { name: 'Import schedule', exact: true }).click();
+  await expect(page.getByText('Navigation test calendar', { exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
+  await expect(page.getByText('Freshly imported deadline', { exact: true })).toBeVisible();
+  expect(reads).toBe(2);
+});
+
+test('an unauthorized refresh clears the retained private boiler', async ({ page, request }) => {
+  const payload = await ownerBoiler(request);
+  await page.route('**/api/me/boiler', route => route.fulfill({ json: payload }));
+  await page.route('**/api/sync', route => route.fulfill({ status: 401, json: { error: 'Not signed in' } }));
+  await page.goto('/boiler');
+  const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
+  await expect(gauge).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(page.getByRole('main').getByRole('alert').filter({ hasText: /^Not signed in$/ })).toBeVisible();
+  await expect(gauge).toHaveCount(0);
+});
+
+test('a task save finishing after navigation reaches the returning boiler', async ({ page, request }) => {
+  const payload = await ownerBoiler(request);
+  const title = 'Task saved while switching tabs';
+  const updated = { ...payload, tasks: [...payload.tasks, { id: 'navigation-saved-task', title,
+    dueAt: null, size: 'S', doneAt: null, source: 'manual', assignmentId: null }] };
+  let reads = 0;
+  let saving = false;
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => { finish = resolve; });
+  await page.route('**/api/me/boiler', route => { reads++; return route.fulfill({ json: payload }); });
+  await page.route('**/api/tasks', async route => {
+    saving = true;
+    await pending;
+    await route.fulfill({ status: 201, json: { boiler: updated } });
+  });
+  try {
+    await page.goto('/boiler');
+    const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
+    await tasks.getByRole('textbox', { name: 'New task', exact: true }).fill(title);
+    await tasks.getByRole('combobox', { name: 'Due', exact: true }).selectOption('none');
+    await tasks.getByRole('button', { name: 'Add task', exact: true }).click();
+    await expect.poll(() => saving).toBe(true);
+    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.waitForURL(url => url.pathname === '/how');
+    await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
+    await page.waitForURL(url => url.pathname === '/boiler');
+    await expect.poll(() => reads).toBe(2);
+    await expect(tasks.getByRole('button', { name: `Complete: ${title}`, exact: true })).toHaveCount(0);
+    finish();
+    await expect(tasks.getByRole('button', { name: `Complete: ${title}`, exact: true })).toBeVisible();
+  } finally { finish(); }
+});
 
 test('a provisioned identity can open its boiler, teams and permitted team members', async ({ page, request }, testInfo) => {
   const teams = await request.get('/api/teams');

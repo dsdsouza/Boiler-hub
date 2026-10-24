@@ -7,5 +7,8 @@ export async function api<T>(url: string, method: "GET" | "POST" | "PATCH", body
   });
   const data = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+  if (method !== "GET" && !url.endsWith("/preview") && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("boiler:data-changed", { detail: { origin: "teams" } }));
+  }
   return data as T;
 }
