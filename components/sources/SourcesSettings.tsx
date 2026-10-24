@@ -80,7 +80,7 @@ function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChan
         <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="break-words text-base font-semibold text-fg">{source.label}</span>
-            {source.label.toLowerCase() !== KIND_LABEL[source.kind].toLowerCase() && <span className="rounded border border-line px-1.5 text-[11px] font-medium text-muted">{KIND_LABEL[source.kind]}</span>}
+            {source.label.trim().toLowerCase() !== KIND_LABEL[source.kind].toLowerCase() && <span className="rounded border border-line px-1.5 text-[11px] font-medium text-muted">{KIND_LABEL[source.kind]}</span>}
             {source.kind === "ics" && source.coursework && <span className="text-xs text-muted">coursework</span>}
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
