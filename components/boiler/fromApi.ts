@@ -23,7 +23,7 @@ function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
   const out: Record<string, TaskMeta> = {};
   for (const t of tasks) {
     if (!t.sourceId || !t.itemKey) continue;
-    out[t.id] = { sourceId: t.sourceId, itemKey: t.itemKey, ...(t.sourceLabel ? { label: t.sourceLabel } : {}), ...(t.url ? { url: t.url } : {}) };
+    out[t.id] = { sourceId: t.sourceId, itemKey: t.itemKey, ...(t.sourceLabel ? { label: t.sourceLabel } : {}), ...(t.url ? { url: t.url } : {}), ...(t.courseName ? { courseName: t.courseName } : {}) };
   }
   return out;
 }

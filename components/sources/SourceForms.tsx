@@ -146,6 +146,14 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
         <HowTo title="Canvas">
           Open <strong>Calendar</strong>, then <strong>Calendar Feed</strong> at the bottom of the right sidebar, and copy the URL.
         </HowTo>
+        <HowTo title="Moodle">
+          Open <strong>Calendar → Export calendar</strong>. Choose your courses and <strong>Recent and next 60 days</strong> or a custom
+          range covering the term. Select <strong>Get calendar URL</strong> and copy the link, rather than downloading a file.
+        </HowTo>
+        <HowTo title="Blackboard">
+          Open <strong>Calendar</strong>, then its settings or sharing menu. Choose <strong>Share calendar</strong> (Ultra) or
+          <strong> Get External Calendar Link</strong> (Original), then copy the iCalendar link.
+        </HowTo>
         <HowTo title="Outlook">
           In Outlook on the web: <strong>Settings → Calendar → Shared calendars → Publish a calendar</strong>, choose &quot;Can view all
           details&quot;, publish, then copy the <strong>ICS</strong> link.

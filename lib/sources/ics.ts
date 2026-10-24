@@ -3,6 +3,8 @@ import type { Size } from "@/lib/types";
 import { WINDOW_DAYS } from "@/lib/pressure/config";
 import { sha256 } from "@/lib/google/normalize";
 import { safeFetchText } from "./fetch";
+import { calendarText, courseworkMetadata } from "./ics-metadata";
+import { lmsProvider } from "./lms";
 import { SourceError, sourceItemId, type AdapterSource, type SourceAdapter, type SourceItem } from "./types";
 
 // ICS feeds (Brightspace, Canvas, Outlook, any calendar). Parsed live each sync, never stored.
@@ -15,7 +17,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export const LOOKBACK_DAYS = 60;
 
-const DEADLINE_RE = /\b(due|assignments?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?)\b/i;
+const DEADLINE_RE = /\b(due|assignments?|homework|problem sets?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?|essays?|papers?|reports?|presentations?|readings?|discussions?)\b/i;
 const CLASS_MEETING_RE = /\b(lectures?|seminars?|tutorials?|recitations?|laborator(?:y|ies)|labs?)\b/i;
 const EXPLICIT_DEADLINE_RE = /\b(due|deadlines?|submissions?|assignments?|homework|problem sets?|essays?|papers?|reports?|presentations?|readings?|discussions?|quiz(?:zes)?|exams?|midterms?|finals?|projects?)\b/i;
 // Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
@@ -36,6 +38,8 @@ export interface ClassifyOptions {
   now: Date;
   /** Zone for all-day deadlines (due 23:59 that day). The feed's X-WR-TIMEZONE wins when present. */
   timeZone: string;
+  /** Used only to recognize the LMS; never returned with source items. */
+  feedUrl?: string;
 }
 
 /**
@@ -57,11 +61,12 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
   const from = new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
   const to = new Date(t + (WINDOW_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
+  const provider = opts.feedUrl ? lmsProvider(opts.feedUrl) : undefined;
 
   for (const component of Object.values(cal)) {
     if (!component || component.type !== "VEVENT") continue;
     const event = component as VEvent;
-    if (event.status === "CANCELLED") continue;
+    if (!event.uid || event.status === "CANCELLED") continue;
 
     let instances: ReturnType<typeof ical.expandRecurringEvent>;
     try {
@@ -73,16 +78,17 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
     for (const inst of instances) {
       const entry = inst.event;
       if (entry.status === "CANCELLED") continue;
-      const title = textOf(entry.summary) || textOf(event.summary) || "Untitled";
+      const title = calendarText(entry.summary) || calendarText(event.summary) || "Untitled";
+      const metadata = courseworkMetadata(entry, provider);
       const start = inst.start.getTime();
       const end = inst.end ? inst.end.getTime() : start;
-      const occurrence = inst.isRecurring ? `@${new Date(start).toISOString()}` : "";
+      const occurrence = inst.isRecurring ? `@${(entry.recurrenceid ?? inst.start).toISOString()}` : "";
       const itemKey = sha256(`${event.uid}${occurrence}`);
       const id = sourceItemId(opts.sourceId, itemKey);
 
       // A timed "CS 180 Lab" is a class, while "Lab report due" remains a deadline.
       const classMeeting = opts.coursework && end > start && CLASS_MEETING_RE.test(title) && !EXPLICIT_DEADLINE_RE.test(title);
-      const keyword = DEADLINE_RE.test(title) && !classMeeting;
+      const keyword = metadata.assignment || DEADLINE_RE.test(title) && !classMeeting;
       const deadline = inst.isFullDay ? opts.coursework || keyword : end === start || keyword;
 
       if (deadline) {
@@ -102,6 +108,8 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
           due: new Date(due).toISOString(),
           doneAt: null,
           size: sizeForTitle(title),
+          ...(metadata.url ? { url: metadata.url } : {}),
+          ...(metadata.courseName ? { courseName: metadata.courseName } : {}),
         });
         continue;
       }
@@ -136,14 +144,10 @@ export const icsAdapter: SourceAdapter = {
       coursework: source.coursework,
       now: ctx.now,
       timeZone: await ctx.timeZone,
+      feedUrl: source.secret,
     });
   },
 };
-
-function textOf(v: VEvent["summary"] | undefined): string {
-  if (!v) return "";
-  return (typeof v === "string" ? v : v.val).trim();
-}
 
 function validZone(zone: unknown): string | undefined {
   if (typeof zone !== "string" || !zone) return undefined;
