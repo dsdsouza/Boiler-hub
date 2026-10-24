@@ -66,6 +66,16 @@ export function mayaBoiler(now: Date = new Date()): MyBoilerData {
     statusNote: maya.statusNote ?? "",
     syncedAt: new Date(now.getTime() - 4 * 60_000).toISOString(),
     calendar: "ok",
+    // Some items carry a label and some do not, as with real sources.
+    courses: {
+      "evt-design-review": "Onboarding v2",
+      "evt-sprint-planning": "Platform",
+      "evt-standup": "Platform",
+      "tsk-onboarding-spec": "Onboarding v2",
+      "tsk-q4-roadmap": "Q4 planning",
+      "tsk-pr-reviews": "Platform",
+      "tsk-done-bugfix": "Onboarding v2",
+    },
   };
 }
 

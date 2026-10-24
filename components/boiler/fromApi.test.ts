@@ -56,6 +56,21 @@ describe("toMyBoilerData", () => {
     expect(d.syncedAt).toBe(res.computedAt);
     expect(d.calendar).toBe("reconnect");
   });
+
+  it("maps course labels by id and skips items without one", () => {
+    expect(toMyBoilerData(res).courses).toEqual({});
+    const d = toMyBoilerData({
+      ...res,
+      tasks: [{ ...res.tasks[0]!, course: "BIO 101" }, { ...res.tasks[0]!, id: "t2", course: "  " }],
+      events: [{ ...res.events[0]!, course: "CHEM 110" }],
+    });
+    expect(d.courses).toEqual({ t1: "BIO 101", evt1: "CHEM 110" });
+  });
+
+  it("keeps the calendar zone when the response has one, and leaves it absent otherwise", () => {
+    expect(toMyBoilerData(res).timeZone).toBeUndefined();
+    expect(toMyBoilerData({ ...res, timeZone: "America/New_York" } as BoilerResponse).timeZone).toBe("America/New_York");
+  });
 });
 
 describe("request bodies match the engine routes", () => {
