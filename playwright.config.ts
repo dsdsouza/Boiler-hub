@@ -11,6 +11,7 @@ export default defineConfig({
   testIgnore: '**/authenticated.spec.ts',
   fullyParallel: true,
   forbidOnly: ci,
+  failOnFlakyTests: ci,
   retries: ci ? 1 : 0,
   workers: ci ? 2 : 4,
   timeout: 30_000,

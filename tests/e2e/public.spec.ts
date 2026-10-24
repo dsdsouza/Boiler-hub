@@ -18,6 +18,7 @@ for (const [value, zone] of [[0, 'Cool'], [39, 'Cool'], [40, 'Working'], [69, 'W
   test(`public gauge boundary ${value} is ${zone}`, async ({ page }) => {
     await page.goto('/');
     const slider = page.getByRole('slider');
+    await expect(slider).toBeEnabled();
     await slider.focus();
     await slider.press('Home');
     for (let i = 0; i < value; i++) await slider.press('ArrowRight');

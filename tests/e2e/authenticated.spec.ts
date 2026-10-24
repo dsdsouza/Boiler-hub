@@ -5,12 +5,15 @@ test('a provisioned identity can open its boiler, teams and permitted team membe
   expect(teams.status()).toBe(200);
   const body = await teams.json();
   expect(Array.isArray(body.teams)).toBe(true);
-  const { teamId, visibleUserIds } = testInfo.project.metadata;
+  const { teamId, visibleUserIds, role } = testInfo.project.metadata;
   if (teamId) {
     expect(body.teams.map((team: { id: string }) => team.id)).toEqual([teamId]);
+    if (role === 'member') expect(body.teams[0].hiddenCount).toBe(0);
     const engine = await request.get(`/api/teams/${teamId}/engine-room`);
     expect(engine.status()).toBe(200);
     const room = await engine.json();
+    if (role === 'member') expect(room.hiddenCount).toBe(0);
+    expect(room.memberCount).toBe(room.boilers.length + room.hiddenCount);
     expect(room.boilers.map((member: { userId: string }) => member.userId).sort()).toEqual([...visibleUserIds].sort());
   } else if (visibleUserIds) expect(body.teams).toEqual([]);
   await page.goto('/boiler');
@@ -18,15 +21,4 @@ test('a provisioned identity can open its boiler, teams and permitted team membe
   await page.goto('/teams');
   await expect(page).toHaveURL(/\/teams$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-});
-
-test('QA-003 @known-issue the live Engine Room hides aggregate counts from non-leads', async ({ request }, testInfo) => {
-  const { teamId, role } = testInfo.project.metadata;
-  test.skip(!teamId || role !== 'member', 'Requires a provisioned member identity');
-  const response = await request.get(`/api/teams/${teamId}/engine-room`);
-  expect(response.status()).toBe(200);
-  const teams = await request.get('/api/teams');
-  expect(teams.status()).toBe(200);
-  const team = (await teams.json()).teams.find((entry: { id: string }) => entry.id === teamId);
-  expect([(await response.json()).hiddenCount, team.hiddenCount]).toEqual([0, 0]);
 });

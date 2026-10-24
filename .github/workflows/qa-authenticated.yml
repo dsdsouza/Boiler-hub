@@ -43,9 +43,6 @@ jobs:
           pnpm qa:session --all
       - name: Verify all 32 accounts
         run: pnpm test:e2e:auth
-      - name: Reproduce known aggregate privacy defect
-        continue-on-error: true
-        run: pnpm test:e2e:auth:known --project=class-member-03
       - name: Remove private browser sessions
         if: always()
         run: node -e "require('node:fs').rmSync('.qa', { recursive:true, force:true })"
