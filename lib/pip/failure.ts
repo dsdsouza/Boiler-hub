@@ -1,6 +1,6 @@
 import { APICallError, RetryError } from "ai";
 
-export type PipStage = "setup" | "assignments" | "gemini";
+export type PipStage = "setup" | "scope" | "assignments" | "gemini" | "review";
 
 /** Only fixed categories and HTTP status codes may reach logs. Never log the error object. */
 export function pipFailure(stage: PipStage, failure: unknown) {

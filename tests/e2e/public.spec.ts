@@ -110,6 +110,10 @@ test('public routes load their assets without missing chunks or runtime errors',
       return faces.every((family) => family.length > 0 && family.every((face) => face.status === 'loaded'));
     });
     expect(fontsLoaded, 'All bundled font families must load on each public route').toBe(true);
+    // Finish Link preloads before the next hard navigation. WebKit otherwise
+    // reports the navigation's cancelled fetches as page errors on the old page.
+    // Genuine loading errors still reach the listeners and fail this assertion.
+    await page.waitForLoadState('networkidle');
   }
   const removed = await page.goto('/privacy');
   expect(removed?.status()).toBe(404);

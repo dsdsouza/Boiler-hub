@@ -306,7 +306,7 @@ export function StudyAccountability({
                   variant="ghost"
                   onClick={() =>
                     ask(
-                      `Help me make a short study plan for ${task?.title}. Break the work into small steps using the course material I provided. I have ${minutes} minutes.`,
+                      `Help me make a short study plan for ${task?.title}. Break the work into process steps using only the requirements and deadlines in my course material, without giving solutions. I have ${minutes} minutes.`,
                     )
                   }
                 >
@@ -437,7 +437,7 @@ export function StudyAccountability({
           className="mt-4"
           onClick={() =>
             ask(
-              "Help me understand the course material I added. What is the next small step? Cite the relevant source text.",
+              "What requirements and deadlines are in the material I added? Help me plan the work without giving solutions. Cite the relevant instructions.",
             )
           }
         >

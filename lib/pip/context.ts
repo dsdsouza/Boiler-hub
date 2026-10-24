@@ -10,6 +10,7 @@ export interface PipAssignment {
   id?: string;
   title: string;
   dueAt: string | null;
+  dueLocal?: string | null;
   size: string;
   source: string;
   course: string | null;
@@ -18,6 +19,7 @@ export interface PipContext {
   schedule?: PipSchedule;
   study?: StudyContext;
   asOf: string;
+  asOfLocal?: string;
   timeZone: string;
   assignments: PipAssignment[];
   totalOpen: number;
@@ -46,9 +48,16 @@ export async function assignmentContext(supabase: SupabaseClient, userId: string
     ...imported.map((item) => ({ id: item.id, title: item.title.slice(0, 200), dueAt: item.due ?? null, size: item.size ?? "M", source: item.source, course: item.courseName?.slice(0, 100) ?? null })),
   ].sort((a, b) => (a.dueAt ?? "9999").localeCompare(b.dueAt ?? "9999"));
   const totalOpen = (tasks.count ?? tasks.data?.length ?? 0) + imported.length;
+  const format = new Intl.DateTimeFormat("en-US", { timeZone, dateStyle: "full", timeStyle: "long" });
   return {
     schedule: await scheduleContext(userId, timeZone, sources.items, now),
-    asOf: now.toISOString(), timeZone, assignments: assignments.slice(0, 100), totalOpen,
+    asOf: now.toISOString(), asOfLocal: format.format(now), timeZone,
+    assignments: assignments.slice(0, 100).map((assignment) => ({
+      ...assignment,
+      dueLocal: assignment.dueAt && Number.isFinite(Date.parse(assignment.dueAt))
+        ? format.format(new Date(assignment.dueAt)) : null,
+    })), totalOpen,
+
     unavailableSources: sources.sources.filter((source) => source.status === "error").length,
     truncated: totalOpen > 100,
   };

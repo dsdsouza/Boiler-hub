@@ -51,4 +51,14 @@ describe("server-owned assignment context", () => {
     mocks.sources.mockResolvedValue({ items: [], sources: [] });
     await expect(assignmentContext(db.client, "verified-user", "UTC")).rejects.toThrow("Sources unavailable");
   });
+  it.each([
+    ["2026-10-25T21:00:00Z", "5:00:00 PM EDT"],
+    ["2026-11-02T21:00:00Z", "4:00:00 PM EST"],
+  ])("formats the real deadline in New York using the date's daylight-saving offset: %s", async (due_at, expected) => {
+    const db = database([{ title: "Sync test", due_at, size: "M", source: "manual" }]);
+    const context = await assignmentContext(db.client, "verified-user", "America/New_York", new Date("2026-10-24T22:00:00Z"));
+    expect(context.assignments[0].dueLocal).toContain(expected);
+    expect(context.assignments[0].dueAt).toBe(due_at);
+    expect(context.asOfLocal).toContain("6:00:00 PM EDT");
+  });
 });
