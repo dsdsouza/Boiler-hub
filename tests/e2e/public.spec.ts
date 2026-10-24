@@ -11,9 +11,9 @@ test('navigation responds immediately while the next page is still downloading',
   try {
     await page.goto('/');
     await expect(page.getByRole('slider')).toBeEnabled();
-    const link = page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true });
+    const link = page.getByRole('banner').getByRole('link', { name: 'Help', exact: true });
     await link.click();
-    await expect(link.getByRole('status')).toHaveText('Opening How it works…');
+    await expect(link.getByRole('status')).toHaveText('Opening Help…');
     finish();
     await expect(page).toHaveURL(/\/how$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Pressure tracks');

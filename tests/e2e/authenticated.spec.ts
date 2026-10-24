@@ -19,7 +19,7 @@ test('tab navigation keeps the owner boiler ready and Refresh still fetches fres
   await page.goto('/boiler');
   const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
   await expect(gauge).toBeVisible();
-  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['How it works', '/how'], ['My Boiler', '/boiler']]) {
+  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how'], ['My Boiler', '/boiler']]) {
     await page.getByRole('banner').getByRole('link', { name, exact: true }).click();
     await page.waitForURL(url => url.pathname === path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -86,7 +86,7 @@ test('a task save finishing after navigation reaches the returning boiler', asyn
     await tasks.getByRole('combobox', { name: 'Due', exact: true }).selectOption('none');
     await tasks.getByRole('button', { name: 'Add task', exact: true }).click();
     await expect.poll(() => saving).toBe(true);
-    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/how');
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
@@ -115,7 +115,7 @@ test('a status save finishing after navigation reaches the returning boiler', as
     const status = page.getByRole('button', { name: label, exact: true });
     await status.click();
     await expect.poll(() => saving).toBe(true);
-    await page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/how');
     await page.getByRole('banner').getByRole('link', { name: 'My Boiler', exact: true }).click();
     await page.waitForURL(url => url.pathname === '/boiler');
