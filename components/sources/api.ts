@@ -7,7 +7,9 @@ export interface AddedSource {
   itemCount: number;
   tasks: number;
   events: number;
-  boiler: BoilerResponse;
+  /** null when the source was saved but the resync after it failed (see `warning`). */
+  boiler: BoilerResponse | null;
+  warning?: string;
 }
 
 export interface TestResult {

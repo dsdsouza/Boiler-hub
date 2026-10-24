@@ -5,6 +5,27 @@ import { parseDue, parseTitle } from "../validate";
 
 const COLUMNS = "id, title, due_at, size, done_at, source, assignment_id";
 
+// DELETE: removes one of the caller's manual tasks (e.g. a stale one). Team assignments and
+// source items cannot be removed, only marked done. Resyncs, returns { boiler }.
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  if (!UUID_RE.test(id)) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+
+  // RLS: only the owner's own task matches.
+  const { data, error } = await auth.supabase.from("tasks").delete().eq("id", id).eq("source", "manual").select("id");
+  if (error) return serverError("DELETE /api/tasks", error);
+  if (!data || data.length === 0) return NextResponse.json({ error: "Only your own manual tasks can be removed" }, { status: 404 });
+
+  try {
+    return NextResponse.json({ boiler: await syncSelf(auth.user) });
+  } catch (e) {
+    return serverError("DELETE /api/tasks resync", e);
+  }
+}
+
 // Body: { title?, due_at?, size?, done? }. done: true sets done_at = now, false clears it.
 // Team-assigned tasks can only be completed or reopened. Resyncs, returns { task, boiler }.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
