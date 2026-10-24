@@ -4,6 +4,7 @@ import { AppMotion } from "@/components/ui/AppMotion";
 import "./fonts.css";
 import "./globals.css";
 import { deploymentRecovery } from "@/lib/deployment-recovery";
+import { PipConversationProvider } from "@/components/mascot/PipConversation";
 
 export const metadata: Metadata = {
   title: "Boilerplate",
@@ -29,8 +30,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AppMotion>
+          <PipConversationProvider>
           {children}
           <PipDock />
+          </PipConversationProvider>
         </AppMotion>
       </body>
     </html>

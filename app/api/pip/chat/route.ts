@@ -6,6 +6,7 @@ import { askGemini, streamGemini } from "@/lib/pip/gemini";
 import { pipFailure, type PipStage } from "@/lib/pip/failure";
 import { PIP_STREAM_TYPE } from "@/lib/pip/stream";
 import { pipStreamResponse } from "@/lib/pip/stream-response";
+import type { StudyProposal } from "@/lib/pip/planning";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -64,8 +65,9 @@ export async function POST(request: Request) {
         onError: (failure) => failureMessage("gemini", failure).message,
       });
     }
-    const reply = await askGemini(chat.messages, context, request.signal);
-    return NextResponse.json({ reply, asOf: context.asOf }, { headers: { ...headers, Vary: "Accept" } });
+    let proposal: StudyProposal | undefined;
+    const reply = await askGemini(chat.messages, context, request.signal, (value) => { proposal = value; });
+    return NextResponse.json({ reply, asOf: context.asOf, ...(proposal ? { proposal } : {}) }, { headers: { ...headers, Vary: "Accept" } });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
     const failureInfo = failureMessage(stage, failure);
