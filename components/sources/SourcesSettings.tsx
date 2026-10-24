@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { timeAgo } from "@/components/boiler/format";
 import { foundLine, sourcesCall, type TestResult } from "./api";
-import { CalendarFeedForm } from "./SourceForms";
+import { CalendarFeedForm, GitHubTokenForm } from "./SourceForms";
 
 const KIND_LABEL: Record<SourceInfo["kind"], string> = { ics: "Calendar feed", github: "GitHub" };
 
@@ -24,7 +24,7 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
         </CardTitle>
         {sources.length === 0 ? (
           <p className="m-0 border-t border-line py-3 text-sm text-muted">
-            Nothing connected yet. Add a calendar feed below and its deadlines join your boiler.
+            Nothing connected yet. Add a calendar feed or GitHub below and their deadlines join your boiler.
           </p>
         ) : (
           <ul className="m-0 list-none p-0">
@@ -45,6 +45,16 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
         </p>
         <CalendarFeedForm onAdded={(r) => upsert(r.source)} />
       </Card>
+
+      <Card as="section" aria-labelledby="add-gh" className="px-5 py-6 sm:px-7">
+        <CardTitle id="add-gh" className="mb-1">
+          Connect GitHub
+        </CardTitle>
+        <p className="mt-0 mb-4 text-sm text-muted">
+          Assigned issues, review requests and failing CI on your PRs become tasks. Issues you close and PRs that merge vent pressure.
+        </p>
+        <GitHubTokenForm onAdded={(r) => upsert(r.source)} />
+      </Card>
     </div>
   );
 }
@@ -61,7 +71,8 @@ function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChan
     try {
       const r = await sourcesCall<TestResult>(`/api/sources/${source.id}/test`, "POST");
       onChange(r.source);
-      setNote(r.ok ? { ok: true, text: `${foundLine(r)}.` } : { ok: false, text: r.error ?? "The source did not respond" });
+      const found = source.kind === "github" ? `Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}` : foundLine(r);
+      setNote(r.ok ? { ok: true, text: `${found}.` } : { ok: false, text: r.error ?? "The source did not respond" });
     } catch (e) {
       setNote({ ok: false, text: (e as Error).message });
     } finally {
