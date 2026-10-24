@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Status } from "@/lib/types";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import { Boiler } from "@/components/boiler/Boiler";
-import { ReconnectBanner } from "@/components/boiler/ReconnectBanner";
+import { CalendarUnavailableBanner, ReconnectBanner } from "@/components/boiler/ReconnectBanner";
 import { StatusPicker } from "@/components/boiler/StatusPicker";
 import { countsLine } from "@/components/boiler/format";
 import { statusBody } from "@/components/boiler/fromApi";
@@ -85,7 +85,9 @@ export function OnboardingClient() {
   const connected = boiler?.calendar === "ok";
   const sources = boiler?.sources ?? [];
   // A new source resyncs on the server; show its effect on the first-sync gauge.
-  const sourceAdded = (r: AddedSource) => setBoiler(r.boiler);
+  const sourceAdded = (r: AddedSource) => {
+    if (r.boiler) setBoiler(r.boiler);
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -103,7 +105,8 @@ export function OnboardingClient() {
             {boiler.events.length === 1 ? "event" : "events"}) to compute a score. Event details are never stored.
           </p>
         )}
-        {boiler && !connected && <ReconnectBanner next="/onboarding" />}
+        {boiler?.calendar === "reconnect" && <ReconnectBanner next="/onboarding" />}
+        {boiler?.calendar === "unavailable" && <CalendarUnavailableBanner />}
       </Step>
 
       <Step n={2} title="First sync">

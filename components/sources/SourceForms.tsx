@@ -32,7 +32,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
         coursework: isCoursework,
         ...(label.trim() ? { label: label.trim() } : {}),
       });
-      setDone(`${r.source.label} connected. ${foundLine(r)}.`);
+      setDone(`${r.source.label} connected. ${foundLine(r)}.${r.warning ? ` ${r.warning}` : ""}`);
       setUrl("");
       setLabel("");
       setCoursework(null);
@@ -144,7 +144,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
     setDone(null);
     try {
       const r = await sourcesCall<AddedSource>("/api/sources", "POST", { kind: "github", token: token.trim() });
-      setDone(`GitHub connected. Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}.`);
+      setDone(`GitHub connected. Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}.${r.warning ? ` ${r.warning}` : ""}`);
       setToken("");
       onAdded?.(r);
     } catch (err) {
