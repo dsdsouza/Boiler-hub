@@ -19,9 +19,7 @@ import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
 import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
-import { timeAgo } from "./format";
 import { fireFromForecast } from "./geometry";
-import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import type { MyBoiler } from "./useMyBoiler";
 
 function useTick(ms: number) {
@@ -60,12 +58,10 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
 export function MyBoilerView({
   boiler,
   title = "My Boiler",
-  sourceLabel = "Google Calendar connected",
   headingLevel = 1,
 }: {
   boiler: MyBoiler;
   title?: string;
-  sourceLabel?: string;
   headingLevel?: 1 | 2;
 }) {
   useTick(30_000);
@@ -94,14 +90,7 @@ export function MyBoilerView({
   return (
     <div className="flex flex-col gap-6">
       <div className="bp-arrive flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
-          <p className="mt-1.5 mb-0 text-[15px] text-muted">
-            {data.calendar !== "ok"
-              ? data.sources?.some((s) => s.kind === "ics" && s.status === "ok") ? "Calendar feeds and tasks" : "Tasks only"
-              : sourceLabel} · meetings {WINDOW_DAYS} days · deadlines {TASK_LOOKAHEAD_DAYS} days · synced {timeAgo(data.syncedAt)}
-          </p>
-        </div>
+        <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
         <button
           type="button"
           // aria-disabled, not disabled: a disabled button drops keyboard focus to the page.
