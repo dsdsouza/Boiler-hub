@@ -3,7 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 const external = process.env.PLAYWRIGHT_BASE_URL;
 const port = Number(process.env.PLAYWRIGHT_PORT || 3100);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PLAYWRIGHT_PORT must be an integer from 1024 to 65535');
-const baseURL = external || `http://127.0.0.1:${port}`;
+// Next normalizes local middleware redirects to localhost. Use that origin for
+// the browser too, so WebKit prefetches do not become cross-origin requests.
+const baseURL = external || `http://localhost:${port}`;
 const ci = Boolean(process.env.CI);
 
 export default defineConfig({
@@ -11,6 +13,7 @@ export default defineConfig({
   testIgnore: '**/authenticated.spec.ts',
   fullyParallel: true,
   forbidOnly: ci,
+  failOnFlakyTests: ci,
   retries: ci ? 1 : 0,
   workers: ci ? 2 : 4,
   timeout: 30_000,

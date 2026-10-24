@@ -2,8 +2,9 @@ name: Boilerplate QA
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -15,6 +16,7 @@ concurrency:
 
 jobs:
   contracts:
+    name: Types, lint and database contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -27,9 +29,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec next typegen
       - run: pnpm typecheck && pnpm lint && pnpm test
 
   browsers:
+    name: Browsers (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -93,33 +97,19 @@ jobs:
           path: playwright-report
           retention-days: 14
 
-  known-issues:
-    # Explicitly visible as a nonblocking job; these assertions remain red until the defects are fixed.
+  qa-gate:
+    name: QA gate
+    if: ${{ always() }}
+    needs: [contracts, browsers, report]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://qa-project.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-anon-placeholder
-      PLAYWRIGHT_PRODUCTION: '1'
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.25.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm build
-      - run: pnpm test:e2e:known --project=desktop-chromium --reporter=list,html
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: known-issue-evidence
-          path: |
-            playwright-report
-            test-results
-          retention-days: 14
+      - name: Require every QA job to succeed
+        env:
+          CONTRACTS: ${{ needs.contracts.result }}
+          BROWSERS: ${{ needs.browsers.result }}
+          REPORT: ${{ needs.report.result }}
+        run: |
+          test "$CONTRACTS" = success
+          test "$BROWSERS" = success
+          test "$REPORT" = success

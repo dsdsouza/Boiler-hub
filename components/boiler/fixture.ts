@@ -9,6 +9,7 @@ export type DemoBoiler = BoilerCard & { raw: number };
 export type DemoTeam = Omit<EngineRoom, "boilers"> & { boilers: DemoBoiler[]; hiddenRaw: number[] };
 
 export const demoTeams = demo.teams as unknown as DemoTeam[];
+export const mayaUserId = demo.maya.userId;
 
 const H = 3_600_000;
 const D = 24 * H;

@@ -149,7 +149,10 @@ test('Pip accessory is exclusive and hide/show survives a reload', async ({ page
 
 test('resizing a completed task leaves other assignments at their original pressure', async ({ page }) => {
   const before = await score(page);
-  await addTask(page, 'QA completed resize', 'L');
+  await addTask(page, 'QA completed resize', 'S');
+  const small = await score(page);
+  await page.getByRole('combobox', { name: 'Size: QA completed resize', exact: true }).selectOption('L');
+  await expect.poll(() => score(page)).toBeGreaterThan(small);
   await page.getByRole('button', { name: 'Complete: QA completed resize', exact: true }).click();
   expect(await score(page)).toBe(before);
   await page.locator('summary').filter({ hasText: 'Completed or cleared' }).click();
@@ -158,4 +161,6 @@ test('resizing a completed task leaves other assignments at their original press
   const row = page.getByRole('region', { name: 'Tasks', exact: true }).getByRole('listitem').filter({ has: page.getByRole('button', { name: 'Mark not done: QA completed resize', exact: true }) });
   await expect(row).toContainText('Completed or cleared');
   await expect(row).not.toContainText('−');
+  await page.getByRole('button', { name: 'Mark not done: QA completed resize', exact: true }).click();
+  await expect.poll(() => score(page)).toBe(small);
 });

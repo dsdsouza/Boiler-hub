@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BoilerCard, Counts, EngineRoom, Role, Status, Visibility, Zone } from "@/lib/types";
 import { safeHiddenCount, type AssignmentInput, type AssignmentTarget, type TargetResult } from "@/app/api/teams/_lib/assignment";
+import { TASK_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
 
 // Query helpers for teams. Callers pass the clients in:
 //   `supabase` is the per-request user client (RLS applies),
@@ -252,8 +253,8 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
 // matches the preview. Recipients are not resynced here (no external calls); their
 // own next sync does the full recompute.
 //
-// Idempotent per `clientKey` (one per draft, unique per team in 0003): a repeat post returns
-// the first assignment with `duplicate: true` and changes nothing.
+// Migration 0006 commits all writes atomically. A failed write rolls everything
+// back, so a retry can finish; a committed draft is returned without double bumps.
 export async function createAssignment(
   admin: SupabaseClient,
   teamId: string,
@@ -264,55 +265,10 @@ export async function createAssignment(
   now: Date,
   clientKey?: string,
 ): Promise<{ assignmentId: string; duplicate: boolean }> {
-  const { data: assignment, error } = await admin
-    .from("team_assignments")
-    .insert({
-      team_id: teamId,
-      title: input.title,
-      due_at: input.due,
-      size: input.size,
-      created_by: createdBy,
-      ...(clientKey ? { client_key: clientKey } : {}),
-    })
-    .select("id")
-    .single();
-  if (error) {
-    if (clientKey && error.code === "23505") {
-      const { data: existing, error: readError } = await admin
-        .from("team_assignments")
-        .select("id")
-        .eq("team_id", teamId)
-        .eq("client_key", clientKey)
-        .single();
-      if (readError) throw readError;
-      return { assignmentId: (existing as { id: string }).id, duplicate: true };
-    }
-    throw error;
-  }
-  const assignmentId = (assignment as { id: string }).id;
-
-  if (targets.length > 0) {
-    // Fresh assignment, so a plain insert; the partial unique index guards duplicates.
-    const { error: taskError } = await admin.from("tasks").insert(
-      targets.map((t) => ({
-        owner_id: t.userId,
-        title: input.title,
-        due_at: input.due,
-        size: input.size,
-        source: "team",
-        assignment_id: assignmentId,
-      })),
-    );
-    if (taskError) {
-      await admin.from("team_assignments").delete().eq("id", assignmentId);
-      throw taskError;
-    }
-  }
-
   // Only members who already have a snapshot are bumped, and computed_at keeps its original
   // value: the score moved, but the calendar behind it was not re-read, so it is no fresher.
   // Never-synced members get the task but no snapshot; their first sync makes one.
-  const dueWithinWeek = Date.parse(input.due) - now.getTime() <= 7 * 86_400_000;
+  const dueWithinWindow = Date.parse(input.due) - now.getTime() <= TASK_LOOKAHEAD_DAYS * 86_400_000;
   const byId = new Map(targets.map((t) => [t.userId, t]));
   const bumps = results.flatMap((r) => {
     const t = byId.get(r.userId);
@@ -321,18 +277,20 @@ export async function createAssignment(
     return [
       {
         user_id: r.userId,
+        raw_before: t.raw,
         score: r.after,
         raw: r.rawAfter,
         zone: r.zoneAfter,
-        counts: { ...counts, tasksDue: counts.tasksDue + (dueWithinWeek ? 1 : 0) },
+        counts: { ...counts, tasksDue: counts.tasksDue + (dueWithinWindow ? 1 : 0) },
         computed_at: t.updatedAt,
       },
     ];
   });
-  if (bumps.length > 0) {
-    const { error: snapError } = await admin.from("pressure_snapshots").upsert(bumps, { onConflict: "user_id" });
-    if (snapError) throw snapError;
-  }
-
-  return { assignmentId, duplicate: false };
+  const { data, error } = await admin.rpc("post_team_assignment", {
+    p_team_id: teamId, p_created_by: createdBy, p_title: input.title,
+    p_due_at: input.due, p_size: input.size, p_client_key: clientKey ?? null,
+    p_targets: targets.map((t) => t.userId), p_bumps: bumps,
+  });
+  if (error) throw error;
+  return data as { assignmentId: string; duplicate: boolean };
 }
