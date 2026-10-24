@@ -172,7 +172,7 @@ export function TaskList({
                 )}
               </button>
               <div className="min-w-0 flex-1">
-                <div className={`text-[15px] font-semibold ${done ? "text-muted line-through" : "text-fg"}`}>
+                <div className={`break-words text-[15px] font-semibold ${done ? "text-muted line-through" : "text-fg"}`}>
                   {m?.url ? (
                     <a href={m.url} target="_blank" rel="noreferrer" className="text-inherit hover:text-brass-light">
                       {t.title}
@@ -188,6 +188,7 @@ export function TaskList({
                     <span className="sr-only">Source: </span>
                     {sourceBadge(t.source, m?.label)}
                   </span>
+                  {m?.courseName && <span className="break-words text-body">{m.courseName}</span>}
                   {stale ? (
                     <span className="font-semibold text-hot-ink">
                       {t.source === "manual" ? "Stale — mark done or remove" : "Stale — mark done"}

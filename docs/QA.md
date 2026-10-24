@@ -1,5 +1,15 @@
 # QA status
 
+## LMS import follow-up — October 24, 2026
+
+Reviewed **Investigate Webly schedule scraping**, including the Webly and Coursicle fictional-feed experiments. Reused eight before/after fixtures for Brightspace, Canvas, Moodle and Blackboard. The fix recognizes school-hosted feed URLs, imports essays/readings and explicitly linked assignments as tasks, preserves supplied course labels and LMS links in the owner's view, and keeps a moved repeat occurrence's original identity.
+
+All four providers imported three tasks and reconciled renames, moved deadlines, additions, removals and unchanged items by UID. A full feed → sync → view-model test verified Refresh bypassing the cache, retained completion/size overrides, owner-scoped status writes, and absence of feed tokens or assignment contents in persisted snapshot/status payloads. No database changes or browser extension were required.
+
+Computer-use checks rendered the actual form and task-list components with fictional data at 1440, 390 and 320 CSS pixels. All four task lists showed three assignments, supplied course labels and links appeared, Moodle links enabled coursework defaults and the correct source name, and updated samples removed the quiz and showed the revised assignment and new reading. A simulated failed POST preserved the entered link; a successful retry cleared the form and showed its result. No horizontal overflow was observed. Axe reported zero violations and zero incomplete checks on the compact preview. The UI source detector returned no findings. Temporary preview routes and request interception were removed after the checks.
+
+Final checks against the latest Brightspace staging update passed: **172 tests in 24 files, TypeScript, ESLint and a production build**. [Import behavior and limits](imports.md) documents the field mappings and refresh contract. These checks used fictional feeds and mocked external responses, not a live school account; institutional variations and school-side caching remain unverified. The live domain still requires deployment of staging.
+
 ## Theme removal and GitHub follow-up — October 24, 2026
 
 The theme button, saved-theme initialization script, OS theme listener and light palette are removed. The app consistently uses its dark iron and brass palette, including native form controls and the browser theme color. Pip's storage helpers now live in `components/ui/storage.ts`.
