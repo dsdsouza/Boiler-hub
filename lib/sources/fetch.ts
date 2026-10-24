@@ -1,4 +1,4 @@
-import { lookup as dnsLookup } from "node:dns/promises";
+import { lookup as dnsLookup, resolve4, resolve6 } from "node:dns/promises";
 import { BlockList, isIP } from "node:net";
 import { SourceError } from "./types";
 
@@ -58,7 +58,22 @@ export function isBlockedIp(address: string): boolean {
 
 export type Lookup = (host: string) => Promise<string[]>;
 
-const defaultLookup: Lookup = async (host) => (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
+const defaultLookup: Lookup = async (host) => {
+  try {
+    return (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
+  } catch (error) {
+    // Workers supports DNS record resolution, but not the OS-backed lookup API.
+    if (!(error instanceof Error) || !/not implemented/i.test(error.message)) throw error;
+    const records = await Promise.allSettled([resolve4(host), resolve6(host)]);
+    // Reject incomplete DNS checks except when that record family has no records.
+    for (const record of records) {
+      if (record.status === "rejected" && !["ENODATA", "ENOTFOUND"].includes(record.reason?.code)) {
+        throw record.reason;
+      }
+    }
+    return records.flatMap((record) => record.status === "fulfilled" ? record.value : []);
+  }
+};
 
 /** Normalize a pasted feed URL (webcal:// → https://) and check its shape. Throws SourceError. */
 export function parseFeedUrl(raw: string): URL {
