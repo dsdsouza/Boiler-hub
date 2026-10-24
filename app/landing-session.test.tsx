@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import LandingPage, { dynamic } from "./page";
 
 const { getUser } = vi.hoisted(() => ({ getUser: vi.fn() }));
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser } }),
 }));
@@ -28,9 +29,10 @@ describe("landing session", () => {
     expect(html).not.toContain("Sign out");
     expect(html).not.toContain("Open My Boiler");
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
-    expect(header).toContain('href="/demo"');
-    expect(header).not.toContain('href="/teams"');
-    expect(header).not.toContain('href="/settings/sources"');
+    for (const href of ["/boiler", "/teams", "/settings/sources", "/how"]) {
+      expect(header).toContain(`href="${href}"`);
+    }
+    expect(header).not.toContain('href="/demo"');
   });
 
   it("shows the verified account and boiler link instead of Google sign-in", async () => {
