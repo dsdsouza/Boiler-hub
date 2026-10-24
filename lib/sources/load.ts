@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decrypt } from "@/lib/crypto";
 import type { SourceInfo } from "@/lib/pressure/api-types";
+import { githubAdapter } from "./github";
 import { icsAdapter } from "./ics";
 import { applyItemState, overdueOpen, silentDoneAt } from "./state";
 import {
@@ -19,7 +20,7 @@ import {
 // Runs every source a user has connected. One failing source never fails the sync: it is marked
 // status 'error' with a user-facing message, and the others still count.
 
-export const ADAPTERS: Partial<Record<SourceKind, SourceAdapter>> = { ics: icsAdapter };
+export const ADAPTERS: Record<SourceKind, SourceAdapter> = { ics: icsAdapter, github: githubAdapter };
 
 /** Best-effort, per server instance (Vercel instances do not share memory). Live items, never persisted. */
 const CACHE_TTL_MS: Record<SourceKind, number> = { ics: 5 * 60_000, github: 2 * 60_000 };
