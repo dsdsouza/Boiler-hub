@@ -25,6 +25,8 @@ type Load = { kind: "none" } | { kind: "ready"; snapshot: Snapshot | null };
 export function PipDock() {
   const pathname = usePathname() ?? "/";
   const routeHidden = HIDE_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // The Engine Room has a lead-only sticky "New assignment" button in this corner (EngineRoom.tsx): sit above it.
+  const raised = /^\/teams\/[^/]+/.test(pathname);
   const [load, setLoad] = useState<Load>({ kind: "none" });
   const [hidden, setHidden] = useState(true);
   const [open, setOpen] = useState(false);
@@ -117,7 +119,11 @@ export function PipDock() {
     // On phones, sit above the bottom tab bar (MobileTabBar: 56px + safe-area padding).
     <div
       ref={rootRef}
-      className="fixed right-4 bottom-[calc(max(env(safe-area-inset-bottom),8px)_+_68px)] z-40 flex flex-col items-end gap-3 sm:right-6 sm:bottom-6 print:hidden"
+      className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 print:hidden ${
+        raised
+          ? "bottom-[calc(env(safe-area-inset-bottom)_+_136px)] sm:bottom-[84px]"
+          : "bottom-[calc(max(env(safe-area-inset-bottom),8px)_+_68px)] sm:bottom-6"
+      }`}
     >
       {open && (
         <section
