@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { computePressure } from "@/lib/pressure/compute";
-import { fetchGithub, githubAdapter, mapGithub, sizeFromLabels, type GhIssue } from "./github";
+import { fetchGithub, githubAdapter, mapGithub, MAX_CI_PRS, sizeFromLabels, type GhIssue } from "./github";
 import { SourceError } from "./types";
 
 const NOW = new Date("2026-10-26T12:00:00Z");
@@ -122,6 +122,52 @@ describe("GitHub adapter (mocked API)", () => {
     const err = await fetchGithub("bad", NOW, fetchImpl).catch((e) => e);
     expect(err).toBeInstanceOf(SourceError);
     expect(err.message).toMatch(/rejected the token/);
+  });
+
+  it("fetches assigned issues beyond the first search page", async () => {
+    const base = fakeGithub(routes);
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/search/issues" && url.searchParams.get("q")?.startsWith("is:open is:issue")) {
+        const page = Number(url.searchParams.get("page") ?? 1);
+        const perPage = Number(url.searchParams.get("per_page"));
+        const start = (page - 1) * perPage;
+        return Response.json({ total_count: 101, incomplete_results: false, items: Array.from({ length: Math.min(perPage, 101 - start) }, (_, i) => issue(start + i + 100, "Assigned")) });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+    const snap = await fetchGithub("tok", NOW, fetchImpl);
+    expect(snap.assigned).toHaveLength(101);
+    expect(snap.assigned.at(-1)?.number).toBe(200);
+  });
+
+  it("rejects incomplete search results instead of reporting a smaller workload", async () => {
+    const fetchImpl = fakeGithub({ ...routes, "search is:open is:issue archived:false assignee:maya": { items: [issue(1, "Partial")], total_count: 12, incomplete_results: true } });
+    await expect(fetchGithub("tok", NOW, fetchImpl)).rejects.toThrow(/incomplete results/);
+  });
+
+  it("explains GitHub's search limit instead of silently truncating", async () => {
+    const fetchImpl = fakeGithub({ ...routes, "search is:open is:issue archived:false assignee:maya": { items: [], total_count: 1001 } });
+    await expect(fetchGithub("tok", NOW, fetchImpl)).rejects.toThrow(/1,000/);
+  });
+
+  it("bounds CI calls to the most recently updated open PRs", async () => {
+    const mine = Array.from({ length: MAX_CI_PRS + 2 }, (_, i) => pr(100 + i, "Open PR"));
+    const fetchImpl = fakeGithub({ ...routes, "search is:open is:pr archived:false author:maya": { items: mine, total_count: 2000 } });
+    await fetchGithub("tok", NOW, fetchImpl);
+    const pullCalls = vi.mocked(fetchImpl).mock.calls.filter(([input]) => new URL(String(input)).pathname.includes("/pulls/"));
+    expect(pullCalls).toHaveLength(MAX_CI_PRS);
+    expect(String(pullCalls.at(-1)?.[0])).toContain(`/pulls/${100 + MAX_CI_PRS - 1}`);
+  });
+
+  it.each([401, 500, 503])("surfaces CI HTTP %s failures instead of counting them as healthy", async (status) => {
+    const fetchImpl = fakeGithub(routes, { "/actions/runs": () => new Response("{}", { status }) });
+    await expect(fetchGithub("tok", NOW, fetchImpl)).rejects.toBeInstanceOf(SourceError);
+  });
+
+  it("surfaces a network failure during CI checks", async () => {
+    const fetchImpl = fakeGithub(routes, { "/actions/runs": () => { throw new TypeError("network"); } });
+    await expect(fetchGithub("tok", NOW, fetchImpl)).rejects.toThrow("Could not reach GitHub");
   });
 
   it("reads size labels in a few spellings", () => {
