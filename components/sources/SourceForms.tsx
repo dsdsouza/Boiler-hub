@@ -9,8 +9,16 @@ export const fieldClass =
   "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 const labelClass = "text-[13px] font-medium text-body";
 
-/** Paste an ICS link (Brightspace, Canvas, Outlook, any feed). Used on /settings/sources and in onboarding. */
-export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r: AddedSource) => void; idPrefix?: string }) {
+/** Paste an ICS link (coursework or another feed). Shared with onboarding. */
+type CalendarProvider = "other" | "brightspace";
+
+export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider = "other", showProvider = true }: {
+  onAdded?: (r: AddedSource) => void;
+  idPrefix?: string;
+  initialProvider?: CalendarProvider;
+  showProvider?: boolean;
+}) {
+  const [provider, setProvider] = useState<CalendarProvider>(initialProvider);
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   // Follows the URL (on for Brightspace and Canvas) until the user sets it.
@@ -18,10 +26,12 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
-  const isCoursework = coursework ?? isCourseworkUrl(url);
+  const isCoursework = coursework ?? (provider === "brightspace" || isCourseworkUrl(url));
+  const isBrightspace = provider === "brightspace";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     setDone(null);
@@ -30,7 +40,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
         kind: "ics",
         url: url.trim(),
         coursework: isCoursework,
-        ...(label.trim() ? { label: label.trim() } : {}),
+        ...(label.trim() ? { label: label.trim() } : isBrightspace ? { label: "Brightspace" } : {}),
       });
       setDone(`${r.source.label} connected. ${foundLine(r)}.${r.warning ? ` ${r.warning}` : ""}`);
       setUrl("");
@@ -47,23 +57,50 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
   return (
     <div className="flex flex-col gap-4">
       <form onSubmit={submit} className="flex flex-col gap-3">
+        {showProvider && <div className="flex flex-col gap-1.5">
+          <label htmlFor={`${idPrefix}-provider`} className={labelClass}>Calendar provider</label>
+          <select
+            id={`${idPrefix}-provider`}
+            value={provider}
+            disabled={busy}
+            onChange={(e) => {
+              setProvider(e.target.value as CalendarProvider);
+              setCoursework(null);
+              setError(null);
+              setDone(null);
+            }}
+            className={fieldClass}
+          >
+            <option value="other">Coursework or other calendar feed</option>
+            <option value="brightspace">Brightspace (D2L)</option>
+          </select>
+        </div>}
+        {isBrightspace && <BrightspaceHelp />}
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${idPrefix}-url`} className={labelClass}>
-            Calendar feed link (.ics or webcal://)
+            {isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}
           </label>
           <input
             id={`${idPrefix}-url`}
             type="url"
             inputMode="url"
             required
+            disabled={busy}
+            maxLength={2048}
             autoComplete="off"
             spellCheck={false}
             placeholder="https://school.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=…"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setError(null);
+              setDone(null);
+            }}
+            aria-describedby={`${idPrefix}-link-help${error ? ` ${idPrefix}-error` : ""}`}
+            aria-invalid={error ? true : undefined}
             className={`${fieldClass} font-mono text-base`}
           />
-          <span className="text-xs text-muted">The link works like a password. It is stored encrypted and never shown again.</span>
+          <span id={`${idPrefix}-link-help`} className="text-xs text-muted">The link works like a password. It is stored encrypted and never shown again.</span>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
@@ -73,6 +110,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
             <input
               id={`${idPrefix}-label`}
               maxLength={60}
+              disabled={busy}
               placeholder={url ? defaultFeedLabel(url) : "Brightspace"}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -83,6 +121,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
             <input
               type="checkbox"
               checked={isCoursework}
+              disabled={busy}
               onChange={(e) => setCoursework(e.target.checked)}
               className="size-5 cursor-pointer accent-(--color-brass)"
             />
@@ -90,20 +129,19 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" disabled={busy || !url.trim()}>
-            {busy ? "Checking the feed…" : "Add feed"}
+          <Button type="submit" variant="primary" disabled={busy || !url.trim()} aria-busy={busy}>
+            {busy ? "Checking the feed…" : isBrightspace ? "Import schedule" : "Add feed"}
           </Button>
           <p aria-live="polite" className="m-0 text-sm">
             {done && <span className="text-cool-ink">{done}</span>}
-            {error && <span className="text-redline-ink">{error}</span>}
+            {error && <span id={`${idPrefix}-error`} className="text-redline-ink">{error}</span>}
           </p>
         </div>
       </form>
 
-      <div className="flex flex-col gap-1 border-t border-line pt-3">
+      {!isBrightspace && <div className="flex flex-col gap-1 border-t border-line pt-3">
         <HowTo title="Brightspace (D2L)">
-          Open <strong>Calendar</strong>, choose <strong>Subscribe</strong> (top right), pick <strong>All Courses</strong>, then copy the
-          link it shows.
+          Open <strong>Calendar → Settings</strong>, enable <strong>Calendar Feeds</strong>, then choose <strong>Subscribe → All Calendars and Tasks</strong> and copy the link.
         </HowTo>
         <HowTo title="Canvas">
           Open <strong>Calendar</strong>, then <strong>Calendar Feed</strong> at the bottom of the right sidebar, and copy the URL.
@@ -112,7 +150,22 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed" }: { onAdded?: (r:
           In Outlook on the web: <strong>Settings → Calendar → Shared calendars → Publish a calendar</strong>, choose &quot;Can view all
           details&quot;, publish, then copy the <strong>ICS</strong> link.
         </HowTo>
-      </div>
+      </div>}
+    </div>
+  );
+}
+
+function BrightspaceHelp() {
+  return (
+    <div className="text-sm text-body">
+      <ol className="mt-0 mb-3 list-decimal space-y-1.5 pl-5">
+        <li>In Brightspace, open <strong>Calendar → Settings</strong>.</li>
+        <li>Turn on <strong>Enable Calendar Feeds</strong> and save.</li>
+        <li>Choose <strong>Subscribe → All Calendars and Tasks</strong>, then copy the subscription link.</li>
+      </ol>
+      <p className="mt-0 mb-2">Classes on that calendar appear in your schedule; assignment deadlines appear in Tasks. Refresh My Boiler to pick up changes.</p>
+      <p className="mt-0 mb-2 text-muted">Missing class times? Brightspace only includes events posted there. For Purdue’s official timetable, check myPurdue → Academic Profile → Student Profile → My Courses. You can also connect a timetable calendar feed below.</p>
+      <a href="https://community.d2l.com/brightspace/kb/articles/18042-manage-course-events-with-the-calendar-tool" target="_blank" rel="noreferrer" className="underline underline-offset-2">Brightspace’s calendar guide</a>
     </div>
   );
 }
