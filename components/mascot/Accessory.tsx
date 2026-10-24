@@ -1,7 +1,8 @@
 import type { AccessoryId } from "./wardrobe";
 
-// Drawn in Mascot's viewBox. Hats sit centered on the brass rim with the chimney
-// poking up through the top, so steam still rises; nothing covers the face, gauge eye or water.
+// Drawn in Mascot's viewBox. On the small Pip, hats sit centered on the brass rim with the
+// chimney poking up through the top, so steam still rises; nothing covers the face, gauge eye or water.
+// PipHero perches them on the boiler's free shoulder instead (stack "none").
 
 const BRASS = "#D1A85A";
 const BRASS_DARK = "#8C6A35";
@@ -11,8 +12,12 @@ const HAT = "#2A231B";
 /** Lifts dark hats off the dark app background. */
 const EDGE = "#7A6750";
 
-/** The top of Pip's chimney, redrawn over a hat so it reads as coming through it (matches Mascot.tsx). */
-function ChimneyTop({ from }: { from: number }) {
+/** "copper": the hat sits over Pip's chimney (Mascot.tsx). "none": no chimney through it (PipHero). */
+export type Stack = "copper" | "none";
+
+/** The top of Pip's chimney, redrawn over a hat so it reads as coming through it. */
+function ChimneyTop({ from, stack }: { from: number; stack: Stack }) {
+  if (stack === "none") return null;
   return (
     <>
       <rect x="54" y="13" width="12" height={from - 13} fill={COPPER} />
@@ -21,7 +26,7 @@ function ChimneyTop({ from }: { from: number }) {
   );
 }
 
-export function Accessory({ id, detail }: { id: AccessoryId; detail: boolean }) {
+export function Accessory({ id, detail, stack = "copper" }: { id: AccessoryId; detail: boolean; stack?: Stack }) {
   switch (id) {
     case "top-hat":
       return (
@@ -30,7 +35,7 @@ export function Accessory({ id, detail }: { id: AccessoryId; detail: boolean }) 
           <rect x="41" y="12" width="38" height="18.5" rx="2" fill={HAT} stroke={EDGE} strokeWidth="1.4" />
           <rect x="41.7" y="23" width="36.6" height="5" fill={COPPER} />
           {detail && <rect x="44" y="14.5" width="4" height="7.5" rx="2" fill="#fff" opacity="0.14" />}
-          <ChimneyTop from={13} />
+          <ChimneyTop from={13} stack={stack} />
         </g>
       );
     case "engineer-cap":
@@ -40,7 +45,7 @@ export function Accessory({ id, detail }: { id: AccessoryId; detail: boolean }) 
           {detail && <path d="M44 19.5 V31 M52 15.5 V31 M68 15.5 V31 M76 19.5 V31" stroke="#C9D8E6" strokeWidth="1.6" opacity="0.6" />}
           <path d="M38 30.5 Q24 30 19 35 H42 Z" fill="#2C4660" />
           <rect x="35" y="29" width="50" height="4.5" rx="2.25" fill="#2C4660" />
-          <ChimneyTop from={16} />
+          <ChimneyTop from={16} stack={stack} />
         </g>
       );
     case "grad-cap":
@@ -48,7 +53,8 @@ export function Accessory({ id, detail }: { id: AccessoryId; detail: boolean }) 
         <g>
           <rect x="42" y="21" width="36" height="12" rx="2.5" fill={HAT} stroke={EDGE} strokeWidth="1.4" />
           <polygon points="24,20 60,9 96,20 60,31" fill={HAT} stroke={EDGE} strokeWidth="1.4" strokeLinejoin="round" />
-          <ChimneyTop from={14} />
+          <ChimneyTop from={14} stack={stack} />
+          {stack === "none" && <circle cx="60" cy="20" r="2.6" fill={BRASS} />}
           <path d="M66 18 Q84 19 88 22 V34" fill="none" stroke={BRASS} strokeWidth={detail ? 1.6 : 2.4} strokeLinecap="round" />
           <rect x="85.5" y="33" width="5" height={detail ? 8 : 6} rx="1.5" fill={BRASS} />
         </g>
@@ -59,7 +65,7 @@ export function Accessory({ id, detail }: { id: AccessoryId; detail: boolean }) 
           <path d="M37 32 C37 11 83 11 83 32 Z" fill="#F0B429" />
           <rect x="31" y="28.5" width="58" height="5.5" rx="2.75" fill="#C98F14" />
           {detail && <path d="M42 28 C42 18 48 14 54 13 M78 28 C78 18 72 14 66 13" fill="none" stroke="#C98F14" strokeWidth="2" strokeLinecap="round" />}
-          <ChimneyTop from={14} />
+          <ChimneyTop from={14} stack={stack} />
         </g>
       );
     case "goggles":
