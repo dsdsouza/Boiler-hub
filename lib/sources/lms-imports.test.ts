@@ -49,7 +49,7 @@ describe("coursework metadata", () => {
     ["https://school.example/mod/assign/view.php?id=7", "Draft 2", "BIO 101"],
   ])("uses assignment links as evidence even without title keywords (%s)", (url, title, courseName) => {
     const text = calendar(event([`SUMMARY:${title}`, `URL:${url}`, "LOCATION:BIO 101", "CATEGORIES:BIO 101"]));
-    expect(classifyIcs(text, opts)[0]).toMatchObject({ kind: "task", title, courseName, url, due: "2026-10-24T17:00:00.000Z" });
+    expect(classifyIcs(text, opts)[0]).toMatchObject({ kind: "task", title, courseName, course: courseName, url, due: "2026-10-24T17:00:00.000Z" });
   });
 
   it("reads an HTML assignment link from a description without rendering its HTML", () => {

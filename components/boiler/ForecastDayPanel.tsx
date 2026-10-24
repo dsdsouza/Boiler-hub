@@ -154,7 +154,7 @@ export function ForecastDayPanel({
           {tasks.map((t) => (
             <li key={t.id} className="flex items-center gap-3 border-t border-line py-2.5">
               <div className="min-w-0 flex-1">
-                <div className={`text-[15px] font-semibold ${t.doneAt ? "text-muted line-through" : "text-fg"}`}>{t.title}</div>
+                <div className={`break-words text-[15px] font-semibold ${t.doneAt ? "text-muted line-through" : "text-fg"}`}>{t.title}</div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
                   <span>
                     {t.doneAt ? "Done" : "Open"} · due {time.format(new Date(t.due!))}
@@ -176,12 +176,12 @@ export function ForecastDayPanel({
           {events.map((e) => (
             <li key={e.id} className="flex items-center gap-3 border-t border-line py-2.5">
               <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-semibold text-fg">{e.title}</div>
+                <div className="break-words text-[15px] font-semibold text-fg">{e.title}</div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
                   <span>
                     {time.format(new Date(e.start!))}
                     {e.end ? `–${time.format(new Date(e.end))}` : ""} ·{" "}
-                    {e.release ? "Vents steam" : WEIGHT_LABEL[e.weight ?? DEFAULT_WEIGHT]}
+                    {e.release ? "Excluded from pressure" : WEIGHT_LABEL[e.weight ?? DEFAULT_WEIGHT]}
                   </span>
                   <CourseChip course={courses[e.id]} />
                 </div>
