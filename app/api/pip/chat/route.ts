@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (auth instanceof NextResponse) return error("Sign in to chat with Pip about your assignments.", 401);
     if (!request.headers.get("content-type")?.startsWith("application/json")) return error("Send a text message to Pip.", 400);
     const raw = await boundedBody(request);
-    if (raw === null) return error("This conversation is too long. Start a new chat.", 413);
+    if (raw === null) return error("This conversation or course material is too long. Shorten an excerpt or start a new chat.", 413);
     let body: unknown;
     try { body = JSON.parse(raw); } catch { return error("That message could not be read.", 400); }
     const chat = parseChatBody(body);
@@ -47,12 +47,17 @@ export async function POST(request: Request) {
     if (!quota.allowed) return error("You’ve reached Pip’s chat limit. Please try again later.", 429, { "Retry-After": String(Math.max(1, Math.min(86400, Number(quota.retryAfter) || 60))) });
     stage = "assignments";
     const context = await assignmentContext(auth.supabase, auth.user.id, chat.timeZone);
+    if (chat.study) context.study = chat.study;
     stage = "gemini";
     const reply = await askGemini(chat.messages, context, request.signal);
     return NextResponse.json({ reply, asOf: context.asOf }, { headers });
   } catch (failure) {
     // Provider error objects can include prompts, assignment data, or credentials.
-    console.warn("[pip] chat failed", pipFailure(stage, failure));
+    const diagnostic = pipFailure(stage, failure);
+    console.warn("[pip] chat failed", diagnostic);
+    if (stage === "gemini" && (diagnostic.status === 503 || diagnostic.kind === "timeout")) {
+      return error("Gemini is temporarily busy. Please try again in a moment. Your assignments are unchanged.", 503, { "Retry-After": "30" });
+    }
     return error("Pip couldn’t answer right now. Your assignments are unchanged. Please try again.", 503);
   }
 }

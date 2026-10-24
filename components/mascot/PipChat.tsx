@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { MAX_CHAT_MESSAGE, type PipMessage } from "@/lib/pip/contracts";
+import { MAX_CHAT_BODY, MAX_CHAT_MESSAGE, type PipMessage } from "@/lib/pip/contracts";
+import type { StudyContext } from "@/lib/pip/study";
+import { PipThinking } from "./PipThinking";
 
 const SUGGESTIONS = ["What’s due next?", "Help me plan today"];
 class ChatError extends Error {}
 
-export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
+export function PipChat({ autoFocus = false, studyContext, draftRequest }: { autoFocus?: boolean; studyContext?: StudyContext; draftRequest?: { question: string; key: number } | null }) {
   const [messages, setMessages] = useState<PipMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = useId();
-  const help = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const newestReply = useRef<HTMLParagraphElement>(null);
@@ -20,6 +21,7 @@ export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
   const submitted = useRef(false);
 
   useEffect(() => { if (autoFocus) input.current?.focus(); }, [autoFocus]);
+  useEffect(() => { if (draftRequest) { setDraft(draftRequest.question.slice(0, MAX_CHAT_MESSAGE)); input.current?.focus(); } }, [draftRequest]);
   useEffect(() => () => active.current?.abort(), []);
   useEffect(() => { if (!busy && submitted.current) input.current?.focus(); }, [busy]);
   useEffect(() => {
@@ -34,7 +36,10 @@ export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
     const text = question.trim();
     if (!text || text.length > MAX_CHAT_MESSAGE || active.current) return;
     const history: PipMessage[] = [...messages.slice(-10), { role: "user", content: text }];
-    while (history.length > 1 && new TextEncoder().encode(JSON.stringify(history)).length > 18_000) history.splice(0, 2);
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const payload = () => JSON.stringify({ messages: history, timeZone, ...(studyContext ? { study: studyContext } : {}) });
+    while (history.length > 1 && new TextEncoder().encode(payload()).length > MAX_CHAT_BODY - 2000) history.splice(0, 2);
+    if (new TextEncoder().encode(payload()).length > MAX_CHAT_BODY) { setError("The course material is too long to send. Shorten an excerpt and try again."); return; }
     const controller = new AbortController();
     active.current = controller;
     submitted.current = true;
@@ -43,7 +48,7 @@ export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
     try {
       const response = await fetch("/api/pip/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }),
+        body: payload(),
         signal: controller.signal,
       });
       const body = await response.json().catch(() => null);
@@ -66,13 +71,13 @@ export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
       {messages.map((message, index) => <p key={index} ref={message.role === "assistant" && index === messages.length - 1 ? newestReply : undefined} className={`m-0 max-w-[95%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere ${message.role === "user" ? "self-end rounded-br-sm bg-brass/15 text-fg" : "self-start rounded-bl-sm bg-surface-2 text-body"}`}>
         <span className="sr-only">{message.role === "user" ? "You: " : "Pip: "}</span>{message.content}
       </p>)}
-      {busy && <p role="status" className="m-0 self-start rounded-2xl rounded-bl-sm bg-surface-2 px-3 py-2 text-sm text-muted">Pip is thinking…</p>}
+      {busy && <PipThinking />}
     </div>
     {!messages.length && <div className="flex shrink-0 flex-wrap gap-2 [@media(max-height:600px)]:hidden">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} disabled={busy} className="bp-button min-h-11 cursor-pointer rounded-lg border border-line bg-transparent px-3 py-2 text-left text-xs text-body hover:border-rivet hover:text-fg">{suggestion}</button>)}</div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="flex shrink-0 flex-col gap-2">
       <label htmlFor={field} className="sr-only">Message Pip</label>
       <div className="flex items-end gap-2 rounded-xl border border-control bg-field p-2 focus-within:border-brass">
-        <textarea ref={input} id={field} value={draft} maxLength={MAX_CHAT_MESSAGE} rows={2} placeholder="Ask about your assignments…" aria-describedby={help} disabled={busy}
+        <textarea ref={input} id={field} value={draft} maxLength={MAX_CHAT_MESSAGE} rows={2} placeholder="Ask about your assignments…" disabled={busy}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }}
           className="min-h-11 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-base leading-normal text-fg placeholder:text-muted focus-visible:outline-none disabled:opacity-70" />
@@ -81,7 +86,6 @@ export function PipChat({ autoFocus = false }: { autoFocus?: boolean }) {
         </button>
       </div>
       {error && <p role="alert" className="m-0 text-sm leading-relaxed text-hot-ink">{error}</p>}
-      <p id={help} className="m-0 text-[11px] leading-relaxed text-muted">Messages and open assignments go to Gemini. Closing this chat clears it.</p>
     </form>
   </div>;
 }

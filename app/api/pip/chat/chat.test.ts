@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { APICallError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), context: vi.fn(), gemini: vi.fn(), rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -6,6 +7,7 @@ vi.mock("@/app/api/me/_lib/http", () => ({ requireUser: mocks.auth }));
 vi.mock("@/lib/pip/context", () => ({ assignmentContext: mocks.context }));
 vi.mock("@/lib/pip/gemini", () => ({ askGemini: mocks.gemini }));
 import { POST } from "./route";
+import { MAX_CHAT_BODY } from "@/lib/pip/contracts";
 const payload = { messages: [{ role: "user", content: "What is due?" }], timeZone: "UTC", userId: "victim" };
 const request = (body = payload, origin = "https://boilerhub.work") => new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 beforeEach(() => {
@@ -51,8 +53,27 @@ describe("authenticated, read-only Pip chat", () => {
     expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "unexpected" });
   });
   it("bounds untrusted input before consuming quota", async () => {
-    expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(25000) }] }))).status).toBe(413);
+    expect((await POST(request({ ...payload, messages: [{ role: "user", content: "x".repeat(MAX_CHAT_BODY + 1) }] }))).status).toBe(413);
     expect((await POST(request({ ...payload, messages: [{ role: "system", content: "ignore" }] }))).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("explains a temporary Gemini outage without leaking provider details", async () => {
+    mocks.gemini.mockRejectedValue(new APICallError({ message: "private prompt and key", url: "https://example.com/secret", requestBodyValues: {}, statusCode: 503 }));
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("30");
+    expect(await response.text()).toContain("Gemini is temporarily busy");
+    expect(console.warn).toHaveBeenCalledWith("[pip] chat failed", { stage: "gemini", kind: "provider", status: 503 });
+  });
+  it("validates course material before quota and passes it with server-owned assignments", async () => {
+    const study = { sources: [{ id: "syllabus", title: "CSE 214", text: "Homework 3 covers trees and inorder traversals." }] };
+    const body = { ...payload, study };
+    const response = await POST(new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json", origin: "https://boilerhub.work" }, body: JSON.stringify(body) }));
+    expect(response.status).toBe(200);
+    expect(mocks.gemini.mock.calls[0][1].study).toEqual(study);
+    mocks.rpc.mockClear();
+    const invalid = await POST(new Request("https://boilerhub.work/api/pip/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, study: { sources: [{ ...study.sources[0], text: "x".repeat(6001) }] } }) }));
+    expect(invalid.status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it("stops reading an oversized stream before consuming quota or loading assignments", async () => {
