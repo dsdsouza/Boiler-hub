@@ -7,8 +7,8 @@ import { K } from "../lib/pressure/config.ts";
 
 const PATH = new URL("../fixtures/demo.json", import.meta.url);
 
-// The fixture stores hidden members as raw only; these are their scores (AP Bio P3's hidden student).
-const HIDDEN_SCORES: Record<string, number[]> = { "Product Squad": [], "AP Bio P3": [86] };
+// The fixture stores hidden members as raw only; these are their scores (AP Bio P3's two hidden students; teams show no hidden count below two).
+const HIDDEN_SCORES: Record<string, number[]> = { "Product Squad": [], "AP Bio P3": [86, 34] };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const scoreOf = (raw: number) => Math.round(100 * (1 - Math.exp(-Math.max(raw, 0) / K)));

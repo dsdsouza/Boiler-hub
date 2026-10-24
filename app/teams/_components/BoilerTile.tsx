@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TeamBoiler } from "@/lib/data/teams";
 import { Boiler } from "@/components/boiler/Boiler";
+import { timeAgo } from "@/components/boiler/format";
+import { freshness } from "@/app/api/teams/_lib/assignment";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { C, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, countsLine, initials } from "../_theme";
 import { api } from "./api";
@@ -15,9 +17,7 @@ export interface TileOverlay {
 }
 
 function updatedLabel(iso: string) {
-  if (!iso) return "never synced";
-  const d = new Date(iso);
-  return `updated ${d.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`;
+  return iso ? `updated ${timeAgo(iso)}` : "never synced";
 }
 
 export function BoilerTile({
@@ -44,6 +44,9 @@ export function BoilerTile({
   const color = ZONE_COLOR[zone];
   const status = STATUS_META[boiler.status];
   const c = boiler.counts;
+  // Older than 24h: dimmed. Older than 72h: labelled Stale. The score may describe a week that has moved on.
+  const age = freshness(boiler.updatedAt, new Date());
+  const dim = age === "dim" || age === "stale";
 
   async function promote() {
     if (!window.confirm(`Make ${boiler.name} a co-${leadLabel.toLowerCase()}? They will see boilers set to "${leadLabel} only" and can post assignments.`)) return;
@@ -62,7 +65,7 @@ export function BoilerTile({
   return (
     <article
       tabIndex={0}
-      aria-label={`${boiler.name}, ${boiler.synced ? `pressure ${show}, ${ZONE_LABEL[zone]}` : "not synced yet"}, ${status.label}`}
+      aria-label={`${boiler.name}, ${boiler.synced ? `pressure ${show}, ${ZONE_LABEL[zone]}, ${updatedLabel(boiler.updatedAt)}${age === "stale" ? ", stale" : ""}` : "not synced yet"}, ${status.label}`}
       className="group relative flex flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
         backgroundColor: C.surface,
@@ -100,16 +103,24 @@ export function BoilerTile({
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[150px]">
+      <div className="mx-auto w-full max-w-[150px]" style={dim && !overlay ? { opacity: 0.55 } : undefined}>
         <Boiler score={boiler.synced || overlay ? show : 0} zone={zone} size="sm" width="fluid" status={boiler.status} />
       </div>
 
       {boiler.synced || overlay ? (
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5" style={dim && !overlay ? { opacity: 0.7 } : undefined}>
           <span className={`text-[30px] font-bold leading-none ${MONO}`} style={{ color }}>
             {show}
           </span>
           <ZoneBadge zone={zone} size="sm" />
+          {age === "stale" && (
+            <span
+              className={`rounded px-1.5 text-[11px] font-bold tracking-[0.08em] ${MONO}`}
+              style={{ border: `1px solid ${ZONE_COLOR.hot}`, color: ZONE_COLOR.hot }}
+            >
+              STALE
+            </span>
+          )}
           {overlay && overlay.after !== boiler.score && (
             <span className={`text-xs ${MONO}`} style={{ color: C.muted }}>
               was {boiler.score}
@@ -130,6 +141,11 @@ export function BoilerTile({
 
       <div className="pt-2.5 text-[13px]" style={{ color: C.muted, borderTop: `1px solid ${C.line}` }}>
         {boiler.synced ? countsLine(c) : "No load data yet"}
+        {boiler.synced && (
+          <span className="block text-xs" style={{ color: age === "fresh" ? C.muted : C.text2 }} suppressHydrationWarning>
+            {updatedLabel(boiler.updatedAt)}
+          </span>
+        )}
       </div>
 
       {/* Hover / focus: category counts only, never event details. */}
@@ -152,7 +168,7 @@ export function BoilerTile({
             <dt>Overdue</dt>
             <dd className="m-0 text-right" style={{ color: c.overdue ? ZONE_COLOR.redline : C.text }}>{c.overdue}</dd>
           </dl>
-          <div className="mt-1.5 text-[11px]" style={{ color: C.muted }}>
+          <div className="mt-1.5 text-[11px]" style={{ color: C.muted }} suppressHydrationWarning>
             {updatedLabel(boiler.updatedAt)}
           </div>
         </div>
