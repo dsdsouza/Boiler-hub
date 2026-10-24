@@ -6,7 +6,7 @@ import type { VentEvent } from "@/components/boiler/useMyBoiler";
 import { Card } from "@/components/ui/Card";
 import { readStorage, writeStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
-import { companionMessage, type CompanionTarget } from "./companionMessage";
+import { companionMessage, type CompanionMessage, type CompanionTarget } from "./companionMessage";
 import { Mascot } from "./Mascot";
 import { PipWardrobe } from "./PipWardrobe";
 import { PipChat } from "./PipChat";
@@ -52,7 +52,7 @@ export function BoilerCompanion({ data, vent, chatEnabled = true, studyContext, 
 
   if (!data) return null;
   const { result } = data;
-  const message = companionMessage({
+  const message: CompanionMessage | null = companionMessage({
     score: result.score,
     zone: result.zone,
     forecast: result.forecast,
@@ -60,7 +60,12 @@ export function BoilerCompanion({ data, vent, chatEnabled = true, studyContext, 
     itemCount: data.items.length,
     calendar: data.calendar,
     vented: recentVent,
-  });
+  }) ?? (chatEnabled ? {
+    key: "assignment-chat",
+    reaction: "attentive",
+    headline: "One small step at a time.",
+    body: "Ask me about your open assignments or the course material you add here.",
+  } : null);
   if (!message) return null;
 
   const setHide = (h: boolean) => {
