@@ -1,0 +1,128 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/crypto", () => ({ decrypt: (s: string) => s.replace(/^enc:/, "") }));
+vi.mock("./client", () => ({
+  GoogleReconnectError: class extends Error {},
+  getAccessToken: async () => "token",
+}));
+vi.mock("./calendar", () => ({ fetchPrimaryEvents: async () => ({ events: [], timeZone: "America/New_York" }) }));
+
+const FEED = readFileSync(join(__dirname, "..", "sources", "__fixtures__", "brightspace.ics"), "utf8");
+vi.mock("@/lib/sources/fetch", async (orig) => ({
+  ...(await orig<typeof import("@/lib/sources/fetch")>()),
+  safeFetchText: async (url: string) => {
+    if (url.includes("broken")) throw new (await import("@/lib/sources/types")).SourceError("The feed returned 500");
+    return FEED;
+  },
+}));
+
+const { syncUser } = await import("./sync");
+
+const NOW = new Date("2026-10-26T12:00:00Z");
+const USER = "00000000-0000-4000-8000-000000000001";
+const GOOD = "11111111-1111-4111-8111-111111111111";
+const BAD = "22222222-2222-4222-8222-222222222222";
+
+type Op = { table: string; op: string; payload?: unknown; filters: [string, unknown][] };
+
+/** Chainable stand-in for the admin client: every filter returns the query, awaiting it resolves the table's data. */
+function fakeAdmin(tables: Record<string, unknown[]>) {
+  const writes: Op[] = [];
+  const from = (table: string) => {
+    const op: Op = { table, op: "select", filters: [] };
+    const result = () => {
+      if (op.op !== "select") {
+        writes.push(op);
+        return { data: null, error: null };
+      }
+      const rows = (tables[table] ?? []).filter((r) =>
+        op.filters.every(([k, v]) => (r as Record<string, unknown>)[k] === undefined || (r as Record<string, unknown>)[k] === v),
+      );
+      return { data: rows, error: null };
+    };
+    const q: Record<string, unknown> = {
+      select: () => q,
+      eq: (k: string, v: unknown) => (op.filters.push([k, v]), q),
+      or: () => q,
+      order: () => q,
+      returns: () => q,
+      maybeSingle: async () => ({ data: (result().data as unknown[] | null)?.[0] ?? null, error: null }),
+      update: (payload: unknown) => ((op.op = "update"), (op.payload = payload), q),
+      upsert: (payload: unknown) => ((op.op = "upsert"), (op.payload = payload), q),
+      then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => Promise.resolve(result()).then(resolve, reject),
+    };
+    return q;
+  };
+  return { admin: { from } as unknown as SupabaseClient, writes };
+}
+
+const source = (id: string, url: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  user_id: USER,
+  kind: "ics",
+  label: id === GOOD ? "Brightspace" : "Broken feed",
+  coursework: true,
+  secret_encrypted: `enc:${url}`,
+  last_synced_at: "2026-10-25T12:00:00Z",
+  status: "ok",
+  error: null,
+  created_at: "2026-10-20T00:00:00Z",
+  ...extra,
+});
+
+describe("syncUser with sources", () => {
+  it("still computes when one source errors, marks it, and counts the healthy one", async () => {
+    const { admin, writes } = fakeAdmin({
+      tasks: [{ id: "t1", title: "Essay", due_at: "2026-10-28T17:00:00Z", size: "M", done_at: null, source: "manual", assignment_id: null }],
+      profiles: [{ status: "open", status_note: null }],
+      sources: [source(GOOD, "https://school.example.com/feed.ics"), source(BAD, "https://broken.example.com/feed.ics")],
+    });
+
+    const res = await syncUser(admin, USER, NOW, { freshSources: true });
+
+    expect(res.sources).toEqual([
+      expect.objectContaining({ id: GOOD, status: "ok", error: null, lastSyncedAt: NOW.toISOString() }),
+      expect.objectContaining({ id: BAD, status: "error", error: "The feed returned 500", lastSyncedAt: "2026-10-25T12:00:00Z" }),
+    ]);
+    const statusWrites = writes.filter((w) => w.table === "sources" && w.op === "update");
+    expect(statusWrites.map((w) => w.payload)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "ok", last_synced_at: NOW.toISOString() }),
+        { status: "error", error: "The feed returned 500" },
+      ]),
+    );
+
+    const lab = res.tasks.find((t) => t.title === "Lab Report 3 - Due");
+    expect(lab).toMatchObject({ source: "ics", sourceId: GOOD, sourceLabel: "Brightspace", size: "M" });
+    expect(res.tasks.some((t) => t.id === "t1")).toBe(true);
+    expect(res.events.some((e) => e.title === "BIO 101 Lecture")).toBe(true);
+    expect(res.result.contributions.some((c) => c.itemId === lab!.id)).toBe(true);
+    expect(writes.some((w) => w.table === "pressure_snapshots" && w.op === "upsert")).toBe(true);
+  });
+
+  it("on a feed's first sync, clears its overdue backlog without a vent", async () => {
+    const { admin, writes } = fakeAdmin({
+      profiles: [{ status: "open", status_note: null }],
+      sources: [source(GOOD, "https://school.example.com/feed.ics", { last_synced_at: null })],
+    });
+
+    const res = await syncUser(admin, USER, NOW, { freshSources: true });
+
+    const marks = writes.find((w) => w.table === "source_item_state" && w.op === "upsert")?.payload as { done_at: string }[];
+    expect(marks).toHaveLength(1); // Problem Set 5, 10 days overdue
+    expect(res.tasks.some((t) => t.title === "Problem Set 5 - Due")).toBe(false);
+    expect(res.result.counts.overdue).toBe(0);
+    expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
+  });
+
+  it("works with no sources at all", async () => {
+    const { admin } = fakeAdmin({ profiles: [{ status: "open", status_note: null }] });
+    const res = await syncUser(admin, USER, NOW);
+    expect(res.sources).toEqual([]);
+    expect(res.result.score).toBe(0);
+  });
+});

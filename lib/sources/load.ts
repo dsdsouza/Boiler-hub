@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decrypt } from "@/lib/crypto";
+import type { SourceInfo } from "@/lib/pressure/api-types";
 import { icsAdapter } from "./ics";
 import { applyItemState, overdueOpen, silentDoneAt } from "./state";
 import {
@@ -24,15 +25,7 @@ export const ADAPTERS: Partial<Record<SourceKind, SourceAdapter>> = { ics: icsAd
 const CACHE_TTL_MS: Record<SourceKind, number> = { ics: 5 * 60_000, github: 2 * 60_000 };
 const cache = new Map<string, { at: number; items: SourceItem[] }>();
 
-export interface SourceSummary {
-  id: string;
-  kind: SourceKind;
-  label: string;
-  coursework: boolean;
-  status: SourceRow["status"];
-  error: string | null;
-  lastSyncedAt: string | null;
-}
+export type SourceSummary = SourceInfo;
 
 export interface LoadedSources {
   /** Items from every healthy source, with the owner's done/size overrides applied. */
