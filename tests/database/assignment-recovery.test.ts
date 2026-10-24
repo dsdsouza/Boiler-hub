@@ -15,6 +15,7 @@ const targets: TargetWithCounts[] = [member, hidden, never].map((userId) => ({
   userId, name: 'Synthetic recipient', visible: userId !== hidden,
   raw: userId === never ? null : 8, score: userId === never ? null : 61,
   zone: userId === never ? null : 'working', updatedAt: userId === never ? null : now.toISOString(),
+  snapshotRevision: userId === never ? undefined : 0,
   counts: userId === never ? null : { meetings: 1, meetingHours: 2, tasksDue: 3, overdue: 0 },
 }));
 let db: PGlite;
@@ -24,10 +25,17 @@ const admin = { async rpc(name: string, p: Record<string, unknown>) {
   expect(name).toBe('post_team_assignment');
   try {
     const result = await db.query<{ result: unknown }>(`select public.post_team_assignment(
-      $1::uuid,$2::uuid,$3::text,$4::timestamptz,$5::public.task_size,$6::uuid,$7::uuid[],$8::jsonb) as result`,
-      [p.p_team_id, p.p_created_by, p.p_title, p.p_due_at, p.p_size, p.p_client_key, p.p_targets, JSON.stringify(p.p_bumps)]);
+      $1::uuid,$2::uuid,$3::text,$4::timestamptz,$5::public.task_size,$6::uuid,$7::jsonb) as result`,
+      [p.p_team_id, p.p_created_by, p.p_title, p.p_due, p.p_size, p.p_client_key, JSON.stringify(p.p_changes)]);
     return { data: result.rows[0].result, error: null };
   } catch (error) { return { data: null, error }; }
+}, from(table: string) {
+  const sql = table === 'memberships' ? `select user_id,visibility from memberships where team_id='${team}' and role='member'`
+    : table === 'profiles' ? 'select id,name from profiles' : 'select * from pressure_snapshots';
+  const chain = { select: () => chain, eq: () => chain, in: () => chain,
+    then: (resolve: (value: unknown) => unknown) => db.query(sql).then(({ rows }) => resolve({ data: JSON.parse(JSON.stringify(rows)), error: null })),
+  };
+  return chain;
 } } as unknown as SupabaseClient;
 const post = (draft = key, recipientTargets = targets, actor = lead) => createAssignment(
   admin, team, actor, input, recipientTargets, computeTargets(recipientTargets, input, now), now, draft,
@@ -77,18 +85,19 @@ it('QA-006: a failed snapshot write rolls back tasks and draft; retry commits on
   }
 });
 
-it('rejects stale snapshot bumps atomically and succeeds after targets are reloaded', async () => {
+it('reloads a competing snapshot before committing, without overwriting its load', async () => {
   await db.query('update pressure_snapshots set raw=9 where user_id=$1', [member]);
-  await expect(post()).rejects.toThrow('assignment snapshots changed');
-  expect((await db.query('select id from tasks')).rows).toHaveLength(0);
-  const fresh = targets.map((t) => t.userId === member ? { ...t, raw: 9 } : t);
-  await expect(post(key, fresh)).resolves.toMatchObject({ duplicate: false });
+  await expect(post()).resolves.toMatchObject({ duplicate: false });
+  const saved = await db.query<{ raw: number }>('select raw from pressure_snapshots where user_id=$1', [member]);
+  expect(saved.rows[0].raw).toBe(computeTargets([{ ...targets[0], raw: 9 }], input, now)[0].rawAfter);
+  expect((await db.query('select id from team_assignments')).rows).toHaveLength(1);
 });
 
-it('rejects changed recipients and non-lead callers without leaving drafts', async () => {
-  await expect(post(key, targets.slice(0, 1))).rejects.toThrow('assignment recipients changed');
-  await expect(post(key, targets, member)).rejects.toThrow('lead membership required');
-  expect((await db.query('select id from team_assignments')).rows).toHaveLength(0);
+it('reloads changed recipients and still rejects a non-lead caller', async () => {
+  await expect(post(key, targets.slice(0, 1))).resolves.toMatchObject({ duplicate: false });
+  expect((await db.query('select id from tasks')).rows).toHaveLength(3);
+  await expect(post(key, targets, member)).rejects.toThrow(/lead.*required/i);
+  expect((await db.query('select id from team_assignments')).rows).toHaveLength(1);
 });
 
 it.each(['anon', 'authenticated'])('never lets %s supply snapshot updates through the RPC', async (role) => {

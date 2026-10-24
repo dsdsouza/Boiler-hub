@@ -124,3 +124,8 @@ A concurrent staging update added live QA-account verification and Apple Calenda
 Final combined staging verification (including the concurrent Apple Calendar and live-QA changes): production build, lint and typecheck passed; **291/291** unit/database tests, **186/186** public browser cases and **64/64** signed-in cases across all 32 accounts passed, with zero retries or skips. Public and authenticated runners now use separate output directories. This prevents one suite from deleting the other suite's traces during teardown; an earlier concurrent run exposed that collision. A separate earlier trace also captured `ERR_NETWORK_CHANGED`. Both suites passed together after the runner fix. The single-session authenticated command passed its two checks as well.
 
 GitHub's protection API returned HTTP 404 to the available non-admin account when applying the prepared rule. Main's required-check enforcement still needs the repository owner; the CI workflow and `qa:protect-main` helper are ready.
+
+
+Concurrent main reconciliation: preserved the newer revision-based assignment comparison (migration 0007), stable recipient locking and automatic re-read/recompute after concurrency conflicts. The live database already has this migration installed. Preserved deployment asset recovery and its two browser regressions. The required QA gate and stricter no-flaky policy remain in place.
+
+Revision-based main reconciliation passes 298 unit/database tests. The public suite now has 198 cases, including deployment recovery; the final combined run is recorded by the PR checks.

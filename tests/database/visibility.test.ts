@@ -128,3 +128,84 @@ describe('32 real SQL identities against the shipped RLS policies', () => {
     } finally { await db.exec('rollback'); }
   });
 });
+
+describe('QA-006 atomic assignment posts', () => {
+  const team = bank.teams[0];
+  const lead = bank.users.find((u) => u.team === team.key && u.role === 'lead')!;
+  const input = { title: 'QA atomic post', size: 'M' as const, due: '2026-10-25T12:00:00Z' };
+  async function changes() {
+    const { computeTargets } = await import('../../app/api/teams/_lib/assignment');
+    const rows = (await db.query<{ user_id: string; raw: number | null; score: number | null; zone: 'cool'; counts: object | null; computed_at: Date | null; revision: number | null }>(`
+      select m.user_id, s.raw, s.score, s.zone, s.counts, s.computed_at, s.revision from memberships m
+      left join pressure_snapshots s on s.user_id=m.user_id
+      where m.team_id=$1 and m.role <> 'lead' order by m.user_id`, [team.id])).rows;
+    return rows.map((row) => {
+      const result = computeTargets([{ userId: row.user_id, name: '', visible: true, raw: row.raw, score: row.score,
+        zone: row.zone, updatedAt: row.computed_at?.toISOString() ?? null }], input, iso)[0];
+      return { user_id: row.user_id, before: row.raw === null ? null : { revision: row.revision, raw: row.raw, score: row.score, zone: row.zone, counts: row.counts, computed_at: row.computed_at?.toISOString() },
+        after: { raw: result.rawAfter, score: result.after, zone: result.zoneAfter, counts: { meetings: 0, meetingHours: 0, tasksDue: 1, overdue: 0 } } };
+    });
+  }
+  const post = (key: string, rows: unknown, actor = lead.id) => db.query<{ result: { assignmentId: string; duplicate: boolean } }>(
+    'select post_team_assignment($1,$2,$3,$4,$5,$6,$7) as result', [team.id, actor, input.title, input.due, input.size, key, JSON.stringify(rows)]);
+  it('rolls back every write on a mid-post failure, then retries exactly once', async () => {
+    const rows = await changes();
+    const key = uuidFor('atomic-retry');
+    const before = (await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows;
+    const failId = rows.filter((r) => r.before !== null).at(-1)!.user_id;
+    await db.exec(`create function public.qa_fail_snapshot() returns trigger language plpgsql as $$ begin
+      if new.user_id = '${failId}'::uuid then raise exception 'QA injected snapshot failure'; end if;
+      return new; end $$;
+      create trigger qa_fail before update on pressure_snapshots for each row execute function qa_fail_snapshot();`);
+    try { await expect(post(key, rows)).rejects.toThrow(/QA injected snapshot failure/); }
+    finally { await db.exec('drop trigger qa_fail on pressure_snapshots; drop function qa_fail_snapshot()'); }
+    expect((await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows).toEqual(before);
+    expect((await db.query('select id from team_assignments where client_key=$1', [key])).rows).toEqual([]);
+    expect((await db.query("select id from tasks where source='team'")).rows).toEqual([]);
+    const first = (await post(key, rows)).rows[0].result;
+    expect(first.duplicate).toBe(false);
+    const after = (await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows;
+    const second = (await post(key, rows)).rows[0].result;
+    expect(second).toEqual({ ...first, duplicate: true });
+    expect((await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows).toEqual(after);
+    const recipients = (await db.query<{ owner_id: string }>('select owner_id from tasks where assignment_id=$1', [first.assignmentId])).rows;
+    expect(recipients).toHaveLength(rows.length);
+    expect(new Set(recipients.map((r) => r.owner_id)).size).toBe(rows.length);
+    for (const change of rows) {
+      const saved = (await db.query<{ raw: number; computed_at: Date; forecast: unknown }>('select raw,computed_at,forecast from pressure_snapshots where user_id=$1', [change.user_id])).rows[0];
+      if (!change.before) expect(saved).toBeUndefined();
+      else {
+        expect(saved.raw).toBe(change.after.raw);
+        expect(saved.computed_at.toISOString()).toBe(change.before.computed_at);
+        expect(saved.forecast).toEqual(before.find((r) => r.user_id === change.user_id)!.forecast);
+      }
+    }
+  });
+  it('rejects stale snapshots without saving an assignment or overwriting newer scores', async () => {
+    const rows = await changes();
+    const recipient = rows.find((r) => r.before !== null)!;
+    await db.query('update pressure_snapshots set raw=raw+2 where user_id=$1', [recipient.user_id]);
+    const before = (await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows;
+    const key = uuidFor('atomic-stale');
+    await expect(post(key, rows)).rejects.toMatchObject({ code: '40001' });
+    expect((await db.query<{ user_id: string; forecast: unknown }>('select * from pressure_snapshots order by user_id')).rows).toEqual(before);
+    expect((await db.query('select id from team_assignments where client_key=$1', [key])).rows).toEqual([]);
+  });
+  it('requires an actual team lead even from the trusted server', async () => {
+    await expect(post(uuidFor('atomic-nonlead'), await changes(), bank.users.find((u) => u.role === 'member')!.id)).rejects.toMatchObject({ code: '42501' });
+  });
+  it('accepts decimal serialization rounding with an exact revision as the real service role', async () => {
+    await db.exec('begin; set local role service_role');
+    try {
+      const rows = await changes();
+      for (const row of rows) if (row.before) row.before.raw = Number(row.before.raw!.toPrecision(14));
+      await expect(post(uuidFor('atomic-service-rounded'), rows)).resolves.toMatchObject({ rows: [{ result: { duplicate: false } }] });
+    } finally { await db.exec('rollback'); }
+  });
+  it('never grants authenticated callers the trusted posting function', async () => {
+    const rows = await changes();
+    await asUser(lead.id, async () => {
+      await expect(post(uuidFor('atomic-denied'), rows)).rejects.toThrow(/permission denied/i);
+    });
+  });
+});
