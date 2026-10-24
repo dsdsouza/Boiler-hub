@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BoilerCard, Counts, EngineRoom, Role, Status, Visibility, Zone } from "@/lib/types";
-import type { AssignmentInput, AssignmentTarget, TargetResult } from "@/app/api/teams/_lib/assignment";
+import { safeHiddenCount, type AssignmentInput, type AssignmentTarget, type TargetResult } from "@/app/api/teams/_lib/assignment";
 
 // Query helpers for teams. Callers pass the clients in:
 //   `supabase` is the per-request user client (RLS applies),
@@ -16,7 +16,7 @@ export interface MyTeam {
   role: Role;
   visibility: Visibility;
   visibleCount: number; // boilers I can see, including mine
-  hiddenCount: number;
+  hiddenCount: number; // 0 when fewer than HIDDEN_MIN, so nobody is singled out
   inviteCode?: string; // leads only
 }
 
@@ -29,7 +29,7 @@ export interface EngineRoomView extends EngineRoom {
   boilers: TeamBoiler[];
   myUserId: string;
   myVisibility: Visibility;
-  memberCount: number;
+  memberCount: number; // visible + shown hidden count, so it never reveals a lone hidden member
   inviteCode?: string; // leads only
 }
 
@@ -93,7 +93,8 @@ async function visibleAndHidden(supabase: SupabaseClient, teamId: string) {
   ]);
   if (boilers.error) throw boilers.error;
   if (hidden.error) throw hidden.error;
-  return { rows: (boilers.data ?? []) as TeamBoilerRow[], hiddenCount: (hidden.data as number) ?? 0 };
+  // k-anonymity: a single hidden member is not counted anywhere a teammate can see.
+  return { rows: (boilers.data ?? []) as TeamBoilerRow[], hiddenCount: safeHiddenCount((hidden.data as number) ?? 0) };
 }
 
 export async function listMyTeams(supabase: SupabaseClient, userId: string): Promise<MyTeam[]> {
@@ -222,13 +223,13 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
 
   const [profiles, snapshots] = await Promise.all([
     admin.from("profiles").select("id, name").in("id", ids),
-    admin.from("pressure_snapshots").select("user_id, raw, score, zone, counts").in("user_id", ids),
+    admin.from("pressure_snapshots").select("user_id, raw, score, zone, counts, computed_at").in("user_id", ids),
   ]);
   if (profiles.error) throw profiles.error;
   if (snapshots.error) throw snapshots.error;
 
   const names = new Map(((profiles.data ?? []) as { id: string; name: string | null }[]).map((p) => [p.id, p.name]));
-  type Snap = { user_id: string; raw: number; score: number; zone: Zone; counts: Partial<Counts> | null };
+  type Snap = { user_id: string; raw: number; score: number; zone: Zone; counts: Partial<Counts> | null; computed_at: string };
   const snaps = new Map(((snapshots.data ?? []) as Snap[]).map((s) => [s.user_id, s]));
 
   return ms.map((m) => {
@@ -240,6 +241,7 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
       raw: s?.raw ?? null,
       score: s?.score ?? null,
       zone: s?.zone ?? null,
+      updatedAt: s?.computed_at ?? null,
       counts: s ? { ...EMPTY_COUNTS, ...(s.counts ?? {}) } : null,
     };
   });
@@ -249,6 +251,9 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
 // recipient's snapshot with the same math the preview used, so the posted result
 // matches the preview. Recipients are not resynced here (no external calls); their
 // own next sync does the full recompute.
+//
+// Idempotent per `clientKey` (one per draft, unique per team in 0003): a repeat post returns
+// the first assignment with `duplicate: true` and changes nothing.
 export async function createAssignment(
   admin: SupabaseClient,
   teamId: string,
@@ -257,13 +262,33 @@ export async function createAssignment(
   targets: TargetWithCounts[],
   results: TargetResult[],
   now: Date,
-): Promise<{ assignmentId: string }> {
+  clientKey?: string,
+): Promise<{ assignmentId: string; duplicate: boolean }> {
   const { data: assignment, error } = await admin
     .from("team_assignments")
-    .insert({ team_id: teamId, title: input.title, due_at: input.due, size: input.size, created_by: createdBy })
+    .insert({
+      team_id: teamId,
+      title: input.title,
+      due_at: input.due,
+      size: input.size,
+      created_by: createdBy,
+      ...(clientKey ? { client_key: clientKey } : {}),
+    })
     .select("id")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (clientKey && error.code === "23505") {
+      const { data: existing, error: readError } = await admin
+        .from("team_assignments")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("client_key", clientKey)
+        .single();
+      if (readError) throw readError;
+      return { assignmentId: (existing as { id: string }).id, duplicate: true };
+    }
+    throw error;
+  }
   const assignmentId = (assignment as { id: string }).id;
 
   if (targets.length > 0) {
@@ -284,23 +309,30 @@ export async function createAssignment(
     }
   }
 
+  // Only members who already have a snapshot are bumped, and computed_at keeps its original
+  // value: the score moved, but the calendar behind it was not re-read, so it is no fresher.
+  // Never-synced members get the task but no snapshot; their first sync makes one.
   const dueWithinWeek = Date.parse(input.due) - now.getTime() <= 7 * 86_400_000;
-  const countsById = new Map(targets.map((t) => [t.userId, t.counts]));
-  const { error: snapError } = await admin.from("pressure_snapshots").upsert(
-    results.map((r) => {
-      const counts = countsById.get(r.userId) ?? EMPTY_COUNTS;
-      return {
+  const byId = new Map(targets.map((t) => [t.userId, t]));
+  const bumps = results.flatMap((r) => {
+    const t = byId.get(r.userId);
+    if (!t || t.raw === null || !t.updatedAt) return [];
+    const counts = t.counts ?? EMPTY_COUNTS;
+    return [
+      {
         user_id: r.userId,
         score: r.after,
         raw: r.rawAfter,
         zone: r.zoneAfter,
         counts: { ...counts, tasksDue: counts.tasksDue + (dueWithinWeek ? 1 : 0) },
-        computed_at: now.toISOString(),
-      };
-    }),
-    { onConflict: "user_id" },
-  );
-  if (snapError) throw snapError;
+        computed_at: t.updatedAt,
+      },
+    ];
+  });
+  if (bumps.length > 0) {
+    const { error: snapError } = await admin.from("pressure_snapshots").upsert(bumps, { onConflict: "user_id" });
+    if (snapError) throw snapError;
+  }
 
-  return { assignmentId };
+  return { assignmentId, duplicate: false };
 }

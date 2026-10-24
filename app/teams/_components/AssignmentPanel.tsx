@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AssignmentPreview, Size } from "@/lib/types";
-import { movedUp, summarize } from "@/app/api/teams/_lib/assignment";
+import { movedUp, summarize, type TeamAssignmentPreview } from "@/app/api/teams/_lib/assignment";
 import { C, DISPLAY, MONO, ZONE_COLOR, plural } from "../_theme";
 import { api } from "./api";
 
@@ -33,7 +33,12 @@ const pill = (on: boolean) => ({
   color: on ? C.onFill : C.text2,
 });
 
-type Posted = { title: string; result: AssignmentPreview; matched: boolean };
+type Posted = { title: string; result: TeamAssignmentPreview; matched: boolean; duplicate: boolean };
+
+/** One key per draft: posting the same draft twice (double click, retry) creates one assignment. */
+function newKey() {
+  return crypto.randomUUID();
+}
 
 export function AssignmentPanel({
   teamId,
@@ -48,7 +53,8 @@ export function AssignmentPanel({
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(() => addDays(7));
   const [size, setSize] = useState<Size>("M");
-  const [preview, setPreview] = useState<AssignmentPreview | null>(null);
+  const [preview, setPreview] = useState<TeamAssignmentPreview | null>(null);
+  const [clientKey, setClientKey] = useState(newKey);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -57,6 +63,9 @@ export function AssignmentPanel({
   const reqId = useRef(0);
 
   const ready = title.trim().length > 0 && date.length > 0;
+
+  // A changed draft is a new assignment; a retry of the same draft keeps its key.
+  useEffect(() => setClientKey(newKey()), [title, date, size]);
 
   // Live preview, debounced; stale responses are dropped.
   useEffect(() => {
@@ -69,7 +78,7 @@ export function AssignmentPanel({
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const p = await api<AssignmentPreview>(`/api/teams/${teamId}/assignments/preview`, "POST", {
+        const p = await api<TeamAssignmentPreview>(`/api/teams/${teamId}/assignments/preview`, "POST", {
           title,
           due: dueIso(date),
           size,
@@ -95,13 +104,18 @@ export function AssignmentPanel({
     setPosting(true);
     setError(null);
     try {
-      const res = await api<{ result: AssignmentPreview }>(`/api/teams/${teamId}/assignments`, "POST", {
+      const res = await api<{ result: TeamAssignmentPreview | null; duplicate: boolean }>(`/api/teams/${teamId}/assignments`, "POST", {
         title,
         due: dueIso(date),
         size,
+        clientKey,
       });
-      const matched = JSON.stringify(res.result) === JSON.stringify(preview);
-      setPosted({ title: title.trim(), result: res.result, matched });
+      if (res.duplicate || !res.result) {
+        setPosted({ title: title.trim(), result: preview, matched: true, duplicate: true });
+      } else {
+        const matched = JSON.stringify(res.result) === JSON.stringify(preview);
+        setPosted({ title: title.trim(), result: res.result, matched, duplicate: false });
+      }
       startTransition(() => router.refresh());
     } catch (e) {
       setError((e as Error).message);
@@ -110,7 +124,8 @@ export function AssignmentPanel({
     }
   }
 
-  const recipients = preview ? preview.members.length + preview.hidden.count : null;
+  // null: the exact total would reveal a lone hidden member, so the button does not count.
+  const recipients = preview ? preview.recipients : undefined;
 
   return (
     <aside
@@ -137,7 +152,11 @@ export function AssignmentPanel({
               “{posted.title}” is now on every {labels.members.replace(/s$/, "")}’s task list, and their boilers have updated.
             </p>
             <p className={`m-0 text-xs ${MONO}`} style={{ color: posted.matched ? ZONE_COLOR.cool : ZONE_COLOR.hot }}>
-              {posted.matched ? "✓ Result matches the preview" : "Scores moved slightly since the preview"}
+              {posted.duplicate
+                ? "Already posted. Nothing was added twice."
+                : posted.matched
+                  ? "✓ Result matches the preview"
+                  : "Scores moved slightly since the preview"}
             </p>
           </div>
           <PreviewTable preview={posted.result} labels={labels} />
@@ -235,11 +254,13 @@ export function AssignmentPanel({
           >
             {posting
               ? "Posting…"
-              : recipients === null
+              : recipients === undefined
                 ? "Post"
-                : recipients === 0
-                  ? `No ${labels.members} to post to`
-                  : `Post to ${plural(recipients, labels.members.replace(/s$/, ""), labels.members)}`}
+                : recipients === null
+                  ? `Post to all ${labels.members}`
+                  : recipients === 0
+                    ? `No ${labels.members} to post to`
+                    : `Post to ${plural(recipients, labels.members.replace(/s$/, ""), labels.members)}`}
           </button>
           <p className="m-0 text-xs" style={{ color: C.muted }}>
             The preview adds this task to each stored snapshot. No calendars are re-read.
@@ -256,7 +277,7 @@ export function AssignmentPanel({
   );
 }
 
-function PreviewTable({ preview, labels }: { preview: AssignmentPreview; labels: { members: string } }) {
+function PreviewTable({ preview, labels }: { preview: TeamAssignmentPreview; labels: { members: string } }) {
   const s = summarize(preview);
   const color = s.intoRedline ? ZONE_COLOR.redline : s.intoHot ? ZONE_COLOR.hot : C.text;
   const { count, intoRedline } = preview.hidden;
@@ -289,7 +310,14 @@ function PreviewTable({ preview, labels }: { preview: AssignmentPreview; labels:
             {intoRedline ? `${intoRedline} would cross into Redline` : "no Redline crossing"}
           </div>
         )}
-        {preview.members.length === 0 && count === 0 && (
+        {preview.noRecentData.length > 0 && (
+          <div className="pt-[9px] text-[13px]" style={{ borderTop: `1px solid ${C.surface2}`, color: C.muted }}>
+            {plural(preview.noRecentData.length, one, labels.members)} {preview.noRecentData.length === 1 ? "has" : "have"} no recent data
+            (never synced or older than 3 days), so {preview.noRecentData.length === 1 ? "is" : "are"} left out of the summary:{" "}
+            {preview.noRecentData.map((m) => m.name).join(", ")}.
+          </div>
+        )}
+        {preview.members.length === 0 && count === 0 && preview.noRecentData.length === 0 && (
           <div className="pt-[9px] text-[13px]" style={{ color: C.muted }}>
             No {labels.members} on this team yet.
           </div>

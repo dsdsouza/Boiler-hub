@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { AssignmentPreview } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadAssignmentTargets } from "@/lib/data/teams";
 import { computeTargets, parseAssignmentInput, toPreview } from "../../../_lib/assignment";
@@ -22,7 +21,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Verified lead: admin reads recipients' raw. Hidden members leave only as counts.
     const targets = await loadAssignmentTargets(createAdminClient(), teamId);
-    const preview: AssignmentPreview = toPreview(targets, computeTargets(targets, parsed.value, now));
+    const preview = toPreview(targets, computeTargets(targets, parsed.value, now));
     return NextResponse.json(preview);
   } catch (e) {
     return serverError(e);

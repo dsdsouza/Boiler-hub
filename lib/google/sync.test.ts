@@ -9,7 +9,13 @@ vi.mock("./client", () => ({
   GoogleReconnectError: class extends Error {},
   getAccessToken: async () => "token",
 }));
-vi.mock("./calendar", () => ({ fetchPrimaryEvents: async () => ({ events: [], timeZone: "America/New_York" }) }));
+const calendar = vi.hoisted(() => ({ fail: null as Error | null }));
+vi.mock("./calendar", () => ({
+  fetchPrimaryEvents: async () => {
+    if (calendar.fail) throw calendar.fail;
+    return { events: [], timeZone: "America/New_York" };
+  },
+}));
 
 const FEED = readFileSync(join(__dirname, "..", "sources", "__fixtures__", "brightspace.ics"), "utf8");
 vi.mock("@/lib/sources/fetch", async (orig) => ({
@@ -113,10 +119,27 @@ describe("syncUser with sources", () => {
     const res = await syncUser(admin, USER, NOW, { freshSources: true });
 
     const marks = writes.find((w) => w.table === "source_item_state" && w.op === "upsert")?.payload as { done_at: string }[];
-    expect(marks).toHaveLength(1); // Problem Set 5, 10 days overdue
+    expect(marks).toHaveLength(2); // Problem Set 5 (10 days overdue) and Reading Response 1 (25, stale)
     expect(res.tasks.some((t) => t.title === "Problem Set 5 - Due")).toBe(false);
+    expect(res.tasks.some((t) => t.title === "Reading Response 1 - Due")).toBe(false);
     expect(res.result.counts.overdue).toBe(0);
     expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
+  });
+
+  it("a Google outage gives a tasks-only result, not an error, and saves no snapshot", async () => {
+    calendar.fail = new Error("Google Calendar fetch failed (503)");
+    try {
+      const { admin, writes } = fakeAdmin({
+        tasks: [{ id: "t1", title: "Essay", due_at: "2026-10-28T17:00:00Z", size: "M", done_at: null, source: "manual", assignment_id: null }],
+        profiles: [{ status: "open", status_note: null }],
+      });
+      const res = await syncUser(admin, USER, NOW);
+      expect(res.calendar).toBe("unavailable");
+      expect(res.result.score).toBeGreaterThan(0);
+      expect(writes.some((w) => w.table === "pressure_snapshots")).toBe(false);
+    } finally {
+      calendar.fail = null;
+    }
   });
 
   it("works with no sources at all", async () => {

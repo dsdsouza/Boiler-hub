@@ -37,6 +37,12 @@ export const URGENCY_CAP = 3;
 /** A task with no due date is treated as due this many days from now. */
 export const NO_DUE_DAYS = 7;
 
+/**
+ * Overdue aging, every task source: a task overdue by more than this many days stops adding
+ * pressure. It stays on the owner's list as stale until it is marked done or removed.
+ */
+export const OVERDUE_STALE_DAYS = 14;
+
 /** Completed task releases COMPLETED_RELEASE × size points, fading linearly to 0 over COMPLETED_RELEASE_HOURS. */
 export const COMPLETED_RELEASE = 0.5;
 export const COMPLETED_RELEASE_HOURS = 48;
