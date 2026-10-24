@@ -4,7 +4,11 @@ import { createAssignment, loadAssignmentTargets } from "@/lib/data/teams";
 import { computeTargets, parseAssignmentInput, toPreview } from "../../_lib/assignment";
 import { fail, getCaller, readJson, requireTeamRole, serverError } from "../../_lib/http";
 
-// POST /api/teams/[id]/assignments { title, due, size }
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// POST /api/teams/[id]/assignments { title, due, size, clientKey? }
+// clientKey: a UUID per draft. Posting the same draft again returns the first assignment
+// ({ duplicate: true, result: null }) instead of creating a second one.
 // Creates the assignment, one `team` task per non-lead member (hidden ones included), and
 // updates their snapshots with the preview math (applyTaskToRaw). No calendar or source is
 // fetched, so posting stays fast and the result matches the preview exactly; each member's
@@ -15,8 +19,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!caller) return fail(401, "Sign in first");
 
   const now = new Date();
-  const parsed = parseAssignmentInput(await readJson(req), now);
+  const body = await readJson(req);
+  const parsed = parseAssignmentInput(body, now);
   if (!parsed.ok) return fail(400, parsed.error);
+  const clientKey = (body as { clientKey?: unknown } | null)?.clientKey;
+  if (clientKey !== undefined && (typeof clientKey !== "string" || !UUID_RE.test(clientKey))) {
+    return fail(400, "clientKey must be a UUID");
+  }
 
   try {
     const check = await requireTeamRole(caller.supabase, teamId, caller.user.id, "lead");
@@ -26,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const admin = createAdminClient();
     const targets = await loadAssignmentTargets(admin, teamId);
     const results = computeTargets(targets, parsed.value, now);
-    const { assignmentId } = await createAssignment(
+    const { assignmentId, duplicate } = await createAssignment(
       admin,
       teamId,
       caller.user.id,
@@ -34,10 +43,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       targets,
       results,
       now,
+      clientKey,
     );
+    if (duplicate) return NextResponse.json({ assignmentId, duplicate: true, result: null });
 
     return NextResponse.json(
-      { assignmentId, recipients: targets.length, result: toPreview(targets, results) },
+      { assignmentId, duplicate: false, result: toPreview(targets, results) },
       { status: 201 },
     );
   } catch (e) {

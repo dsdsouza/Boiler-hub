@@ -10,6 +10,7 @@ import {
   K,
   NO_DUE_DAYS,
   ORGANIZER_FACTOR,
+  OVERDUE_STALE_DAYS,
   PROXIMITY_RATE,
   SIZE_POINTS,
   URGENCY_CAP,
@@ -49,9 +50,18 @@ export function proximity(daysFromNow: number): number {
   return 1 / (1 + PROXIMITY_RATE * Math.max(daysFromNow, 0));
 }
 
-/** 1 / max(days until due, 0.25), capped at 3; overdue = 3. A missing due date counts as NO_DUE_DAYS out. */
+/** Overdue by more than OVERDUE_STALE_DAYS: no longer adds pressure, shown as stale. */
+export function isStaleOverdue(due: string | undefined, now: Date): boolean {
+  return !!due && now.getTime() - Date.parse(due) > OVERDUE_STALE_DAYS * DAY_MS;
+}
+
+/**
+ * 1 / max(days until due, 0.25), capped at 3; overdue = 3; overdue by more than OVERDUE_STALE_DAYS = 0.
+ * A missing due date counts as NO_DUE_DAYS out.
+ */
 export function urgency(due: string | undefined, now: Date): number {
   if (!due) return 1 / NO_DUE_DAYS;
+  if (isStaleOverdue(due, now)) return 0;
   const days = (Date.parse(due) - now.getTime()) / DAY_MS;
   if (days < 0) return URGENCY_CAP;
   return Math.min(1 / Math.max(days, URGENCY_MIN_DAYS), URGENCY_CAP);
@@ -128,6 +138,8 @@ function scoreTask(item: LoadItem, now: Date): Scored | null {
     }
   }
 
+  // Long overdue: off the gauge (and out of counts), though still on the owner's list.
+  if (isStaleOverdue(item.due, now)) return null;
   const points = taskPoints({ due: item.due, size }, now);
   if (!item.due) return { points, reason: `${size} task, no due date` };
   const days = (Date.parse(item.due) - t) / DAY_MS;
@@ -251,7 +263,8 @@ function fmtHours(h: number): string {
 }
 
 function fmtDays(days: number): string {
-  if (days < 1) return `in ${Math.max(1, Math.round(days * 24))}h`;
+  if (days * 24 < 0.5) return "now";
+  if (days < 1) return `in ${Math.round(days * 24)}h`;
   const r = Math.round(days * 10) / 10;
   return `in ${r} day${r === 1 ? "" : "s"}`;
 }
