@@ -180,7 +180,7 @@
             },
             {
               "type": "assert",
-              "title": "Verify the page shows The formula, Weights, Zones, and Our privacy promise."
+              "title": "Verify the page shows The formula, Weights, Zones, and Choose who sees your boiler."
             },
             {
               "type": "act",
@@ -188,7 +188,7 @@
             },
             {
               "type": "assert",
-              "title": "Verify the removed site-wide footer and Privacy link are absent. The privacy promise remains available in Help."
+              "title": "Verify the removed site-wide footer and Privacy link are absent. The visibility options remain available under Choose who sees your boiler in Help."
             },
             {
               "type": "act",
