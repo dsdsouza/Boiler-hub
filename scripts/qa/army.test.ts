@@ -27,7 +27,9 @@ it('runs the requested instances and keeps authenticated evidence private', () =
   expect(auth.find((arg: string) => arg.startsWith('--reporter='))).not.toContain('html');
 });
 it('keeps the interactive dashboard bound to localhost', () => {
-  expect(browserArgs(parseOptions(['--ui']), '/tmp/run')).toContain('--ui-host=127.0.0.1');
+  const args = browserArgs(parseOptions(['--ui']), '/tmp/run');
+  expect(args).toContain('--ui-host=127.0.0.1');
+  expect(args.some((arg: string) => arg.startsWith('--reporter='))).toBe(false);
 });
 
 const fake = (outcome: string, expectedStatus = 'passed') => ({ outcome: () => outcome, expectedStatus,

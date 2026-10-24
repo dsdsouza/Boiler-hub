@@ -19,7 +19,9 @@ export default defineConfig({
   timeout: 30_000,
   globalTimeout: 20 * 60_000,
   expect: { timeout: 8000 },
-  reporter: ci ? [['list'], ['blob']] : [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/results.json' }]],
+  reporter: process.env.QA_ARMY_UI === '1'
+    ? [['./scripts/qa/army-reporter.mjs'], ['html', { open: 'never' }]]
+    : ci ? [['list'], ['blob']] : [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/results.json' }]],
   use: {
     baseURL,
     timezoneId: 'America/New_York',

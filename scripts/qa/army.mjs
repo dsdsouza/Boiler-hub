@@ -56,7 +56,10 @@ export function browserArgs(options, runDir, authenticated = false) {
   const args = ['exec', 'playwright', 'test', `--workers=${authenticated ? Math.min(options.workers, 4) : options.workers}`,
     `--repeat-each=${options.repeat}`, `--global-timeout=${20 * 60_000 * options.repeat}`, '--retries=0', '--fail-on-flaky-tests', '--forbid-only'];
   if (authenticated) args.push('--config=playwright.auth.config.ts', '--reporter=list,./scripts/qa/army-reporter.mjs');
-  else args.push('--reporter=list,html,./scripts/qa/army-reporter.mjs', `--output=${resolve(runDir, 'artifacts')}`);
+  else {
+    if (!options.ui) args.push('--reporter=list,html,./scripts/qa/army-reporter.mjs');
+    args.push(`--output=${resolve(runDir, 'artifacts')}`);
+  }
   if (options.quick && !authenticated) args.push('--project=desktop-chromium');
   if (options.ui) args.push('--ui', '--ui-host=127.0.0.1', '--ui-port=0');
   return args;
@@ -133,7 +136,7 @@ export async function main(argv) {
   };
   const baseEnv = { ...process.env, PLAYWRIGHT_BASE_URL: options.url ?? '', PLAYWRIGHT_PORT: new URL(run.target).port,
     PLAYWRIGHT_PRODUCTION: '1', PLAYWRIGHT_HTML_OPEN: 'never', PLAYWRIGHT_HTML_OUTPUT_DIR: resolve(runDir, 'public'),
-    QA_ARMY_RESULT_FILE: resolve(runDir, 'public-summary.json'), QA_ARMY_PRIVATE: '0' };
+    QA_ARMY_RESULT_FILE: resolve(runDir, 'public-summary.json'), QA_ARMY_PRIVATE: '0', QA_ARMY_UI: options.ui ? '1' : '0' };
   if (!options.url) {
     baseEnv.NEXT_PUBLIC_SUPABASE_URL = 'https://qa-project.supabase.co';
     baseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'qa-anon-placeholder';
