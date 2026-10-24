@@ -1,0 +1,376 @@
+{
+  "_note": "Demo fixture. Each boiler is a BoilerCard plus `raw` (for assignment preview). hiddenRaw holds raw values of hidden members, for preview counts only.",
+  "teams": [
+    {
+      "team": {
+        "id": "00000000-0000-4000-a000-000000000001",
+        "name": "Product Squad",
+        "type": "work"
+      },
+      "myRole": "lead",
+      "boilers": [
+        {
+          "userId": "00000000-0000-4000-a000-000000000011",
+          "name": "Jordan",
+          "score": 92,
+          "zone": "redline",
+          "status": "running_hot",
+          "statusNote": "Launch week, please check in",
+          "counts": {
+            "meetings": 22,
+            "meetingHours": 26.5,
+            "tasksDue": 5,
+            "overdue": 2
+          },
+          "updatedAt": "2026-10-24T08:40:00Z",
+          "raw": 63.14
+        },
+        {
+          "userId": "00000000-0000-4000-a000-000000000012",
+          "name": "Chen",
+          "score": 81,
+          "zone": "hot",
+          "status": "heads_down",
+          "statusNote": "Migrating billing, no new asks",
+          "counts": {
+            "meetings": 12,
+            "meetingHours": 14,
+            "tasksDue": 4,
+            "overdue": 1
+          },
+          "updatedAt": "2026-10-24T08:10:00Z",
+          "raw": 41.52
+        },
+        {
+          "userId": "00000000-0000-4000-a000-000000000010",
+          "name": "Maya",
+          "score": 74,
+          "zone": "hot",
+          "status": "heads_down",
+          "statusNote": "Shipping v2 onboarding",
+          "counts": {
+            "meetings": 14,
+            "meetingHours": 16.5,
+            "tasksDue": 4,
+            "overdue": 1
+          },
+          "updatedAt": "2026-10-24T09:05:00Z",
+          "raw": 33.68
+        },
+        {
+          "userId": "00000000-0000-4000-a000-000000000013",
+          "name": "Alex",
+          "score": 63,
+          "zone": "working",
+          "status": "away",
+          "statusNote": "PTO Friday",
+          "counts": {
+            "meetings": 9,
+            "meetingHours": 10,
+            "tasksDue": 3,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-23T22:30:00Z",
+          "raw": 24.86
+        },
+        {
+          "userId": "00000000-0000-4000-a000-000000000014",
+          "name": "Priya",
+          "score": 55,
+          "zone": "working",
+          "status": "open",
+          "counts": {
+            "meetings": 10,
+            "meetingHours": 9.5,
+            "tasksDue": 2,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T07:55:00Z",
+          "raw": 19.96
+        },
+        {
+          "userId": "00000000-0000-4000-a000-000000000015",
+          "name": "Sam",
+          "score": 28,
+          "zone": "cool",
+          "status": "open",
+          "statusNote": "Have room for code reviews",
+          "counts": {
+            "meetings": 4,
+            "meetingHours": 3,
+            "tasksDue": 1,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T09:00:00Z",
+          "raw": 8.21
+        }
+      ],
+      "hiddenCount": 0,
+      "hiddenRaw": []
+    },
+    {
+      "team": {
+        "id": "00000000-0000-4000-b000-000000000001",
+        "name": "AP Bio P3",
+        "type": "class"
+      },
+      "myRole": "lead",
+      "boilers": [
+        {
+          "userId": "00000000-0000-4000-b000-000000000011",
+          "name": "Ava",
+          "score": 93,
+          "zone": "redline",
+          "status": "running_hot",
+          "statusNote": "3 exams and a shift at work",
+          "counts": {
+            "meetings": 28,
+            "meetingHours": 30,
+            "tasksDue": 6,
+            "overdue": 2
+          },
+          "updatedAt": "2026-10-24T07:20:00Z",
+          "raw": 66.48
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000012",
+          "name": "Diego",
+          "score": 84,
+          "zone": "hot",
+          "status": "heads_down",
+          "statusNote": "Lab report + SAT prep",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 27,
+            "tasksDue": 5,
+            "overdue": 1
+          },
+          "updatedAt": "2026-10-24T06:45:00Z",
+          "raw": 45.81
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000013",
+          "name": "Ben",
+          "score": 78,
+          "zone": "hot",
+          "status": "heads_down",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 26,
+            "tasksDue": 4,
+            "overdue": 1
+          },
+          "updatedAt": "2026-10-23T21:15:00Z",
+          "raw": 37.85
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000014",
+          "name": "Carmen",
+          "score": 72,
+          "zone": "hot",
+          "status": "open",
+          "statusNote": "Busy but can take more",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 25,
+            "tasksDue": 4,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T08:00:00Z",
+          "raw": 31.82
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000015",
+          "name": "Elena",
+          "score": 52,
+          "zone": "working",
+          "status": "open",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 25,
+            "tasksDue": 2,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T07:50:00Z",
+          "raw": 18.35
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000016",
+          "name": "Farah",
+          "score": 45,
+          "zone": "working",
+          "status": "away",
+          "statusNote": "Out sick Thursday",
+          "counts": {
+            "meetings": 20,
+            "meetingHours": 20,
+            "tasksDue": 2,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-23T19:30:00Z",
+          "raw": 14.95
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000017",
+          "name": "Gus",
+          "score": 31,
+          "zone": "cool",
+          "status": "open",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 25,
+            "tasksDue": 1,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T08:20:00Z",
+          "raw": 9.28
+        },
+        {
+          "userId": "00000000-0000-4000-b000-000000000018",
+          "name": "Hana",
+          "score": 18,
+          "zone": "cool",
+          "status": "open",
+          "statusNote": "Ahead on everything",
+          "counts": {
+            "meetings": 25,
+            "meetingHours": 25,
+            "tasksDue": 0,
+            "overdue": 0
+          },
+          "updatedAt": "2026-10-24T08:25:00Z",
+          "raw": 4.96
+        }
+      ],
+      "hiddenCount": 1,
+      "hiddenRaw": [
+        49.15
+      ]
+    }
+  ],
+  "maya": {
+    "userId": "00000000-0000-4000-a000-000000000010",
+    "result": {
+      "score": 74,
+      "raw": 33.68,
+      "zone": "hot",
+      "contributions": [
+        {
+          "itemId": "evt-design-review",
+          "title": "Design review",
+          "points": 7.2,
+          "reason": "2h review, 9 people, Heavy, tomorrow"
+        },
+        {
+          "itemId": "tsk-onboarding-spec",
+          "title": "Finish onboarding v2 spec",
+          "points": 6.4,
+          "reason": "Task L, due in 1.25 days"
+        },
+        {
+          "itemId": "evt-customer-calls",
+          "title": "Customer calls",
+          "points": 4.6,
+          "reason": "3h total, 4 people, you organize"
+        },
+        {
+          "itemId": "tsk-q4-roadmap",
+          "title": "Q4 roadmap deck",
+          "points": 4,
+          "reason": "Task M, overdue"
+        },
+        {
+          "itemId": "evt-sprint-planning",
+          "title": "Sprint planning",
+          "points": 3.5,
+          "reason": "1.5h, 8 people, Normal, Monday"
+        },
+        {
+          "itemId": "evt-1on1s",
+          "title": "1:1s",
+          "points": 2.6,
+          "reason": "4 x 30m, recurring, Light"
+        },
+        {
+          "itemId": "tsk-pr-reviews",
+          "title": "Review 3 PRs",
+          "points": 2.4,
+          "reason": "Task S, due today"
+        },
+        {
+          "itemId": "evt-all-hands",
+          "title": "All hands",
+          "points": 2.1,
+          "reason": "1h, 10+ people, Normal"
+        },
+        {
+          "itemId": "evt-standup",
+          "title": "Daily standup",
+          "points": 1.9,
+          "reason": "5 x 15m, recurring, Light"
+        },
+        {
+          "itemId": "tsk-hiring-loop",
+          "title": "Write hiring loop feedback",
+          "points": 1.8,
+          "reason": "Task S, due in 2 days"
+        },
+        {
+          "itemId": "evt-focus-block",
+          "title": "Focus time",
+          "points": -1.2,
+          "reason": "Release: 3h focus time, Thursday"
+        },
+        {
+          "itemId": "tsk-done-bugfix",
+          "title": "Fix signup bug (done)",
+          "points": -1.62,
+          "reason": "Release: completed task, fading"
+        }
+      ],
+      "counts": {
+        "meetings": 14,
+        "meetingHours": 16.5,
+        "tasksDue": 4,
+        "overdue": 1
+      },
+      "forecast": [
+        {
+          "date": "2026-10-24",
+          "score": 74,
+          "zone": "hot"
+        },
+        {
+          "date": "2026-10-25",
+          "score": 71,
+          "zone": "hot"
+        },
+        {
+          "date": "2026-10-26",
+          "score": 66,
+          "zone": "working"
+        },
+        {
+          "date": "2026-10-27",
+          "score": 58,
+          "zone": "working"
+        },
+        {
+          "date": "2026-10-28",
+          "score": 49,
+          "zone": "working"
+        },
+        {
+          "date": "2026-10-29",
+          "score": 37,
+          "zone": "cool"
+        },
+        {
+          "date": "2026-10-30",
+          "score": 30,
+          "zone": "cool"
+        }
+      ]
+    }
+  }
+}
