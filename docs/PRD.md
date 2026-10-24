@@ -16,7 +16,7 @@ Boilerplate (working name) turns each person's calendar and tasks into a live bo
 
 ## Goals and non-goals
 
-The goal is a live, hosted web app that a judge can open on a custom GoDaddy domain and understand in under 30 seconds, with or without logging in.
+The goal is a live, hosted web app that a judge can open on a custom domain (boilerhub.work) and understand in under 30 seconds, with or without logging in.
 
 **Goals (must ship)**
 
@@ -255,7 +255,7 @@ Calendar events are fetched live and never stored. The database holds people, te
 5. Sync on login, on the Refresh button, after task changes, when My Boiler loads with a snapshot older than 30 minutes, and once a day for everyone via the Vercel cron `GET /api/cron/resync` (authorized by `Authorization: Bearer $CRON_SECRET`).
 6. If Google is unreachable for any reason other than a revoked or expired grant, the result is tasks-only with a "temporarily unavailable" banner and the snapshot is not saved.
 
-**Google Cloud setup.** OAuth consent screen in Testing mode; add every teammate and any judge emails as test users (limit 100); authorized redirect URI is the Supabase callback; add both the Vercel URL and the GoDaddy domain to authorized origins. Testing-mode refresh tokens expire after 7 days, which is fine for the event.
+**Google Cloud setup.** OAuth consent screen in Testing mode; add every teammate and any judge emails as test users (limit 100); authorized redirect URI is the Supabase callback; add `https://boilerhub.work` to authorized origins (`www.boilerhub.work` and `boiler-hub.vercel.app` 308-redirect to it). Testing-mode refresh tokens expire after 7 days, which is fine for the event.
 
 **Privacy promise (for the pitch and How it works).** We never store what is on your calendar. Teams see a number, a zone and your status, only if you choose. You can hide from any team at any time.
 
@@ -271,8 +271,9 @@ All worktrees share one Supabase project, one Google OAuth client and one `.env.
 | `GOOGLE_CLIENT_ID` | Google Cloud, Credentials, OAuth client (web) | No |
 | `GOOGLE_CLIENT_SECRET` | Same OAuth client | No |
 | `TOKEN_ENCRYPTION_KEY` | Generate: `openssl rand -base64 32` | No |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` locally; the GoDaddy domain in production | Yes |
 | `CRON_SECRET` | Generate: `openssl rand -hex 32`; Vercel sends it to the daily cron | No |
+
+**Site URL.** No site-URL variable is needed: sign-in, the auth callback and sign-out build their redirects from the request's own origin. Production is `https://boilerhub.work`; `www.boilerhub.work` and `boiler-hub.vercel.app` redirect to it permanently (308), so sign-in cookies live on one host. Supabase's Site URL and allowed redirect URLs, and the Google OAuth client's authorized origins, list `https://boilerhub.work`.
 
 **Local ports.** Engine on 3000, UI on 3001, Teams on 3002. Each `http://localhost:300X/auth/callback` must be in Supabase's allowed redirect URLs and each origin in the Google OAuth client.
 
@@ -280,7 +281,7 @@ All worktrees share one Supabase project, one Google OAuth client and one `.env.
 
 ## Stack, repo layout and contracts
 
-Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, deployed on Vercel with the GoDaddy domain pointed at it. The shared types below are written first and frozen, so parallel worktrees can build against them without colliding.
+Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, deployed on Vercel with boilerhub.work pointed at it. The shared types below are written first and frozen, so parallel worktrees can build against them without colliding.
 
 | Layer | Choice | Why |
 | --- | --- | --- |
@@ -290,7 +291,7 @@ Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, 
 | Auth and DB | Supabase (Google provider, Postgres, RLS) | Auth and DB in about an hour |
 | Calendar | Google Calendar REST via `fetch` | No SDK needed for one endpoint |
 | Tests | Vitest for `lib/pressure` | Engine correctness without UI |
-| Hosting | Vercel, custom domain from GoDaddy (CNAME and A records) | Fastest deploy; open question on sponsor rules below |
+| Hosting | Vercel, custom domain boilerhub.work from GoDaddy (CNAME and A records) | Fastest deploy; open question on sponsor rules below |
 
 **Repo layout**
 
@@ -398,7 +399,7 @@ Four Claude Code sessions are enough: one Foundation on main, three parallel wor
 
 Foundation must merge before any worktree starts, because it freezes `lib/types.ts` and the schema. Merge the tracks in order engine, ui, teams, since teams imports the engine's preview helper and the UI's boiler. Nothing new starts after the hour-29 freeze; only fixes.
 
-**Your role while tracks run.** Review each track's commits every hour or two, run the Google Cloud and Supabase setup by hand, collect judge emails for test users, and confirm the GoDaddy domain DNS early, since propagation can take hours.
+**Your role while tracks run.** Review each track's commits every hour or two, run the Google Cloud and Supabase setup by hand, collect judge emails for test users, and confirm the boilerhub.work DNS early, since propagation can take hours.
 
 ## Claude Code handoffs
 
@@ -430,7 +431,7 @@ Do:
 5. Auth: Google sign-in via Supabase with scopes openid email profile https://www.googleapis.com/auth/calendar.readonly, queryParams access_type=offline and prompt=consent. app/auth/callback/route.ts exchanges the code and upserts provider_token, provider_refresh_token and expiry into google_tokens (server-only). Middleware protects /boiler, /teams and /onboarding.
 6. fixtures/demo.json: one work team "Product Squad" with 6 members and one class "AP Bio P3" with 8 students. Each member has a BoilerCard (spread across all four zones, mixed statuses and notes) and, for one member "Maya", a full PressureResult with 12 contributions and a 7-day forecast.
 7. Write CLAUDE.md with the rules in the PRD (frozen types, owned folders, typecheck and test before commit, commit prefixes) and a short "Track ownership" table: engine owns lib/pressure, lib/google, app/api/me, app/api/sync, app/api/tasks, app/api/event-weights; ui owns components/boiler, components/ui, app/page.tsx, app/boiler, app/how, app/demo; teams owns app/teams, app/api/teams, lib/data/teams.ts.
-8. .env.example listing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY, NEXT_PUBLIC_SITE_URL.
+8. .env.example listing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY. (NEXT_PUBLIC_SITE_URL was in the original list; it was removed later because nothing reads it: auth uses the request origin.)
 
 Done when: pnpm build passes, sign-in with Google works locally and a google_tokens row appears, every route renders its placeholder, and the app is deployed to Vercel. Ask me before choosing anything the PRD does not specify.
 ```
@@ -502,7 +503,7 @@ The demo is 3 minutes, built around one moment: a lead previews an assignment an
 4. (1:10) Engine Room for AP Bio P3: three students in Hot, one whistling in Redline marked "Running hot". One student is Hidden and appears only as a count.
 5. (1:40) As the teacher, draft a lab report due Friday. Preview: "Moves 3 into Hot, 2 into Redline." Push the due date to next Tuesday; preview: "1 into Hot." Post it.
 6. (2:20) Privacy promise and visibility levels in one slide.
-7. (2:40) Live link on the GoDaddy domain, QR code, "Try the demo".
+7. (2:40) Live link on boilerhub.work, QR code, "Try the demo".
 
 **Risks and fallbacks**
 
