@@ -8,11 +8,18 @@ The server verifies the Supabase user, reads only their open tasks under RLS, an
 
 Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/api-keys). Google documents key creation and server-side use in its [API key guide](https://ai.google.dev/gemini-api/docs/api-key).
 
-For **boilerhub.work**:
+For the Cloudflare deployment now configured on `main`:
+
+1. Open the Cloudflare account **zhomander → Workers & Pages → boilerplate → Settings → Variables and Secrets → Add**.
+2. Select **Secret**, name it **GEMINI_API_KEY**, and paste your Gemini key as the value. Select **Deploy** to save the runtime secret. These steps match Cloudflare's [secret setup guide](https://developers.cloudflare.com/workers/configuration/secrets/).
+3. Optionally add **GEMINI_MODEL** as a text variable with value **gemini-3.8-flash**. Leaving it unset uses that default. This is Google's [current stable Flash model](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash).
+4. The key is read at runtime through OpenNext; it does not need a GitHub Actions build secret. Keep the existing deployment credentials and Supabase variables configured as described in [CLOUDFLARE.md](./CLOUDFLARE.md).
+
+At verification time, **boilerhub.work** still served its existing host while the Cloudflare deployment workflow was not yet configured with its deployment token. Until the domain is migrated, the Gemini key must also be added to that app's runtime if deploying the chat there:
 
 1. Open the hosting project **boiler-hub**, which serves boilerhub.work. Open **Settings → Environment Variables**.
 2. Add **GEMINI_API_KEY**. Paste the Gemini key as its value, select **Secret**, and select **Production** and **Preview**. Save. If the account requires different secret values per environment, add separate keys for those environments.
-3. Optionally add **GEMINI_MODEL** as Config, value **gemini-3.8-flash**. Leaving it unset uses that default. This is Google's [current stable Flash model](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash).
+3. Optionally add **GEMINI_MODEL** as Config, value **gemini-3.8-flash**. Leaving it unset uses that default.
 4. Deploy this PR after all checks and preview deployments pass. Environment changes apply to new deployments. If changing the key after deployment, redeploy to load the new value. At implementation time the existing host deployment quota was exhausted; a new build must wait for that quota to reset.
 5. Sign in, open My Boiler → Ask Pip, and ask **What's due next?** Compare the answer with your open assignment list. Complete an assignment in My Boiler and ask again in the same chat; the new request uses fresh completion state.
 
