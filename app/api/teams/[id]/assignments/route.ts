@@ -3,11 +3,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createAssignment, loadAssignmentTargets } from "@/lib/data/teams";
 import { computeTargets, parseAssignmentInput, toPreview } from "../../_lib/assignment";
 import { fail, getCaller, readJson, requireTeamRole, serverError } from "../../_lib/http";
-import { syncUser } from "@/lib/google/sync";
 
 // POST /api/teams/[id]/assignments { title, due, size }
-// Creates the assignment, one `team` task per non-lead member (hidden ones included),
-// updates their snapshots with the preview math, then triggers each member's resync.
+// Creates the assignment, one `team` task per non-lead member (hidden ones included), and
+// updates their snapshots with the preview math (applyTaskToRaw). No calendar or source is
+// fetched, so posting stays fast and the result matches the preview exactly; each member's
+// own next sync reconciles.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: teamId } = await params;
   const caller = await getCaller();
@@ -34,10 +35,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       results,
       now,
     );
-
-    // Best effort: a failed resync must not undo a posted assignment.
-    const syncs = await Promise.allSettled(targets.map((t) => syncUser(admin, t.userId, now)));
-    syncs.forEach((s) => s.status === "rejected" && console.error("[assignments] resync failed", s.reason));
 
     return NextResponse.json(
       { assignmentId, recipients: targets.length, result: toPreview(targets, results) },
