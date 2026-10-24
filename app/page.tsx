@@ -22,9 +22,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         account={
           // Route handler, not a page: plain anchor so Next does not prefetch it.
           <span className="hidden sm:inline-flex">
-            <LinkButton plain href={signin} variant="ghost" className="border-rivet text-fg">
-              Sign in with Google
-            </LinkButton>
+            <GoogleSignInButton href={signin} />
           </span>
         }
       />
@@ -54,10 +52,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
                 Try the demo
               </LinkButton>
-              <LinkButton plain href={signin} variant="ghost" size="lg" className="border-rivet font-semibold text-fg max-sm:w-full">
-                <GoogleMark />
-                Sign in with Google
-              </LinkButton>
+              <GoogleSignInButton href={signin} className="max-sm:w-full" />
             </div>
           </div>
           <HeroBoiler />
@@ -124,6 +119,15 @@ function Step({ title, text, icon, color }: { title: string; text: string; icon:
       <h3 className="m-0 text-xl font-bold">{title}</h3>
       <p className="m-0 leading-relaxed text-body">{text}</p>
     </div>
+  );
+}
+
+function GoogleSignInButton({ href, className = "" }: { href: string; className?: string }) {
+  return (
+    <LinkButton plain href={href} variant="ghost" size="lg" className={`border-rivet font-semibold text-fg ${className}`}>
+      <GoogleMark />
+      Sign in with Google
+    </LinkButton>
   );
 }
 
