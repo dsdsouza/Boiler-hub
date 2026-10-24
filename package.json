@@ -9,14 +9,13 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:e2e": "playwright test --grep-invert @known-issue",
-    "test:e2e:known": "playwright test --grep @known-issue",
+    "test:e2e": "playwright test",
+    "test:e2e:known": "playwright test tests/e2e/regressions.spec.ts",
     "test:e2e:all": "playwright test",
     "test:database": "vitest run tests/database",
     "qa:accounts": "node scripts/qa/provision.mjs",
     "qa:session": "node scripts/qa/session.mjs",
-    "test:e2e:auth": "playwright test --config=playwright.auth.config.ts --grep-invert @known-issue",
-    "test:e2e:auth:known": "playwright test --config=playwright.auth.config.ts --grep @known-issue",
+    "test:e2e:auth": "playwright test --config=playwright.auth.config.ts",
     "qa:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e"
   },
   "dependencies": {

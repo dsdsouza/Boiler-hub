@@ -1,0 +1,44 @@
+import { test, expect } from '@playwright/test';
+
+test('QA-007 recovers when a deployment loses bootstrap assets', async ({ page }) => {
+  let documents = 0;
+  let failed = 0;
+  page.on('request', (request) => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
+  await page.route('**/*', async (route) => {
+    const request = route.request();
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame() && documents === 1) {
+      // Model old HTML referencing a retired build, then serve fresh HTML on reload.
+      const response = await route.fetch();
+      const html = (await response.text()).replace(/((?:src|href)=")\/_next\/static\//g, '$1/_next/static/qa-retired/');
+      return route.fulfill({ response, body: html });
+    }
+    if (request.url().includes('/_next/static/qa-retired/')) {
+      failed++;
+      return route.fulfill({ status: 404, headers: { 'cache-control': 'no-store' }, body: 'Old deployment asset missing' });
+    }
+    return route.continue();
+  });
+  await page.goto('/', { waitUntil: 'commit' });
+  await page.waitForURL(/__boiler_reload=/);
+  const slider = page.getByRole('slider');
+  await expect(slider).toBeEnabled();
+  await slider.focus();
+  await slider.press('End');
+  await expect(page.getByRole('img', { name: /^Boiler at pressure 100, Redline/ })).toBeVisible();
+  expect(failed).toBeGreaterThan(0);
+  expect(documents).toBe(2);
+  const styles = await page.locator('link[rel="stylesheet"]').evaluateAll((links) => links.every((link) => (link as HTMLLinkElement).sheet !== null));
+  expect(styles).toBe(true);
+  await expect(page.getByText('A site update could not load.', { exact: false })).toHaveCount(0);
+});
+
+test('QA-007 persistent missing assets show a retry without a reload loop', async ({ page }) => {
+  let documents = 0;
+  page.on('request', (request) => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
+  await page.route('**/_next/static/**', (route) => /\.(js|css)(\?|$)/.test(route.request().url())
+    ? route.fulfill({ status: 404, body: 'Persistent asset outage' }) : route.continue());
+  await page.goto('/', { waitUntil: 'commit' });
+  await expect(page.getByRole('alert')).toContainText('A site update could not load');
+  await expect(page.getByRole('link', { name: 'Reload Boilerplate', exact: true })).toBeVisible();
+  expect(documents).toBe(2);
+});

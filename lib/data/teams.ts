@@ -1,6 +1,7 @@
+import { TASK_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BoilerCard, Counts, EngineRoom, Role, Status, Visibility, Zone } from "@/lib/types";
-import { safeHiddenCount, type AssignmentInput, type AssignmentTarget, type TargetResult } from "@/app/api/teams/_lib/assignment";
+import { computeTargets, safeHiddenCount, type AssignmentInput, type AssignmentTarget, type TargetResult } from "@/app/api/teams/_lib/assignment";
 
 // Query helpers for teams. Callers pass the clients in:
 //   `supabase` is the per-request user client (RLS applies),
@@ -86,10 +87,10 @@ export async function getMembership(
   return (data as { role: Role; visibility: Visibility } | null) ?? null;
 }
 
-async function visibleAndHidden(supabase: SupabaseClient, teamId: string) {
+async function visibleAndHidden(supabase: SupabaseClient, teamId: string, role: Role) {
   const [boilers, hidden] = await Promise.all([
     supabase.rpc("team_boilers", { team_id: teamId }),
-    supabase.rpc("team_hidden_count", { team_id: teamId }),
+    role === "lead" ? supabase.rpc("team_hidden_count", { team_id: teamId }) : Promise.resolve({ data: 0, error: null }),
   ]);
   if (boilers.error) throw boilers.error;
   if (hidden.error) throw hidden.error;
@@ -115,7 +116,7 @@ export async function listMyTeams(supabase: SupabaseClient, userId: string): Pro
   return Promise.all(
     rows.map(async (r) => {
       const t = r.teams!;
-      const { rows: visible, hiddenCount } = await visibleAndHidden(supabase, t.id);
+      const { rows: visible, hiddenCount } = await visibleAndHidden(supabase, t.id, r.role);
       return {
         id: t.id,
         name: t.name,
@@ -143,7 +144,7 @@ export async function getEngineRoom(
 
   const [teamRes, { rows, hiddenCount }] = await Promise.all([
     supabase.from("teams").select("id, name, type, invite_code").eq("id", teamId).single(),
-    visibleAndHidden(supabase, teamId),
+    visibleAndHidden(supabase, teamId, me.role),
   ]);
   if (teamRes.error) throw teamRes.error;
   const team = teamRes.data as { id: string; name: string; type: TeamType; invite_code: string };
@@ -206,6 +207,9 @@ export async function setMemberRole(
 
 export interface TargetWithCounts extends AssignmentTarget {
   counts: Counts | null;
+  /** Preserve the stored JSON for transaction comparisons, before filling UI defaults. */
+  snapshotCounts?: Partial<Counts> | null;
+  snapshotRevision?: number;
 }
 
 // Assignment recipients: every non-lead member, hidden ones included.
@@ -223,13 +227,13 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
 
   const [profiles, snapshots] = await Promise.all([
     admin.from("profiles").select("id, name").in("id", ids),
-    admin.from("pressure_snapshots").select("user_id, raw, score, zone, counts, computed_at").in("user_id", ids),
+    admin.from("pressure_snapshots").select("user_id, raw, score, zone, counts, computed_at, revision").in("user_id", ids),
   ]);
   if (profiles.error) throw profiles.error;
   if (snapshots.error) throw snapshots.error;
 
   const names = new Map(((profiles.data ?? []) as { id: string; name: string | null }[]).map((p) => [p.id, p.name]));
-  type Snap = { user_id: string; raw: number; score: number; zone: Zone; counts: Partial<Counts> | null; computed_at: string };
+  type Snap = { user_id: string; raw: number; score: number; zone: Zone; counts: Partial<Counts> | null; computed_at: string; revision: number };
   const snaps = new Map(((snapshots.data ?? []) as Snap[]).map((s) => [s.user_id, s]));
 
   return ms.map((m) => {
@@ -243,17 +247,14 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
       zone: s?.zone ?? null,
       updatedAt: s?.computed_at ?? null,
       counts: s ? { ...EMPTY_COUNTS, ...(s.counts ?? {}) } : null,
+      snapshotCounts: s?.counts ?? null,
+      snapshotRevision: s?.revision,
     };
   });
 }
 
-// Creates the assignment, fans out one `team` task per recipient, then bumps each
-// recipient's snapshot with the same math the preview used, so the posted result
-// matches the preview. Recipients are not resynced here (no external calls); their
-// own next sync does the full recompute.
-//
-// Idempotent per `clientKey` (one per draft, unique per team in 0003): a repeat post returns
-// the first assignment with `duplicate: true` and changes nothing.
+// Commit the assignment, recipient tasks and snapshot bumps in one transaction.
+// A changed snapshot rejects the entire attempt; re-read and recompute with the engine.
 export async function createAssignment(
   admin: SupabaseClient,
   teamId: string,
@@ -263,76 +264,27 @@ export async function createAssignment(
   results: TargetResult[],
   now: Date,
   clientKey?: string,
-): Promise<{ assignmentId: string; duplicate: boolean }> {
-  const { data: assignment, error } = await admin
-    .from("team_assignments")
-    .insert({
-      team_id: teamId,
-      title: input.title,
-      due_at: input.due,
-      size: input.size,
-      created_by: createdBy,
-      ...(clientKey ? { client_key: clientKey } : {}),
-    })
-    .select("id")
-    .single();
-  if (error) {
-    if (clientKey && error.code === "23505") {
-      const { data: existing, error: readError } = await admin
-        .from("team_assignments")
-        .select("id")
-        .eq("team_id", teamId)
-        .eq("client_key", clientKey)
-        .single();
-      if (readError) throw readError;
-      return { assignmentId: (existing as { id: string }).id, duplicate: true };
-    }
-    throw error;
+): Promise<{ assignmentId: string; duplicate: boolean; targets: TargetWithCounts[]; results: TargetResult[] }> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const byId = new Map(results.map((r) => [r.userId, r]));
+    const dueWithinWindow = Date.parse(input.due) - now.getTime() <= TASK_LOOKAHEAD_DAYS * 86_400_000;
+    const changes = targets.map((t) => {
+      const r = byId.get(t.userId)!;
+      return {
+        user_id: t.userId,
+        before: t.raw === null ? null : { revision: t.snapshotRevision, raw: t.raw, score: t.score, zone: t.zone, counts: t.snapshotCounts === undefined ? t.counts : t.snapshotCounts, computed_at: t.updatedAt },
+        after: { raw: r.rawAfter, score: r.after, zone: r.zoneAfter,
+          counts: { ...(t.counts ?? EMPTY_COUNTS), tasksDue: (t.counts ?? EMPTY_COUNTS).tasksDue + (dueWithinWindow ? 1 : 0) } },
+      };
+    });
+    const { data, error } = await admin.rpc("post_team_assignment", {
+      p_team_id: teamId, p_created_by: createdBy, p_title: input.title,
+      p_due: input.due, p_size: input.size, p_client_key: clientKey ?? null, p_changes: changes,
+    });
+    if (!error) return { ...(data as { assignmentId: string; duplicate: boolean }), targets, results };
+    if (error.code !== "40001" || attempt === 2) throw error;
+    targets = await loadAssignmentTargets(admin, teamId);
+    results = computeTargets(targets, input, now);
   }
-  const assignmentId = (assignment as { id: string }).id;
-
-  if (targets.length > 0) {
-    // Fresh assignment, so a plain insert; the partial unique index guards duplicates.
-    const { error: taskError } = await admin.from("tasks").insert(
-      targets.map((t) => ({
-        owner_id: t.userId,
-        title: input.title,
-        due_at: input.due,
-        size: input.size,
-        source: "team",
-        assignment_id: assignmentId,
-      })),
-    );
-    if (taskError) {
-      await admin.from("team_assignments").delete().eq("id", assignmentId);
-      throw taskError;
-    }
-  }
-
-  // Only members who already have a snapshot are bumped, and computed_at keeps its original
-  // value: the score moved, but the calendar behind it was not re-read, so it is no fresher.
-  // Never-synced members get the task but no snapshot; their first sync makes one.
-  const dueWithinWeek = Date.parse(input.due) - now.getTime() <= 7 * 86_400_000;
-  const byId = new Map(targets.map((t) => [t.userId, t]));
-  const bumps = results.flatMap((r) => {
-    const t = byId.get(r.userId);
-    if (!t || t.raw === null || !t.updatedAt) return [];
-    const counts = t.counts ?? EMPTY_COUNTS;
-    return [
-      {
-        user_id: r.userId,
-        score: r.after,
-        raw: r.rawAfter,
-        zone: r.zoneAfter,
-        counts: { ...counts, tasksDue: counts.tasksDue + (dueWithinWeek ? 1 : 0) },
-        computed_at: t.updatedAt,
-      },
-    ];
-  });
-  if (bumps.length > 0) {
-    const { error: snapError } = await admin.from("pressure_snapshots").upsert(bumps, { onConflict: "user_id" });
-    if (snapError) throw snapError;
-  }
-
-  return { assignmentId, duplicate: false };
+  throw new Error("Assignment could not be committed");
 }

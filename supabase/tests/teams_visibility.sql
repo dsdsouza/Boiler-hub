@@ -65,8 +65,8 @@ begin
     raise exception 'FAIL: non-lead saw a lead-only member';
   end if;
 
-  if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 3 then
-    raise exception 'FAIL: member E hidden count should be 3 (L, B, C)';
+  if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 0 then
+    raise exception 'FAIL: non-lead E must not receive a hidden count';
   end if;
 
   -- Direct table reads are owner-only.
@@ -136,8 +136,8 @@ begin
   ]::uuid[] then
     raise exception 'FAIL: lead L should see L, C and E, saw %', seen;
   end if;
-  if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 1 then
-    raise exception 'FAIL: lead L hidden count should be 1 (B)';
+  if public.team_hidden_count('aaaaaaaa-0000-4000-a000-0000000000f1') <> 0 then
+    raise exception 'FAIL: lead L must not receive a count of one';
   end if;
   select count(*) into n from public.pressure_snapshots where user_id <> 'aaaaaaaa-0000-4000-a000-00000000000a';
   if n <> 0 then raise exception 'FAIL: lead L read % other snapshots directly', n; end if;
