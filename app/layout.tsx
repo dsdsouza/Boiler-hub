@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import { PipDock } from "@/components/mascot/PipDock";
 import { AppMotion } from "@/components/ui/AppMotion";
-import { SiteFooter } from "@/components/ui/SiteFooter";
 import "./globals.css";
 import { deploymentRecovery } from "@/lib/deployment-recovery";
 
@@ -35,7 +34,6 @@ export default function RootLayout({
       <body className="antialiased">
         <AppMotion>
           {children}
-          <SiteFooter />
           <PipDock />
         </AppMotion>
       </body>

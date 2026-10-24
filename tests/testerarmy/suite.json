@@ -184,15 +184,15 @@
             },
             {
               "type": "act",
-              "title": "Open Privacy from the footer."
+              "title": "Scroll to the bottom of the page."
             },
             {
               "type": "assert",
-              "title": "Verify Privacy explains read-only Google Calendar access, encrypted source links/tokens, what is stored, Hidden as the default per team, and how to request deletion. Do not send an email."
+              "title": "Verify the removed site-wide footer and Privacy link are absent. The privacy promise remains available in How it works."
             },
             {
               "type": "act",
-              "title": "Use the footer Try the demo link."
+              "title": "Return to the homepage and use Try the demo in the main content."
             },
             {
               "type": "assert",
