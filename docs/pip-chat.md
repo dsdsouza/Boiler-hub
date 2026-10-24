@@ -2,6 +2,10 @@
 
 Signed-in users can open Pip in the corner of a page, or choose **Ask Pip** on My Boiler. Type a question and press Enter or Send; Shift-Enter inserts a new line. Responses appear in speech bubbles. Closing the chat or reloading clears the conversation. The public demo does not send personal assignment questions.
 
+Replies stream directly from Gemini as they are generated. The steam loader stays until the first text arrives, then one reply bubble grows in place. Scrolling up pauses automatic following. Closing the chat aborts its request; interrupted replies are discarded and the question is restored for retry, so partial text never enters the next conversation turn. Screen readers receive the finished reply without an announcement for every token.
+
+The client requests `application/x-ndjson`: bounded `delta` events, a final `done` event, or a redacted `error` event. Both sides still support the previous JSON response during rolling deployments. Authentication, origin checks, quotas, the generation timeout and `store: false` remain in place. Course-source answers request citations first and verify those quotes before streaming the answer; references appear only after final validation. If a model returns fields in the opposite order, that course answer waits for final verification.
+
 The server verifies the Supabase user, reads only their open tasks under RLS, and loads that same user's connected-source assignments with the existing source loader and completion overrides. It excludes meetings, completed assignments, source URLs, and source credentials. Every question reloads the assignment context so completed work drops out. The prompt contains up to 100 open assignments, sorted by due date, and reports partial source data or truncation. Pip suggests a plan; it does not modify or submit work.
 
 ## Add the Gemini key
@@ -15,13 +19,7 @@ For the Cloudflare deployment now configured on `main`:
 3. Optionally add **GEMINI_MODEL** as a text variable with value **gemini-3.8-flash**. Leaving it unset uses that default. This is Google's [current stable Flash model](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash).
 4. The key is read at runtime through OpenNext; it does not need a GitHub Actions build secret. Keep the existing deployment credentials and Supabase variables configured as described in [CLOUDFLARE.md](./CLOUDFLARE.md).
 
-At verification time, **boilerhub.work** still served its existing host while the Cloudflare deployment workflow was not yet configured with its deployment token. Until the domain is migrated, the Gemini key must also be added to that app's runtime if deploying the chat there:
-
-1. Open the hosting project **boiler-hub**, which serves boilerhub.work. Open **Settings → Environment Variables**.
-2. Add **GEMINI_API_KEY**. Paste the Gemini key as its value, select **Secret**, and select **Production** and **Preview**. Save. If the account requires different secret values per environment, add separate keys for those environments.
-3. Optionally add **GEMINI_MODEL** as Config, value **gemini-3.8-flash**. Leaving it unset uses that default.
-4. Deploy this PR after all checks and preview deployments pass. Environment changes apply to new deployments. If changing the key after deployment, redeploy to load the new value. At implementation time the existing host deployment quota was exhausted; a new build must wait for that quota to reset.
-5. Sign in, open My Boiler → Ask Pip, and ask **What's due next?** Compare the answer with your open assignment list. Complete an assignment in My Boiler and ask again in the same chat; the new request uses fresh completion state.
+Use [the Cloudflare app](https://boilerplate.zhomander.workers.dev/boiler) for Pip chat. Sign in, open My Boiler → Ask Pip, and ask **What’s due next?** Compare the answer with your open assignment list. Every new question reloads completion state.
 
 The Gemini key belongs in the **app server's environment**. Supabase already provides authentication, assignment data, and request budgets; this implementation does not run a Supabase Edge Function and does not require a Gemini secret in Supabase. Existing production Supabase, source-encryption, and Google Calendar environment variables continue to be used.
 
@@ -40,10 +38,10 @@ The additive migration [20261024211627_pip_chat_quota.sql](../supabase/migration
 
 `pip_private.chat_usage` stores one counter row per account: UTC day, daily request count, minute-window start, and minute count. It stores no prompts, replies, or assignment contents. The authenticated `pip_chat_take_quota()` RPC uses the caller's JWT identity with no user-supplied id or clock. Its private implementation atomically admits at most five attempts per minute and fifty per UTC day. Anonymous callers cannot execute it, and authenticated callers cannot read or reset the counter table. This limit applies across server instances. Failed attempts after quota reservation also count; missing-key and invalid requests do not reserve quota.
 
-The API uses the direct Google provider with pinned AI SDK packages, a 25-second generation timeout, bounded input/history/context/output, and no automatic provider retries. The chat route does not log provider errors, prompts, source data, or keys. Google receives the user's messages and selected open assignment facts on Send; Google's own retention and API terms apply independently of Boilerplate's transient chat UI.
+The API uses the direct Google provider with pinned AI SDK packages and Google's recommended Interactions endpoint. Every request explicitly sets `store: false`, sends the current conversation and fresh assignment context, and never chains a saved interaction. A 40-second total generation budget includes at most one automatic retry for a transient provider failure. Input, history, context, and output remain bounded. A persistent service outage produces a readable retry message. The chat route logs only fixed failure categories, the failing step, and a provider HTTP status; it never logs raw exceptions, prompts, source data, or keys. Google receives the user's messages and selected open assignment facts on Send; Google's own retention and API terms apply independently of Boilerplate's transient chat UI.
 
 ## Verification
 
 Tests cover authenticated ownership, input validation, missing setup, quota exhaustion, no-store responses, redacted errors, source completion filtering, bounded context, and the actual Google provider request/response protocol with a simulated transport. PostgreSQL tests cover minute/day limits, account separation, concurrency, anonymous denial, and counter tampering. Live Supabase verification used an authenticated fixture inside a rolled-back transaction; no test user or quota remained. Security advisors report no findings for the new Pip objects.
 
-A real Gemini-generated reply still requires the API key. Simulated provider tests and labelled UI fixtures do not claim a live paid-provider call.
+Protocol tests verify stateless requests, recovery after one temporary service failure, and a strict retry limit. Simulated provider tests and labelled UI fixtures do not claim a live paid-provider call; live provider availability must be checked separately.

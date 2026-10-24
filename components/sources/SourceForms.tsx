@@ -3,12 +3,9 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Feedback } from "@/components/ui/Feedback";
 import { Button } from "@/components/ui/Button";
+import { Field, Input, Select } from "@/components/ui/Field";
 import { defaultFeedLabel, isAppleCalendarUrl, isCourseworkUrl } from "@/lib/sources/hints";
 import { foundLine, sourcesCall, type AddedSource } from "./api";
-
-export const fieldClass =
-  "bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
-const labelClass = "text-[13px] font-medium text-body";
 
 /** Paste an ICS link (Apple Calendar, coursework, or another feed). Shared with onboarding. */
 type CalendarProvider = "other" | "apple" | "brightspace";
@@ -70,9 +67,8 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
   return (
     <div className="flex flex-col gap-4">
       <form onSubmit={submit} className="flex flex-col gap-3">
-        {showProvider && <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${idPrefix}-provider`} className={labelClass}>Calendar provider</label>
-          <select
+        {showProvider && <Field htmlFor={`${idPrefix}-provider`} label="Calendar provider">
+          <Select
             id={`${idPrefix}-provider`}
             value={provider}
             disabled={busy}
@@ -82,20 +78,16 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               setError(null);
               setDone(null);
             }}
-            className={fieldClass}
           >
-            <option value="other">Coursework or other calendar feed</option>
+            <option value="other">Other calendar feed</option>
             <option value="brightspace">Brightspace (D2L)</option>
             <option value="apple">Apple Calendar (iCloud)</option>
-          </select>
-        </div>}
+          </Select>
+        </Field>}
         {isApple && <AppleCalendarHelp />}
         {isBrightspace && <BrightspaceHelp />}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${idPrefix}-url`} className={labelClass}>
-            {isApple ? "iCloud public calendar link" : isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}
-          </label>
-          <input
+        <Field htmlFor={`${idPrefix}-url`} label={isApple ? "iCloud public calendar link" : isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}>
+          <Input
             ref={urlField}
             id={`${idPrefix}-url`}
             type="url"
@@ -113,34 +105,29 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               setError(null);
               setDone(null);
             }}
-            aria-describedby={`${idPrefix}-link-help${error ? ` ${idPrefix}-error` : ""}`}
+            aria-describedby={error ? `${idPrefix}-error` : undefined}
             aria-invalid={error ? true : undefined}
-            className={`${fieldClass} font-mono text-base`}
+            className="font-mono"
           />
-          <span id={`${idPrefix}-link-help`} className="text-xs text-muted">The link works like a password. It is stored encrypted and never shown again.</span>
-        </div>
+        </Field>
         <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
-            <label htmlFor={`${idPrefix}-label`} className={labelClass}>
-              Name (optional)
-            </label>
-            <input
+          <Field htmlFor={`${idPrefix}-label`} label="Name (optional)" className="min-w-[180px] flex-1">
+            <Input
               id={`${idPrefix}-label`}
               maxLength={60}
               readOnly={busy}
               placeholder={isApple ? "Apple Calendar" : url ? defaultFeedLabel(url) : "Brightspace"}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              className={fieldClass}
             />
-          </div>
+          </Field>
           {!isApple && <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-body">
             <input
               type="checkbox"
               checked={isCoursework}
               disabled={busy}
               onChange={(e) => setCoursework(e.target.checked)}
-              className="size-5 cursor-pointer accent-(--color-brass)"
+              className="size-5 shrink-0 cursor-pointer accent-(--color-brass)"
             />
             Coursework feed: all-day entries are deadlines
           </label>}
@@ -288,11 +275,8 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
         </div>
       </details>
       <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-          <label htmlFor={`${idPrefix}-token`} className={labelClass}>
-            Personal access token
-          </label>
-          <input
+        <Field htmlFor={`${idPrefix}-token`} label="Personal access token" className="min-w-[min(100%,220px)] flex-1">
+          <Input
             ref={tokenField}
             id={`${idPrefix}-token`}
             type="password"
@@ -303,9 +287,9 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
             placeholder="github_pat_…"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            className={`${fieldClass} font-mono text-base`}
+            className="font-mono"
           />
-        </div>
+        </Field>
         <Button type="submit" variant="primary" disabled={!token.trim()} aria-disabled={busy || !token.trim()} aria-busy={busy}>
           {busy ? "Checking…" : "Connect GitHub"}
         </Button>

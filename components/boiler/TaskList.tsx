@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Contribution, LoadItem, Size } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Field, Input, Select } from "@/components/ui/Field";
 import type { NewTask, TaskMeta } from "./boilerState";
 import { SIZE_POINTS, TASK_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
 import { isStaleOverdue } from "@/lib/pressure/compute";
@@ -26,9 +27,6 @@ function dueFor(choice: DueChoice, now = new Date()) {
   if (d <= now) d.setHours(23, 59, 0, 0);
   return d.toISOString();
 }
-
-const field =
-  "bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 
 export function TaskList({
   items,
@@ -203,19 +201,19 @@ export function TaskList({
         <div className="flex shrink-0 flex-col items-end justify-center gap-1 sm:flex-row sm:items-center sm:gap-3">
           {!compact &&
             (sizeEditable ? (
-            <select
+            <Select
+              compact
               aria-label={`Size: ${t.title}`}
               disabled={saving}
               value={sizeDraft[t.id] ?? t.size}
               onChange={(e) => changeSize(t.id, e.target.value as Size)}
-              className="bp-field min-h-11 w-12 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-base font-bold text-body hover:border-brass"
             >
               {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <span className="rounded border border-rivet px-[7px] py-0.5 font-mono text-xs font-bold text-body">
               <span className="sr-only">Size </span>
@@ -273,43 +271,35 @@ export function TaskList({
       </ul>
       {completedTasks.length > 0 && <details className="border-t border-line">
         <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-body">Completed or cleared ({completedTasks.length})</summary>
-        <p className="mt-0 mb-2 text-sm text-muted">Still due? Uncheck an assignment to restore it to your score.</p>
         <ul className="m-0 list-none p-0">{completedTasks.map(renderTask)}</ul>
       </details>}
-      <form onSubmit={submit} className="flex flex-wrap items-end gap-2.5 border-t border-line pt-4">
-        <div className="flex basis-full flex-col gap-1.5 sm:basis-auto sm:flex-[1_1_220px]">
-          <label htmlFor="nt" className="text-[13px] font-medium text-body">
-            New task
-          </label>
-          <input id="nt" ref={titleInput} type="text" required maxLength={120} placeholder="e.g. Draft lab report" value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
+      <form onSubmit={submit} className="bp-task-form border-t border-line pt-4">
+        <div className="bp-task-fields">
+          <Field htmlFor="nt" label="New task" className="bp-task-title">
+            <Input id="nt" ref={titleInput} type="text" required maxLength={120} placeholder="e.g. Draft lab report" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </Field>
+          <Field htmlFor="ns" label="Size">
+            <Select id="ns" value={size} onChange={(e) => setSize(e.target.value as Size)}>
+              {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
+                <option key={s} value={s}>
+                  {s} · {SIZE_POINTS[s]} pts
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field htmlFor="nd" label="Due">
+            <Select id="nd" value={due} onChange={(e) => setDue(e.target.value as DueChoice)}>
+              {(Object.keys(DUE_LABEL) as DueChoice[]).map((d) => (
+                <option key={d} value={d}>
+                  {DUE_LABEL[d]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Button type="submit" variant="primary" aria-disabled={adding} aria-busy={adding} className="bp-task-submit h-11 w-full whitespace-nowrap aria-disabled:cursor-wait aria-disabled:opacity-70">
+            {adding ? "Adding…" : "Add task"}
+          </Button>
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-none">
-          <label htmlFor="ns" className="text-[13px] font-medium text-body">
-            Size
-          </label>
-          <select id="ns" value={size} onChange={(e) => setSize(e.target.value as Size)} className={field}>
-            {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
-              <option key={s} value={s}>
-                {s} · {SIZE_POINTS[s]} pts
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-none">
-          <label htmlFor="nd" className="text-[13px] font-medium text-body">
-            Due
-          </label>
-          <select id="nd" value={due} onChange={(e) => setDue(e.target.value as DueChoice)} className={field}>
-            {(Object.keys(DUE_LABEL) as DueChoice[]).map((d) => (
-              <option key={d} value={d}>
-                {DUE_LABEL[d]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button type="submit" variant="primary" aria-disabled={adding} aria-busy={adding} className="w-full sm:w-auto aria-disabled:cursor-wait aria-disabled:opacity-70">
-          {adding ? "Adding…" : "Add task"}
-        </Button>
       </form>
     </Card>
   );

@@ -1,0 +1,146 @@
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("fonts/bebas.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url("fonts/inter.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/mono.woff2") format("woff2");
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+  background: #15120e;
+  color: #f1e7d3;
+  font-family: Inter, system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+body {
+  margin: 0;
+  min-width: 340px;
+}
+main {
+  max-width: 680px;
+  padding: 32px 28px;
+  margin: 0 auto;
+}
+.brand {
+  color: #e3be74;
+  text-decoration: none;
+  font:
+    28px "Bebas Neue",
+    sans-serif;
+  letter-spacing: 0.04em;
+  display: block;
+  min-height: 44px;
+}
+section {
+  margin-top: 32px;
+  border: 1px solid #6b5a44;
+  border-radius: 14px;
+  background: #1f1a14;
+  padding: 32px 24px;
+  text-align: center;
+}
+h1 {
+  font:
+    400 42px/1.1 "Bebas Neue",
+    sans-serif;
+  letter-spacing: 0.03em;
+  margin: 0 0 17px;
+  text-wrap: balance;
+}
+p {
+  font-size: 14px;
+  color: #d9ccb5;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+#timer {
+  font:
+    46px/1.2 "JetBrains Mono",
+    monospace;
+  font-variant-numeric: tabular-nums;
+  color: #e3be74;
+  margin: 25px 0;
+}
+#task {
+  font-weight: 650;
+}
+#goal {
+  font-size: 13px;
+  color: #b3a48c;
+  margin-bottom: 24px;
+}
+.primary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 12px 22px;
+  background: #d1a85a;
+  color: #15120e;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 10px;
+}
+button {
+  display: block;
+  min-height: 44px;
+  padding: 12px;
+  margin: 16px auto 0;
+  border: 1px solid #84725b;
+  border-radius: 10px;
+  background: #2a231b;
+  color: #f1e7d3;
+  cursor: pointer;
+  font:
+    13px Inter,
+    system-ui,
+    sans-serif;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+#status,
+.note {
+  font-size: 12px;
+  color: #b3a48c;
+}
+.note {
+  text-align: center;
+  margin-top: 23px;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #e3be74;
+  outline-offset: 4px;
+}
+::selection {
+  background: #d1a85a;
+  color: #15120e;
+}
+@media (max-width: 450px) {
+  main {
+    padding: 22px 18px;
+  }
+  section {
+    padding: 25px 18px;
+    margin-top: 20px;
+  }
+  h1 {
+    font-size: 34px;
+  }
+}

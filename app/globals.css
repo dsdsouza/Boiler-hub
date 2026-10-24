@@ -101,6 +101,39 @@ input[type="range"] {
   accent-color: #d1a85a;
 }
 
+/* The native input owns the hit area; only its decorative rail vibrates. */
+.bp-pressure-control { position: relative; }
+.bp-pressure-track { position: absolute; inset-inline: 10px; top: 17px; height: 10px; pointer-events: none; }
+.bp-pressure-rail { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--control); border-radius: 999px; background: var(--surface-2); }
+.bp-pressure-fill { height: 100%; background: var(--pressure-color); transform: scaleX(var(--pressure-fill)); transform-origin: left center; }
+.bp-pressure-divider { position: absolute; top: -2px; bottom: -2px; width: 2px; border-left: 1px solid var(--bg); border-right: 1px solid var(--control); transform: translateX(-50%); }
+.bp-pressure-slider { position: relative; display: block; appearance: none; width: 100%; height: 44px; margin: 0; padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: pointer; }
+.bp-pressure-slider:disabled { cursor: default; }
+.bp-pressure-slider::-webkit-slider-runnable-track { height: 10px; border: 0; background: transparent; }
+.bp-pressure-slider::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; margin-top: -5px; border: 0; border-radius: 50%; background: var(--pressure-color); }
+.bp-pressure-slider::-moz-range-track { height: 10px; border: 0; background: transparent; }
+.bp-pressure-slider::-moz-range-progress { background: transparent; }
+.bp-pressure-slider::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--pressure-color); }
+@keyframes bp-pressure-shake {
+  0%, 50%, 100% { transform: translateX(0); }
+  25% { transform: translateX(var(--pressure-shake)); }
+  75% { transform: translateX(calc(-1 * var(--pressure-shake))); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bp-pressure-control:is([data-zone="hot"], [data-zone="redline"]) .bp-pressure-track { animation: bp-pressure-shake 700ms ease-in-out infinite; }
+  .bp-pressure-control[data-paused] .bp-pressure-track { animation-play-state: paused; }
+  .bp-pressure-fill { transition: background-color 120ms ease-out; }
+  .bp-pressure-slider::-webkit-slider-thumb { transition: background-color 120ms ease-out; }
+  .bp-pressure-slider::-moz-range-thumb { transition: background-color 120ms ease-out; }
+}
+@media (forced-colors: active) {
+  .bp-pressure-rail { border-color: CanvasText; background: Canvas; }
+  .bp-pressure-fill { background: Highlight; }
+  .bp-pressure-divider { border-color: CanvasText; }
+  .bp-pressure-slider::-webkit-slider-thumb { background: Highlight; border: 1px solid CanvasText; }
+  .bp-pressure-slider::-moz-range-thumb { background: Highlight; border: 1px solid CanvasText; }
+}
+
 /* Sign-in feedback floats above the page without moving the hero. */
 .bp-signin-toast {
   right: max(16px, env(safe-area-inset-right));
@@ -127,7 +160,26 @@ input[type="range"] {
   .bp-signin-toast-progress { animation-timing-function: steps(5, end); }
 }
 
-/* Boiler SVG motion. Durations come from inline custom properties. */
+/* Pip's reply is brewing: small steam wisps, with a still reduced-motion state. */
+.bp-pip-steam path { opacity: 0.75; }
+@keyframes bp-pip-steam {
+  0%, 100% { opacity: 0.25; transform: translateY(2px); }
+  45% { opacity: 1; transform: translateY(-2px); }
+  80% { opacity: 0.25; transform: translateY(-5px); }
+}
+@keyframes bp-pip-thought {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bp-pip-steam path { animation: bp-pip-steam 1800ms ease-in-out infinite; }
+  .bp-pip-steam path:nth-child(2) { animation-delay: -600ms; }
+  .bp-pip-steam path:nth-child(3) { animation-delay: -1200ms; }
+  .bp-pip-thought { animation: bp-pip-thought 200ms ease-out; }
+  .bp-pip-thinking[data-paused] :is(.bp-pip-steam path, .bp-pip-thought) { animation-play-state: paused; }
+}
+
+/* Boiler SVG motion. Liquid periods stay fixed; playback speed preserves phase. */
 @keyframes bp-wave-r {
   from { transform: translateX(0); }
   to { transform: translateX(80px); }
@@ -157,9 +209,9 @@ input[type="range"] {
   50% { opacity: var(--fire-hi, 0.6); }
 }
 
-.bp-wave-r { animation: bp-wave-r var(--dur, 3s) cubic-bezier(0.37, 0, 0.63, 1) infinite; }
-.bp-wave-l { animation: bp-wave-l var(--dur, 4s) cubic-bezier(0.37, 0, 0.63, 1) infinite; }
-.bp-bob { animation: bp-bob var(--dur, 2s) ease-in-out infinite; }
+.bp-wave-r { animation: bp-wave-r 4.2s cubic-bezier(0.37, 0, 0.63, 1) infinite; }
+.bp-wave-l { animation: bp-wave-l 5.2s cubic-bezier(0.37, 0, 0.63, 1) infinite; }
+.bp-bob { animation: bp-bob 2.4s ease-in-out infinite; }
 .bp-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: bp-flame 0.9s ease-in-out infinite; }
 .bp-glow { opacity: var(--glow-lo, 0); animation: bp-glow 0.8s ease-in-out infinite; }
 .bp-flutter { animation: bp-flutter var(--dur, 0.3s) ease-in-out infinite; }
@@ -246,6 +298,17 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
 .bp-field:focus-visible { border-color: var(--brass-ink); }
 .bp-field[aria-invalid="true"] { border-color: var(--redline-ink); }
 .bp-field:disabled { border-color: var(--line); opacity: 0.6; }
+
+.bp-task-form { container-type: inline-size; }
+.bp-task-fields { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 12px; }
+.bp-task-title, .bp-task-submit { grid-column: 1 / -1; }
+@container (min-width: 312px) {
+  .bp-task-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 680px) {
+  .bp-task-fields { grid-template-columns: minmax(0, 1fr) 160px 160px auto; }
+  .bp-task-title, .bp-task-submit { grid-column: auto; }
+}
 
 .bp-button {
   -webkit-tap-highlight-color: transparent;

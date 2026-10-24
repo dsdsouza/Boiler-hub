@@ -14,6 +14,16 @@ const reopen = async (page: Page) => {
 };
 const noteField = (page: Page) => page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true });
 const taskButton = (page: Page, title: string, done = false) => page.getByRole('button', { name: `${done ? 'Mark not done' : 'Complete'}: ${title}`, exact: true });
+async function openPip(page: Page) {
+  const ask = page.getByRole('button', { name: 'Ask Pip about my course material', exact: true });
+  if (await ask.count() === 0) {
+    await page.getByText('Course material for Pip · 0 of 3 documents', { exact: true }).click();
+    await page.getByRole('textbox', { name: 'Document title', exact: true }).fill('Workflow course');
+    await page.getByRole('textbox', { name: 'Course text', exact: true }).fill('The workflow deliverable is due tomorrow. Start with the outline, then review it.');
+    await page.getByRole('button', { name: 'Add course material', exact: true }).click();
+  }
+  await ask.click();
+}
 async function showCompleted(page: Page, title: string) {
   const hidden = page.getByRole('button', { name: `Mark not done: ${title}`, exact: true, includeHidden: true });
   await expect(hidden).toHaveCount(1);
@@ -123,11 +133,11 @@ test('Pip help through a failed request and a completed conversation', plan([
 ]), async ({ page, context }) => {
   const service = world(); await service.connect(context); service.failOnce('POST /api/pip/chat');
   try {
-    await step('Open Pip from the workload', async () => { await open(page); await page.getByRole('button', { name: 'Ask Pip', exact: true }).click(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeFocused(); });
+    await step('Open Pip from the workload', async () => { await open(page); await openPip(page); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeFocused(); });
     await step('Keep a question after a failed reply', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('What should I work on?'); await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('alert').filter({ hasText: 'temporarily unavailable' })).toBeVisible(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue('What should I work on?'); });
     await step('Retry and receive a reply', async () => { await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true })).toContainText('Workflow: start with the dated deliverable.'); });
     await step('Ask a follow-up question', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('And after that?'); await page.getByRole('textbox', { name: 'Message Pip', exact: true }).press('Enter'); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true }).getByText('Workflow: start with the dated deliverable.', { exact: false })).toHaveCount(2); });
     await step('Close the conversation', async () => { await page.getByRole('button', { name: 'Close chat', exact: true }).click(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveCount(0); });
-    await step('Reopen without the previous conversation', async () => { await page.getByRole('button', { name: 'Ask Pip', exact: true }).click(); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true })).not.toContainText('And after that?'); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue(''); });
+    await step('Reopen without the previous conversation', async () => { await openPip(page); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true })).not.toContainText('And after that?'); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue(/^Help me understand the course material I added\./); });
   } finally { await step('Restore test data', async () => { service.reset(); }); }
 });

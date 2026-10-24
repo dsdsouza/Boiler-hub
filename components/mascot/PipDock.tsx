@@ -6,7 +6,6 @@ import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { LinkButton } from "@/components/ui/Button";
 import { readStorage } from "@/components/ui/storage";
-import { ZONE_LABEL } from "@/components/ui/zones";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
 import { PipChat } from "./PipChat";
@@ -15,9 +14,10 @@ import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
 // Pip in the corner of signed-in pages. Reads the caller's own stored snapshot
 // (owner-only RLS), so moving between pages never triggers a calendar fetch.
-// My Boiler and /demo have the full strip instead; onboarding has its own Pip.
+// My Boiler keeps chat in this dock alongside its hero and inline wardrobe.
+// The demo and onboarding provide their own Pip.
 
-const HIDE_ON = ["/boiler", "/demo", "/onboarding", "/mascot-preview", "/auth"];
+const HIDE_ON = ["/demo", "/onboarding", "/mascot-preview", "/auth"];
 
 type Load = { kind: "none" } | { kind: "ready"; snapshot: Snapshot | null };
 
@@ -126,11 +126,6 @@ export function PipDock() {
           <div className="flex shrink-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">
               <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with {MASCOT_NAME}</h2>
-              {snap && (
-                <span className="font-mono text-[11px] tracking-[0.14em] text-muted uppercase">
-                  {ZONE_LABEL[snap.zone]} {snap.score}
-                </span>
-              )}
             </div>
             <button
               type="button"
@@ -145,7 +140,7 @@ export function PipDock() {
           </div>
           <PipChat />
           <div className="mt-3 shrink-0">
-            <LinkButton href={message.action.href} variant="ghost" onClick={() => setOpen(false)}>
+            <LinkButton href={message.action.href} variant={message.action.href === "/boiler" ? "primary" : "ghost"} onClick={() => setOpen(false)}>
               {message.action.label}
             </LinkButton>
           </div>

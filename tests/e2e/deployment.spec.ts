@@ -8,8 +8,12 @@ test('QA-007 recovers when a deployment loses bootstrap assets', async ({ page }
     const request = route.request();
     if (request.isNavigationRequest() && request.frame() === page.mainFrame() && documents === 1) {
       // Model old HTML referencing a retired build, then serve fresh HTML on reload.
-      const response = await route.fetch();
-      const html = (await response.text()).replace(/((?:src|href)=")\/_next\/static\//g, '$1/_next/static/qa-retired/');
+      // Edit plain HTML; Cloudflare can otherwise send zstd bytes the test client does not decode.
+      const response = await route.fetch({ headers: { ...request.headers(), 'accept-encoding': 'identity' } });
+      expect(response.status()).toBe(200);
+      const original = await response.text();
+      expect(original).toContain('/_next/static/');
+      const html = original.replace(/((?:src|href)=")\/_next\/static\//g, '$1/_next/static/qa-retired/');
       return route.fulfill({ response, body: html });
     }
     if (request.url().includes('/_next/static/qa-retired/')) {

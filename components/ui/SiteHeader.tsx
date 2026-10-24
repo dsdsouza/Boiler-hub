@@ -21,7 +21,7 @@ const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },
   { key: "teams", href: "/teams", label: "Teams" },
   { key: "sources", href: "/settings/sources", label: "Sources" },
-  { key: "how", href: "/how", label: "How it works" },
+  { key: "how", href: "/how", label: "Help" },
 ];
 
 function NavLink({ href, label, current, prefetch }: { href: string; label: string; current: boolean; prefetch?: boolean }) {
@@ -164,7 +164,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
     {
       key: "how",
       href: "/how",
-      label: "How",
+      label: "Help",
       icon: (
         <>
           <circle cx="12" cy="12" r="9" />

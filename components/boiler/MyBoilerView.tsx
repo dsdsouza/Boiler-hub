@@ -1,14 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
-import { BoilerCompanion } from "@/components/mascot/BoilerCompanion";
+import { PipDressUp } from "@/components/mascot/PipDressUp";
+import { PipChat } from "@/components/mascot/PipChat";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -19,10 +20,10 @@ import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
 import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
-import { timeAgo } from "./format";
 import { fireFromForecast } from "./geometry";
-import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import type { MyBoiler } from "./useMyBoiler";
+import { StudyAccountability } from "./StudyAccountability";
+import { useStudyAccountability } from "./useStudyAccountability";
 
 function useTick(ms: number) {
   const [, setTick] = useState(0);
@@ -60,16 +61,17 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
 export function MyBoilerView({
   boiler,
   title = "My Boiler",
-  sourceLabel = "Google Calendar connected",
   headingLevel = 1,
 }: {
   boiler: MyBoiler;
   title?: string;
-  sourceLabel?: string;
   headingLevel?: 1 | 2;
 }) {
   useTick(30_000);
   const accessory = usePipAccessory();
+  const study = useStudyAccountability(boiler);
+  const [chatRequest, setChatRequest] = useState<{ question: string; key: number } | null>(null);
+  const chatTrigger = useRef<HTMLElement | null>(null);
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
 
@@ -90,18 +92,16 @@ export function MyBoilerView({
 
   const { result } = data;
   const fire = fireFromForecast(result.forecast.map((d) => d.score));
+  const statusPicker = (
+    <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus}>
+      <PipDressUp score={result.score} />
+    </StatusPicker>
+  );
 
   return (
     <div className="flex flex-col gap-6">
       <div className="bp-arrive flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
-          <p className="mt-1.5 mb-0 text-[15px] text-muted">
-            {data.calendar !== "ok"
-              ? data.sources?.some((s) => s.kind === "ics" && s.status === "ok") ? "Calendar feeds and tasks" : "Tasks only"
-              : sourceLabel} · meetings {WINDOW_DAYS} days · deadlines {TASK_LOOKAHEAD_DAYS} days · synced {timeAgo(data.syncedAt)}
-          </p>
-        </div>
+        <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
         <button
           type="button"
           // aria-disabled, not disabled: a disabled button drops keyboard focus to the page.
@@ -115,8 +115,19 @@ export function MyBoilerView({
         </button>
       </div>
 
-      <BoilerCompanion data={data} vent={vent} chatEnabled={boiler.source !== "fixture"} />
-
+      <StudyAccountability boiler={boiler} study={study} onAsk={(question) => {
+        chatTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setChatRequest((previous) => ({ question, key: (previous?.key ?? 0) + 1 }));
+      }} />
+      {chatRequest && boiler.source !== "fixture" && (
+        <Card as="section" aria-label="Study chat" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="m-0 text-lg font-semibold text-fg">Study with Pip</h2>
+            <Button variant="ghost" onClick={() => { setChatRequest(null); chatTrigger.current?.focus(); }}>Close chat</Button>
+          </div>
+          <PipChat autoFocus studyContext={study.context} draftRequest={chatRequest} />
+        </Card>
+      )}
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
       {data.sources && <SourcesBanner sources={data.sources} />}
@@ -163,7 +174,7 @@ export function MyBoilerView({
           </div>
 
           <div className="hidden lg:block lg:w-full">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus} />
+            {statusPicker}
           </div>
         </section>
 
@@ -182,7 +193,6 @@ export function MyBoilerView({
             <div className="hidden sm:block">
               <ForecastStrip days={result.forecast} />
             </div>
-            <p className="mt-3 mb-0 text-[13px] text-muted">Assumes future tasks are finished by their due dates. Already overdue work stays counted.</p>
           </Card>
 
           <TaskList
@@ -209,7 +219,7 @@ export function MyBoilerView({
           />
 
           <div className="rounded-[14px] border border-line bg-surface px-5 py-6 shadow-(--shadow) lg:hidden">
-            <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus} />
+            {statusPicker}
           </div>
         </div>
       </div>

@@ -15,15 +15,7 @@ export default async function TeamsPage() {
 
   return (
     <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 pb-24 pt-7 sm:px-8 sm:pb-16">
-      <div className="flex flex-col gap-1.5">
-        <div className={`text-[13px] tracking-[0.16em] ${MONO}`} style={{ color: C.brassLight }}>
-          MY TEAMS
-        </div>
-        <h1 className={`m-0 text-[52px] leading-none tracking-[0.02em] sm:text-[60px] ${DISPLAY}`}>Teams</h1>
-        <p className="m-0 text-[15px]" style={{ color: C.muted }}>
-          Teams see a number, a zone and your status, never your calendar. You choose who sees it, per team.
-        </p>
-      </div>
+      <h1 className={`m-0 text-[52px] leading-none tracking-[0.02em] sm:text-[60px] ${DISPLAY}`}>Teams</h1>
 
       {teams.length === 0 ? (
         <p className="m-0 rounded-xl p-5 text-[15px]" style={{ backgroundColor: C.surface, border: `1px dashed ${C.rivet}`, color: C.text2 }}>
