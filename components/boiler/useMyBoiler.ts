@@ -154,14 +154,14 @@ export function useMyBoiler(source: DataSource = SOURCE) {
   }, [mutate]);
 
   const setEventWeight = useCallback(
-    (id: string, weight: Weight, series: boolean) => {
+    (id: string, weight: Weight, series: boolean, clearIds: string[] = []) => {
       const item = dataRef.current?.items.find((i) => i.id === id);
       return mutate(
-        (d) => S.setEventWeight(d, id, weight, series),
+        (d) => S.setEventWeight(d, id, weight, series, clearIds),
         () =>
           api<BoilerResponse>("/api/event-weights", {
             method: "PUT",
-            body: JSON.stringify(eventWeightBody(item ?? { id }, weight, series)),
+            body: JSON.stringify(eventWeightBody(item ?? { id }, weight, series, clearIds)),
           }),
       );
     },

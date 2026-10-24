@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { Status } from "@/lib/types";
 import { Eyebrow } from "@/components/ui/Card";
 import { StatusDot } from "@/components/ui/StatusPill";
@@ -16,6 +16,8 @@ export function StatusPicker({
   note: string;
   onChange: (status: Status, note: string) => void;
 }) {
+  // Unique per instance: My Boiler renders one picker per breakpoint.
+  const uid = useId();
   const [draft, setDraft] = useState(note);
   const [saved, setSaved] = useState(false);
 
@@ -34,8 +36,8 @@ export function StatusPicker({
 
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <Eyebrow id="status-label">Your status</Eyebrow>
-      <div role="group" aria-labelledby="status-label" className="grid grid-cols-2 gap-2">
+      <Eyebrow id={`${uid}-label`}>Your status</Eyebrow>
+      <div role="group" aria-labelledby={`${uid}-label`} className="grid grid-cols-2 gap-2">
         {STATUSES.map((s) => {
           const on = s === status;
           return (
@@ -55,11 +57,11 @@ export function StatusPicker({
         })}
       </div>
       <p className="m-0 text-[13px] text-muted">{STATUS_META[status].hint}</p>
-      <label htmlFor="status-note" className="pt-1 text-[13px] font-medium text-body">
+      <label htmlFor={`${uid}-note`} className="pt-1 text-[13px] font-medium text-body">
         Status note (shown to your teams)
       </label>
       <input
-        id="status-note"
+        id={`${uid}-note`}
         type="text"
         maxLength={80}
         value={draft}
@@ -72,7 +74,7 @@ export function StatusPicker({
             commitNote();
           }
         }}
-        className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-[15px] text-fg placeholder:text-muted"
+        className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted"
       />
       <p className="m-0 flex justify-between text-xs text-muted">
         <span>Status never changes your score.</span>

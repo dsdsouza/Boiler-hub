@@ -61,6 +61,13 @@ export function AssignmentPanel({
   const [posted, setPosted] = useState<Posted | null>(null);
   const [, startTransition] = useTransition();
   const reqId = useRef(0);
+  const postedRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // The form is swapped for the result after posting: keep keyboard focus with it.
+  useEffect(() => {
+    if (posted) postedRef.current?.focus();
+  }, [posted]);
 
   const ready = title.trim().length > 0 && date.length > 0;
 
@@ -143,7 +150,7 @@ export function AssignmentPanel({
       </div>
 
       {posted ? (
-        <div role="status" className="flex flex-col gap-3.5">
+        <div ref={postedRef} tabIndex={-1} role="status" className="flex flex-col gap-3.5 outline-none">
           <div className="flex flex-col gap-1.5 rounded-[10px] p-4" style={{ backgroundColor: C.bg, border: `1px solid ${ZONE_COLOR.cool}` }}>
             <div className={`text-[28px] tracking-[0.03em] ${DISPLAY}`} style={{ color: ZONE_COLOR.cool }}>
               Posted
@@ -165,6 +172,7 @@ export function AssignmentPanel({
             onClick={() => {
               setPosted(null);
               setTitle("");
+              setTimeout(() => titleRef.current?.focus(), 0);
             }}
             className="min-h-11 rounded-lg text-sm font-semibold"
             style={{ border: `1px solid ${C.rivet}`, color: C.text, backgroundColor: "transparent" }}
@@ -179,13 +187,14 @@ export function AssignmentPanel({
               Title
             </label>
             <input
+              ref={titleRef}
               id="a-title"
               type="text"
               value={title}
               maxLength={200}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Lab report: enzyme kinetics"
-              className="min-h-11 w-full rounded-lg px-3 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="min-h-11 w-full rounded-lg px-3 text-base outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight }}
             />
           </div>
@@ -214,7 +223,7 @@ export function AssignmentPanel({
               value={date}
               min={addDays(0)}
               onChange={(e) => setDate(e.target.value)}
-              className={`min-h-11 w-full rounded-lg px-3 text-[15px] [color-scheme:dark] ${MONO}`}
+              className={`min-h-11 w-full rounded-lg px-3 text-base [color-scheme:dark] ${MONO}`}
               style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}` }}
             />
           </div>
@@ -295,12 +304,10 @@ function PreviewTable({ preview, labels }: { preview: TeamAssignmentPreview; lab
               <span style={{ color: ZONE_COLOR[m.zoneBefore] }}>{m.before}</span>
               <span style={{ color: C.muted }}> → </span>
               <span style={{ color: ZONE_COLOR[m.zoneAfter] }}>{m.after}</span>
-              {movedUp(m) && (
-                <span className="text-[11px]" style={{ color: ZONE_COLOR[m.zoneAfter] }}>
-                  {"  ▲ "}
-                  {m.zoneAfter.toUpperCase()}
-                </span>
-              )}
+              {/* Zone as text, not just color: "WORKING ▲ HOT" when it moves, else the zone it stays in. */}
+              <span className="text-[11px]" style={{ color: movedUp(m) ? ZONE_COLOR[m.zoneAfter] : C.muted }}>
+                {movedUp(m) ? `  ${m.zoneBefore.toUpperCase()} ▲ ${m.zoneAfter.toUpperCase()}` : `  ${m.zoneAfter.toUpperCase()}`}
+              </span>
             </span>
           </div>
         ))}
