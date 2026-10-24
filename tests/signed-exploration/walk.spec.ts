@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Request } from '@playwright/test';
 
 const walks = Number(process.env.QA_EXPLORE_WALKS ?? 2);
 const steps = Number(process.env.QA_EXPLORE_STEPS ?? 60);
@@ -39,7 +39,7 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
   const rng = random(seed), used = new Map<string, number>();
   const history: { step: number; action: string; path: string }[] = [];
   const findings: { step: number; kind: string }[] = [];
-  const paths = new Set<string>(), pending = new Set<object>();
+  const paths = new Set<string>(), pending = new Set<Request>();
   const prefix = `QA explore ${info.project.name} ${baseSeed} ${walk}`;
   const ownTaskIds = new Set<string>();
   const teamId = info.project.metadata.teamId as string | undefined;
@@ -49,6 +49,13 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
   page.on('request', (r) => { if (isAPI(r.url())) pending.add(r); });
   page.on('requestfinished', (r) => pending.delete(r));
   page.on('requestfailed', (r) => pending.delete(r));
+  page.on('framenavigated', (frame) => {
+    if (frame !== page.mainFrame()) return;
+    // A navigation can abandon a read without a final network event. The old
+    // document's GET/preview response is irrelevant to the new document. Keep
+    // owner writes tracked until they finish, including during cleanup.
+    for (const r of pending) if (r.method() === 'GET' || new URL(r.url()).pathname.endsWith('/assignments/preview')) pending.delete(r);
+  });
   page.on('response', (r) => { if (isAPI(r.url()) && r.status() >= 500) record('server-error'); });
   page.on('dialog', (dialog) => { record('unexpected-dialog'); void dialog.dismiss(); });
   const initialResponse = await request.get('/api/me/boiler');
@@ -56,7 +63,10 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
   const original = await initialResponse.json();
   const teams = await (await request.get('/api/teams')).json();
   const originalVisibility = teams.teams.find((t: { id: string }) => t.id === teamId)?.visibility;
-  const settle = async () => { await expect.poll(() => pending.size, { timeout: 25_000 }).toBe(0); };
+  const settle = async () => {
+    try { await expect.poll(() => pending.size, { timeout: 25_000 }).toBe(0); }
+    catch { throw new Error(`Unsettled app requests: ${[...pending].map((r) => `${r.method()} ${new URL(r.url()).pathname}`).join(', ')}`); }
+  };
   try {
     await page.goto('/boiler');
     const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
