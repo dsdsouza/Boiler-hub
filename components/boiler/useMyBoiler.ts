@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Status, Weight } from "@/lib/types";
+import type { Size, Status, Weight } from "@/lib/types";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "./boilerState";
 import type { MyBoilerData, NewTask } from "./boilerState";
 import { mayaBoiler } from "./fixture";
-import { eventWeightBody, newTaskBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
+import { clearItemsBody, eventWeightBody, newTaskBody, sourceItemBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
 
 export type DataSource = "fixture" | "api";
 
@@ -94,19 +94,54 @@ export function useMyBoiler(source: DataSource = SOURCE) {
       if (!current) return Promise.resolve();
       const { vented } = S.setTaskDone(current, id, done, new Date());
       if (done) setVent((v) => ({ key: v.key + 1, amount: vented }));
+      // Source items (ICS, GitHub) keep their done mark in source_item_state, not in tasks.
+      const meta = current.taskMeta?.[id];
       return mutate(
         (d) => S.setTaskDone(d, id, done, new Date()).data,
         async () =>
           (
-            await api<{ boiler: BoilerResponse }>(`/api/tasks/${encodeURIComponent(id)}`, {
+            await api<{ boiler: BoilerResponse }>(meta ? "/api/sources/items" : `/api/tasks/${encodeURIComponent(id)}`, {
               method: "PATCH",
-              body: JSON.stringify(taskDoneBody(done)),
+              body: JSON.stringify(meta ? sourceItemBody(meta, { done }) : taskDoneBody(done)),
             })
           ).boiler,
       );
     },
     [mutate],
   );
+
+  const setTaskSize = useCallback(
+    (id: string, size: Size) => {
+      const meta = dataRef.current?.taskMeta?.[id];
+      return mutate(
+        (d) => S.setTaskSize(d, id, size, new Date()),
+        async () =>
+          (
+            await api<{ boiler: BoilerResponse }>(meta ? "/api/sources/items" : `/api/tasks/${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              body: JSON.stringify(meta ? sourceItemBody(meta, { size }) : { size }),
+            })
+          ).boiler,
+      );
+    },
+    [mutate],
+  );
+
+  /** "Mark all overdue done": clears every overdue source task without a vent. */
+  const clearOverdue = useCallback(() => {
+    const current = dataRef.current;
+    if (!current) return Promise.resolve();
+    const overdue = S.overdueSourceTasks(current, new Date());
+    if (overdue.length === 0) return Promise.resolve();
+    const ids = new Set(overdue.map((i) => i.id));
+    const metas = overdue.map((i) => current.taskMeta![i.id]!);
+    return mutate(
+      (d) => S.clearTasks(d, ids),
+      async () =>
+        (await api<{ boiler: BoilerResponse }>("/api/sources/items", { method: "PATCH", body: JSON.stringify(clearItemsBody(metas)) }))
+          .boiler,
+    );
+  }, [mutate]);
 
   const setEventWeight = useCallback(
     (id: string, weight: Weight, series: boolean) => {
@@ -153,7 +188,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     }
   }, [source]);
 
-  return { source, data, error, syncing, vent, addTask, setTaskDone, setEventWeight, setStatus, refresh };
+  return { source, data, error, syncing, vent, addTask, setTaskDone, setTaskSize, clearOverdue, setEventWeight, setStatus, refresh };
 }
 
 export type MyBoiler = ReturnType<typeof useMyBoiler>;

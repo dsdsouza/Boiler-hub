@@ -1,12 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import type { Contribution, LoadItem, Size } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import type { NewTask } from "./boilerState";
+import type { NewTask, TaskMeta } from "./boilerState";
 import { SIZE_POINTS } from "@/lib/pressure/config";
+import { sourceBadge } from "@/lib/sources/hints";
 import { dueText, formatPoints } from "./format";
+
+const BADGE_INK: Record<string, string> = { manual: "text-muted", team: "text-brass-ink", ics: "text-cool-ink", github: "text-body" };
 
 type DueChoice = "today" | "tomorrow" | "3d" | "7d";
 const DUE_LABEL: Record<DueChoice, string> = { today: "Today", tomorrow: "Tomorrow", "3d": "In 3 days", "7d": "In a week" };
@@ -29,6 +33,10 @@ export function TaskList({
   contributions,
   onToggle,
   onAdd,
+  onSize,
+  onClearOverdue,
+  meta = {},
+  sourcesHref,
   compact,
   className = "",
 }: {
@@ -36,6 +44,14 @@ export function TaskList({
   contributions: Contribution[];
   onToggle: (id: string, done: boolean) => void;
   onAdd: (task: NewTask) => void;
+  /** Change a task's size. Team assignments keep the size their lead set. */
+  onSize?: (id: string, size: Size) => void;
+  /** Clear overdue source items without a vent. */
+  onClearOverdue?: () => void;
+  /** Source extras (badge label, link) keyed by task id. */
+  meta?: Record<string, TaskMeta>;
+  /** Where to connect or manage sources; hidden when absent (demo). */
+  sourcesHref?: string;
   compact?: boolean;
   className?: string;
 }) {
@@ -47,6 +63,7 @@ export function TaskList({
   const tasks = items
     .filter((i) => i.kind === "task")
     .sort((a, b) => Number(!!a.doneAt) - Number(!!b.doneAt) || (a.due ?? "").localeCompare(b.due ?? ""));
+  const overdue = tasks.filter((t) => !t.doneAt && meta[t.id] && t.due && Date.parse(t.due) < now.getTime()).length;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -58,14 +75,31 @@ export function TaskList({
 
   return (
     <Card as="section" aria-labelledby="tasks" className={`px-5 py-6 sm:px-7 ${className}`}>
-      <CardTitle id="tasks" className="mb-2">
-        Tasks
-      </CardTitle>
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <CardTitle id="tasks">Tasks</CardTitle>
+        {sourcesHref && (
+          <Link href={sourcesHref} className="text-[13px] font-medium">
+            {Object.keys(meta).length > 0 ? "Manage sources" : "Connect coursework or GitHub"}
+          </Link>
+        )}
+      </div>
+      {overdue > 0 && onClearOverdue && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2.5">
+          <p className="m-0 text-[13px] text-muted">
+            {overdue} overdue from your feeds. Already handed in? Clear them without venting.
+          </p>
+          <Button variant="ghost" onClick={onClearOverdue}>
+            Mark all overdue done
+          </Button>
+        </div>
+      )}
       {tasks.length === 0 && <p className="m-0 border-t border-line py-3 text-sm text-muted">No tasks yet. Add one below.</p>}
       <ul className="m-0 list-none p-0">
         {tasks.map((t) => {
           const done = !!t.doneAt;
           const pts = points.get(t.id);
+          const m = meta[t.id];
+          const sizeEditable = !!onSize && t.source !== "team";
           return (
             <li key={t.id} className="flex items-center gap-3.5 border-t border-line py-2.5">
               <button
@@ -84,18 +118,45 @@ export function TaskList({
                 )}
               </button>
               <div className="min-w-0 flex-1">
-                <div className={`text-[15px] font-semibold ${done ? "text-muted line-through" : "text-fg"}`}>{t.title}</div>
-                <div className="text-[13px] text-muted">
-                  {done ? "Done · steam vented" : capitalize(dueText(t.due ?? now.toISOString(), now))}
-                  {t.source === "team" && " · from your team"}
+                <div className={`text-[15px] font-semibold ${done ? "text-muted line-through" : "text-fg"}`}>
+                  {m?.url ? (
+                    <a href={m.url} target="_blank" rel="noreferrer" className="text-inherit hover:text-brass-light">
+                      {t.title}
+                    </a>
+                  ) : (
+                    t.title
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
+                  <span
+                    className={`rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] uppercase ${BADGE_INK[t.source] ?? "text-muted"}`}
+                  >
+                    <span className="sr-only">Source: </span>
+                    {sourceBadge(t.source, m?.label)}
+                  </span>
+                  <span>{done ? "Done · steam vented" : capitalize(dueText(t.due ?? now.toISOString(), now))}</span>
                 </div>
               </div>
-              {!compact && (
-                <span className="rounded border border-rivet px-[7px] py-0.5 font-mono text-xs font-bold text-body">
-                  <span className="sr-only">Size </span>
-                  {t.size}
-                </span>
-              )}
+              {!compact &&
+                (sizeEditable ? (
+                  <select
+                    aria-label={`Size: ${t.title}`}
+                    value={t.size}
+                    onChange={(e) => onSize!(t.id, e.target.value as Size)}
+                    className="min-h-11 cursor-pointer rounded border border-rivet bg-field px-1.5 font-mono text-xs font-bold text-body hover:border-brass"
+                  >
+                    {(Object.keys(SIZE_POINTS) as Size[]).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="rounded border border-rivet px-[7px] py-0.5 font-mono text-xs font-bold text-body">
+                    <span className="sr-only">Size </span>
+                    {t.size}
+                  </span>
+                ))}
               {pts !== undefined && (
                 <span className={`min-w-12 text-right font-mono text-sm font-bold ${pts < 0 ? "text-cool-ink" : "text-brass-ink"}`}>
                   {formatPoints(pts)}
