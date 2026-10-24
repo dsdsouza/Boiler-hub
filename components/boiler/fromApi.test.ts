@@ -32,6 +32,7 @@ const res: BoilerResponse = {
   ],
   status: { status: "heads_down", note: null },
   calendar: "reconnect",
+  sources: [],
   computedAt: "2026-10-24T12:00:00Z",
 };
 
