@@ -31,6 +31,9 @@ const projects = bank ? personas!.users.map((persona) => {
 
 export default defineConfig({
   testDir: './tests/e2e', testMatch: '**/authenticated.spec.ts',
+  // Keep private integration output separate; concurrent public runs must not
+  // remove each other's trace/video files during browser teardown.
+  outputDir: 'test-results-auth',
   forbidOnly: true, failOnFlakyTests: true,
   workers, retries: 0, timeout: 45_000, projects,
   reporter: [['list']], // Authenticated traces/reports can contain private data; keep them off by default.
