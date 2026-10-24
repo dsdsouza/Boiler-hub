@@ -48,11 +48,23 @@ describe("boilerState", () => {
   it("completing a task vents steam and drops the needle", () => {
     const d = base();
     const { data, vented } = S.setTaskDone(d, "tsk-onboarding-spec", true, NOW);
-    expect(vented).toBeGreaterThan(6);
+    expect(vented).toBeGreaterThan(0);
     expect(data.result.score).toBeLessThan(d.result.score);
     expect(data.items.find((i) => i.id === "tsk-onboarding-spec")!.doneAt).toBeTruthy();
     expect(data.result.contributions.find((x) => x.itemId === "tsk-onboarding-spec")).toBeUndefined();
     expect(data.result.raw).toBeCloseTo(d.result.raw - vented, 1);
+  });
+
+  it("keeps the demo below saturation so a new assignment visibly adds load at any hour", () => {
+    for (const hour of [0, 8, 12, 17, 23]) {
+      const now = new Date(2026, 9, 24, hour);
+      const base = mayaBoiler(now);
+      const due = new Date(now); due.setDate(due.getDate() + 1); due.setHours(17, 0, 0, 0);
+      const added = S.addTask(base, { title: "New demo assignment", size: "M", due: due.toISOString() }, "demo-new", now);
+      expect(base.result.score).toBeLessThan(90);
+      expect(added.result.score).toBeGreaterThan(base.result.score);
+      expect(S.setTaskDone(added, "demo-new", true, now).data.result.score).toBe(base.result.score);
+    }
   });
 
   it("does not vent unrelated changes when a completed task is clicked again later", () => {
@@ -146,7 +158,11 @@ describe("format", () => {
   });
 
   it("captions the forecast by its hottest coming day", () => {
-    expect(forecastCaption(mayaBoiler(NOW).result.forecast)).toBe("Sunday is already lit");
+    expect(forecastCaption([
+      { date: "2026-10-24", score: 95, zone: "redline" },
+      { date: "2026-10-25", score: 80, zone: "hot" },
+      { date: "2026-10-26", score: 50, zone: "working" },
+    ])).toBe("Sunday is already lit");
   });
 });
 

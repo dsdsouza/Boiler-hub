@@ -37,10 +37,10 @@ function mayaItems(now: Date): LoadItem[] {
     ev("evt-all-hands", "All hands", 3, 16, 1, { attendees: 40, weight: "normal", seriesKey: "s-all-hands" }),
     ev("evt-standup", "Daily standup", 1, 9, 0.25, { attendees: 7, weight: "light", isRecurring: true, seriesKey: "s-standup" }),
     ev("evt-focus-block", "Focus time", 5, 9, 3, { release: true }),
-    { id: "tsk-onboarding-spec", kind: "task", source: "manual", title: "Finish onboarding v2 spec", due: at(now, 1.25 * D), size: "L", doneAt: null },
-    { id: "tsk-q4-roadmap", kind: "task", source: "team", title: "Q4 roadmap deck", due: at(now, -1 * D, 17), size: "M", doneAt: null },
-    { id: "tsk-pr-reviews", kind: "task", source: "manual", title: "Review 3 PRs", due: at(now, 0.2 * D), size: "S", doneAt: null },
-    { id: "tsk-hiring-loop", kind: "task", source: "manual", title: "Write hiring loop feedback", due: at(now, 2 * D), size: "S", doneAt: null },
+    { id: "tsk-onboarding-spec", kind: "task", source: "manual", title: "Finish onboarding v2 spec", due: at(now, 3 * D), size: "L", doneAt: null },
+    { id: "tsk-q4-roadmap", kind: "task", source: "team", title: "Q4 roadmap deck", due: at(now, 4 * D), size: "M", doneAt: null },
+    { id: "tsk-pr-reviews", kind: "task", source: "manual", title: "Review 3 PRs", due: at(now, 2 * D), size: "S", doneAt: null },
+    { id: "tsk-hiring-loop", kind: "task", source: "manual", title: "Write hiring loop feedback", due: at(now, 3 * D), size: "S", doneAt: null },
     { id: "tsk-done-bugfix", kind: "task", source: "manual", title: "Fix signup bug", due: at(now, -1 * D), size: "S", doneAt: at(now, -0.4 * D) },
   ];
 }
