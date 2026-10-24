@@ -12,24 +12,28 @@ export function VisibilityPicker({ teamId, value, leadLabel }: { teamId: string;
   const router = useRouter();
   const [current, setCurrent] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [pending, startTransition] = useTransition();
 
   async function pick(next: Visibility) {
-    if (next === current) return;
+    if (next === current || saving || pending) return;
     const prev = current;
     setCurrent(next);
     setError(null);
+    setSaving(true);
     try {
       await api(`/api/teams/${teamId}/membership`, "PATCH", { visibility: next });
       startTransition(() => router.refresh());
     } catch (e) {
       setCurrent(prev);
       setError((e as Error).message);
+    } finally {
+      setSaving(false);
     }
   }
 
   return (
-    <fieldset className="flex flex-col gap-2" aria-busy={pending}>
+    <fieldset className="flex flex-col gap-2" disabled={saving || pending} aria-busy={saving || pending}>
       <legend className="mb-1.5 text-[13px] font-medium" style={{ color: C.text2 }}>
         Who sees my boiler here
       </legend>

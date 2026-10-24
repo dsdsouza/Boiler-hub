@@ -1,6 +1,6 @@
 # Boilerplate QA
 
-The automated suite covers the public site, seeded demo, signed-out route/API boundaries, and the shipped PostgreSQL row-level security policies. Authenticated deployment checks are a separate, explicit command. A public-demo pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
+The automated suite covers the public site, seeded demo, signed-out route/API boundaries, shipped PostgreSQL row-level security policies, and component save/failure behavior. Signed-in checks and exploration are explicit commands using the private synthetic account bank. A public-demo pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
 
 ## Local QA army
 
@@ -46,7 +46,27 @@ The explorer inventories currently visible controls after every action and favor
 
 Each walk attaches its seed, engine, visited routes, selected actions and candidate findings as `exploration.json` in the browser report. Reports include the checkout revision and uncommitted-state flag. Replay with the same seed and browser; the recorded action history helps reproduction when the app or clock has changed. A discovered finding fails the run and still allows the remaining walks to collect evidence. Timeouts and interrupted walks are failures, not passes. Video recording is off for exploration; failed walks keep screenshots and traces.
 
-This is a bounded state explorer with product invariants, not an autonomous language model. It explores the public site and synthetic demo; it does not click Google consent, change real account data, import remote feeds, or infer arbitrary business requirements. Authenticated checks remain separate. Human/agent triage confirms findings and adds focused regressions before fixes. The first pass discovered real shared-pressure and long-text bugs that the earlier fixed scenarios missed.
+This is a bounded state explorer with product invariants, not an autonomous language model. Its default target is the public site and synthetic demo. Human/agent triage confirms findings and adds focused regressions before fixes. The first pass discovered real shared-pressure and long-text bugs that the earlier fixed scenarios missed.
+
+### Explore the signed-in app
+
+Double-click `Find Signed-In Bugs.command`, or run:
+
+```sh
+pnpm qa:explore --url https://boilerhub.work --accounts --workers 16 --walks 2 --steps 60
+```
+
+This runs public exploration, isolated component regressions and then signed-in exploration with the 32 existing QA identities. It assigns Chromium, Firefox, WebKit and mobile Chromium across the bank, with up to 16 local browser workers. Walks for one identity run sequentially. Each signed-in walk creates one uniquely named manual task, discovers visible controls and links, and explores its own task completion/size, status/note, wardrobe, team filters, assignment drafts/previews, source help, onboarding, navigation, reloads and screen sizes. It compares the owner's displayed score/status with the real API. It does not post team assignments, promote members, create/join teams, confirm subscriptions, add external sources or complete Google consent.
+
+Cleanup deletes only the walk's own new manual task IDs and restores the original status/note and visibility. Existing fixture tasks, roles and sources remain untouched. Both successful and failing walks attempt cleanup. An interrupted process may need the same synthetic task prefix reviewed before rerunning. Failure, cleanup failure, timeout and an incomplete walk all fail the run; there are no retries or skipped findings. The target origin, project URL, synthetic email addresses and bank marker are checked before browser sessions are loaded.
+
+Signed-in screenshots, videos and traces are disabled. Detailed seeds, selected actions and visited routes stay in `.qa/signed-history-<run>.json` with private permissions. Public run reports receive counts only. Credentials and cookies are never copied to these histories. This mode needs the existing private bank and public Supabase key, but no admin key or Google calendar grants. Its server target is the deployed app; browser execution is local.
+
+### Reproduce slow saves and failures
+
+`pnpm test:components` renders the actual application components in a disposable local copy, with fictional responses and controlled request delays/failures. It checks privacy-save serialization, draft preservation, long names, status acknowledgements, ordered owner writes and pending task identities in four browser configurations. The temporary QA route exists only in that copy; it is never added to the deployed app. No environment files or account bank are copied. Full `qa:army`/`qa:explore` runs and GitHub's browser shards include this suite.
+
+Feature branches matching `staging-*` or `staging/**` run the credential-free QA gate on push. The gate includes the Cloudflare build, a dry run and 48 public cases against the local Workers runtime, preserving the newer main deployment setup. Wait for that gate and both preview build statuses to pass before opening a PR; then require the PR checks to pass before merging. The authenticated GitHub workflow continues to check trusted main only and never exposes account credentials to branch or fork code.
 
 ## Run locally
 
@@ -117,7 +137,7 @@ The current 32-account bank and browser states were provisioned and verified in 
 
 ## GitHub Actions
 
-`Boilerplate QA` runs on staging/main pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts and all 288 browser cases across Chromium, Firefox, WebKit and three small-screen configurations. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
+`Boilerplate QA` runs on main/staging and `staging-*`/`staging/**` pushes, every pull request, merge groups and manual dispatch. It checks types, lint, all unit/database contracts, 288 public/demo browser cases, 48 component cases and 48 cases on the Workers runtime. It also builds and bundles the Cloudflare Worker without deploying or receiving deployment credentials. The former quarantined defects are ordinary blocking regressions. No expected-failure tests or nonblocking defect job remain. Public reports are merged into a downloadable `browser-report` artifact; failed cases include traces and screenshots.
 
 
 The final **QA gate** job runs even when a dependency fails or is skipped, and succeeds only when contracts, every browser shard and report generation succeed. It is the check intended for required-status enforcement on `main`; the owner will enable that setting separately. A test that needs a retry is a CI failure (`failOnFlakyTests`); failed tests cannot pass the gate merely because a dependent job was skipped.
@@ -182,3 +202,32 @@ The deployment recovery guard ignores canceled assets from departing documents. 
 After these repairs, the complete production-browser suite passed **198/198** cases across all six configurations, with no retries or skipped tests. **284/284 unit/database tests**, type checks, lint and the production build passed. Database tests cover mid-transaction rollback, same-draft idempotency, stale revision rejection, service-role execution and decimal serialization. A live service-role transaction fanned out to all 14 class members and was rolled back. The live hidden-count function was checked against every membership without persisting test changes.
 
 The local QA army then passed **306/306 unit/database tests** and **204/204 browser cases**, including a new regression for navigation-cancelled assets. Its first full run exposed a Firefox reload caused by treating a cancelled asset request as a deployment failure. Recovery now confirms an HTTP asset failure before reloading. A repeat smoke run passed 66/66 cases before the new regression was added. A subsequent live run passed all 34 public/demo scenarios and all 32 existing account checks. The interactive dashboard was also verified by running and replaying a case from its interface. GitHub run [40126242427](https://github.com/dsdsouza/Boiler-hub/actions/runs/40126242427) passed all 306 unit/database and 204 browser checks on `1f2362b`; an earlier CI attempt failed during Google's font download before one browser shard could start.
+
+
+## Whole workflows and stuck-step reports
+
+Open **Check Whole Workflows.command**, or run:
+
+```bash
+pnpm qa:workflows --workers 4
+pnpm qa:workflows --accounts --workers 8
+pnpm qa:workflows --accounts --url https://boilerplate.zhomander.workers.dev --workers 8
+```
+
+The first command runs seven complete journeys on Chromium, Firefox, WebKit and a phone configuration: onboarding to a completed and reopened task; class and work teams from creation through a second person's assignment completion and visibility changes; failed task/status saves through successful recovery; connecting, testing and removing a calendar feed; calendar subscription consent through revocation; and a Pip conversation from a failed reply through retry, follow-up and closing. These use actual app components in a disposable Next checkout with resettable simulated services. The harness route is never shipped and makes no calls to live data services. Fixture services exist in the browser, so their router adapter uses explicit fresh-page checkpoints instead of a production server refresh. These local journeys do not claim real backend create/join/assignment writes or a real Gemini response; the live personal journeys and existing API/database tests provide separate coverage.
+
+`--accounts` additionally refreshes the existing 32 synthetic account sessions and runs each account through real onboarding, note persistence, task creation, resizing, completion, fresh-page persistence checks, permitted team navigation and source settings. The default live target is `https://boilerhub.work`; `--url` also accepts the verified Cloudflare origin shown above. Other account targets are rejected. These checks use the real application API and database. Each identity modifies only its unique temporary manual task and its own status; cleanup deletes that task, restores the original status, and verifies both. The live suite does not create teams, post assignments, change source connections or create private calendar subscriptions. Those full lifecycle mutations are covered by the resettable local journeys. Fresh Google consent, real calendar grants and external provider connectivity remain separate manual/integration checks.
+
+Each goal is a named Playwright step with a bounded timeout. The generated `qa-runs/workflows-<run>/{local,live}/index.html` updates while a run is active. It shows every planned step, duration, last completed goal, the point where progress stopped, and cleanup outcome. A timed-out step is **stuck**; a failed assertion is **failed**; later goals are **blocked**. Interrupted, skipped, missing and incomplete journeys never pass. The process exits unsuccessfully if any journey cannot finish. The command also prints stopping points directly.
+
+Public report summaries contain static step labels and outcomes, not authenticated error text. Detailed errors remain in `.qa/workflow-diagnostics/<run>/errors.json`; failed live screenshots remain in `.qa/workflow-live-artifacts/`. Sessions, private diagnostics and screenshot contents are excluded from published CI reports. Reports describe where a runner stopped; candidates must still be reproduced before being called app bugs.
+
+`pnpm qa:army` and `pnpm qa:check` include local journeys. Account army runs also include the live personal journeys after session preparation. Feature-branch CI shards the local journeys with the browser checks and uploads a separate workflow report per shard. The explicitly dispatched authenticated workflow on trusted `main` also runs the live personal journeys on Cloudflare, uploads their sanitized summary, and deletes its private sessions and diagnostics. No retries or expected failures turn an unfinished journey green.
+
+To verify the stuck detector itself, run a deliberate diagnostic separately:
+
+```bash
+QA_WORKFLOW_PROBE=1 QA_WORKFLOW_REPORT_DIR=qa-runs/workflow-probe pnpm test:workflows --project=chromium --workers=1
+```
+
+This command is **supposed to fail** at “Wait for the stuck task save,” block “Complete the task,” and complete cleanup. It is excluded from regular product checks and does not represent an app bug.
