@@ -4,10 +4,10 @@ The desktop Chrome/Edge helper finds subscription links on a school page the use
 
 ## Use it
 
-1. Open **Sources → How to find your school calendar link** in Boiler Hub. The page first explains how to copy a link without installing anything. To try automatic scanning, expand **Extension preview and setup**, download the optional extension and unzip it.
+1. Open **Sources → How to find your school calendar link** in Boilerplate. The page first explains how to copy a link without installing anything. To try automatic scanning, expand **Extension preview and setup**, download the optional extension and unzip it.
 2. Open `chrome://extensions` or `edge://extensions`, turn on Developer mode, select **Load unpacked**, then choose the extracted `boiler-calendar-helper` folder.
 3. Sign in to the school in that browser and open its Calendar. Open Subscribe, Calendar Feed or Export calendar. Click Calendar Finder in the browser’s extensions menu.
-4. Choose **Review in Boiler Hub**, review the URL/name/coursework setting, and connect it. A signed-out user signs into Boiler Hub first; the tab retains the link for up to ten minutes. A copy-link fallback is available.
+4. Choose **Review in Boilerplate**, review the URL/name/coursework setting, and connect it. A signed-out user signs into Boilerplate first; the tab retains the link for up to ten minutes. A copy-link fallback is available.
 
 The packaged helper points to `https://boilerhub.work/calendar-helper`. That application route must be deployed before using its review action. During local development, use Copy link and paste into local Sources. Publishing this unpacked build to a browser store is a separate release step.
 
@@ -19,7 +19,7 @@ The self-contained scanner reads rendered anchors, non-password/non-hidden input
 
 Known Brightspace, Canvas, Moodle and Blackboard feed paths are recognized. Other `.ics` and explicit webcal links are supported. If no subscription is present, the popup gives provider-specific instructions and offers school-calendar navigation links already present on the page. It never constructs a secret feed URL or clicks a school setting on the user’s behalf. Scanner limits are 20 results, 20,000 nodes and 300,000 text characters, with a large-page notice.
 
-Choosing Review opens a fixed Boiler Hub URL with the selected feed in a fragment, which is not part of the HTTP request. The public receiver strips the fragment, holds a short-lived draft in tab-scoped sessionStorage, and reuses the existing sign-in and source form. Only explicit form submission calls `/api/sources`; that endpoint still performs authentication, ownership, encryption, DNS/redirect checks and feed validation. Invalid inputs are rejected again at handoff. Success or Discard clears the draft. The helper never receives Boiler Hub credentials.
+Choosing Review opens a fixed Boilerplate URL with the selected feed in a fragment, which is not part of the HTTP request. The public receiver strips the fragment, holds a short-lived draft in tab-scoped sessionStorage, and reuses the existing sign-in and source form. Only explicit form submission calls `/api/sources`; that endpoint still performs authentication, ownership, encryption, DNS/redirect checks and feed validation. Invalid inputs are rejected again at handoff. Success or Discard clears the draft. The helper never receives Boilerplate credentials.
 
 ## Packaging and checks
 
