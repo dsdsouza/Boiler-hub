@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Private QA accounts, browser sessions, and generated reports
+/.qa/
+/playwright-report/
+/test-results/
+/blob-report/
+/all-blob-reports/
+/output/playwright/

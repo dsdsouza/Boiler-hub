@@ -24,6 +24,8 @@ export interface Task {
   courseName?: string;
   /** Completion reported by the source itself, rather than the owner's local mark. */
   completedInSource?: boolean;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /** A connected source as the owner sees it. Never includes the secret. */
@@ -54,6 +56,8 @@ export interface OwnerEvent {
   isRecurring: boolean;
   /** Focus time or out of office: excluded from pressure, not taggable. */
   release: boolean;
+  /** Class, repo or team name shown as a label; absent when unknown. */
+  course?: string;
 }
 
 /**
