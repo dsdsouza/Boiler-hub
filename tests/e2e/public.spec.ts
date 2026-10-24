@@ -18,8 +18,11 @@ for (const [value, zone] of [[0, 'Cool'], [39, 'Cool'], [40, 'Working'], [69, 'W
   test(`public gauge boundary ${value} is ${zone}`, async ({ page }) => {
     await page.goto('/');
     const slider = page.getByRole('slider');
+    await expect(slider).toBeEnabled();
     await slider.focus();
+    await expect(slider).toBeFocused();
     await slider.press('Home');
+    await expect(slider).toHaveValue('0');
     for (let i = 0; i < value; i++) await slider.press('ArrowRight');
     await expect(slider).toHaveValue(String(value));
     await expect(page.getByRole('img', { name: new RegExp(`^Boiler at pressure ${value}, ${zone}`) })).toBeVisible();
