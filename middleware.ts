@@ -5,9 +5,15 @@ import { PROTECTED_PREFIXES } from "@/lib/auth";
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Without Supabase config (e.g. a fresh deploy), treat everyone as signed out
+  // instead of crashing every request.
+  if (!url || !anonKey) return guard(request, false, response);
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -27,8 +33,10 @@ export async function middleware(request: NextRequest) {
 
   // Refreshes the session cookie if needed. Must run before any redirect decision.
   const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims);
+  return guard(request, Boolean(data?.claims), response);
+}
 
+function guard(request: NextRequest, signedIn: boolean, response: NextResponse) {
   const { pathname, search } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
