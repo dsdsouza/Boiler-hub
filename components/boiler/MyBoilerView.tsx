@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
+import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
@@ -197,6 +198,8 @@ export function MyBoilerView({
             meta={data.taskMeta}
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
+
+          {boiler.source === "api" && <CalendarSubscription />}
 
           <Breakdown
             className="lg:hidden"

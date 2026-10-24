@@ -2,15 +2,15 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
-import { defaultFeedLabel, isCourseworkUrl } from "@/lib/sources/hints";
+import { defaultFeedLabel, isAppleCalendarUrl, isCourseworkUrl } from "@/lib/sources/hints";
 import { foundLine, sourcesCall, type AddedSource } from "./api";
 
 export const fieldClass =
   "min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted";
 const labelClass = "text-[13px] font-medium text-body";
 
-/** Paste an ICS link (coursework or another feed). Shared with onboarding. */
-type CalendarProvider = "other" | "brightspace";
+/** Paste an ICS link (Apple Calendar, coursework, or another feed). Shared with onboarding. */
+type CalendarProvider = "other" | "apple" | "brightspace";
 
 export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider = "other", showProvider = true }: {
   onAdded?: (r: AddedSource) => void;
@@ -27,11 +27,17 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const isCoursework = coursework ?? (provider === "brightspace" || isCourseworkUrl(url));
+  const isApple = provider === "apple";
   const isBrightspace = provider === "brightspace";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
+    if (provider === "apple" && !isAppleCalendarUrl(url)) {
+      setError("Paste the public calendar link from iCloud. In Calendar, enable Public Calendar, then copy its webcal:// link.");
+      setDone(null);
+      return;
+    }
     setBusy(true);
     setError(null);
     setDone(null);
@@ -39,7 +45,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
       const r = await sourcesCall<AddedSource>("/api/sources", "POST", {
         kind: "ics",
         url: url.trim(),
-        coursework: isCoursework,
+        coursework: isApple ? false : isCoursework,
         ...(label.trim() ? { label: label.trim() } : isBrightspace ? { label: "Brightspace" } : {}),
       });
       setDone(`${r.source.label} connected. ${foundLine(r)}.${r.warning ? ` ${r.warning}` : ""}`);
@@ -73,12 +79,14 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
           >
             <option value="other">Coursework or other calendar feed</option>
             <option value="brightspace">Brightspace (D2L)</option>
+            <option value="apple">Apple Calendar (iCloud)</option>
           </select>
         </div>}
+        {isApple && <AppleCalendarHelp />}
         {isBrightspace && <BrightspaceHelp />}
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${idPrefix}-url`} className={labelClass}>
-            {isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}
+            {isApple ? "iCloud public calendar link" : isBrightspace ? "Brightspace subscription link" : "Calendar feed link (.ics or webcal://)"}
           </label>
           <input
             id={`${idPrefix}-url`}
@@ -89,10 +97,11 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             maxLength={2048}
             autoComplete="off"
             spellCheck={false}
-            placeholder="https://school.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=…"
+            placeholder={isApple ? "webcal://p123-caldav.icloud.com/published/2/…" : "https://school.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=…"}
             value={url}
             onChange={(e) => {
               setUrl(e.target.value);
+              if (showProvider && isAppleCalendarUrl(e.target.value)) setProvider("apple");
               setError(null);
               setDone(null);
             }}
@@ -111,13 +120,13 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               id={`${idPrefix}-label`}
               maxLength={60}
               disabled={busy}
-              placeholder={url ? defaultFeedLabel(url) : "Brightspace"}
+              placeholder={isApple ? "Apple Calendar" : url ? defaultFeedLabel(url) : "Brightspace"}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               className={fieldClass}
             />
           </div>
-          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-body">
+          {!isApple && <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-body">
             <input
               type="checkbox"
               checked={isCoursework}
@@ -126,11 +135,11 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
               className="size-5 cursor-pointer accent-(--color-brass)"
             />
             Coursework feed: all-day entries are deadlines
-          </label>
+          </label>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={busy || !url.trim()} aria-busy={busy}>
-            {busy ? "Checking the feed…" : isBrightspace ? "Import schedule" : "Add feed"}
+            {busy ? "Checking the feed…" : isApple ? "Connect Apple Calendar" : isBrightspace ? "Import schedule" : "Add feed"}
           </Button>
           <p aria-live="polite" className="m-0 text-sm">
             {done && <span className="text-cool-ink">{done}</span>}
@@ -139,7 +148,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
         </div>
       </form>
 
-      {!isBrightspace && <div className="flex flex-col gap-1 border-t border-line pt-3">
+      {!isApple && !isBrightspace && <div className="flex flex-col gap-1 border-t border-line pt-3">
         <HowTo title="Brightspace (D2L)">
           Open <strong>Calendar → Settings</strong>, enable <strong>Calendar Feeds</strong>, then choose <strong>Subscribe → All Calendars and Tasks</strong> and copy the link.
         </HowTo>
@@ -174,6 +183,22 @@ function BrightspaceHelp() {
       <p className="mt-0 mb-2">Classes on that calendar appear in your schedule; assignment deadlines appear in Tasks. Refresh My Boiler to pick up changes.</p>
       <p className="mt-0 mb-2 text-muted">Missing class times? Brightspace only includes events posted there. For Purdue’s official timetable, check myPurdue → Academic Profile → Student Profile → My Courses. You can also connect a timetable calendar feed below.</p>
       <a href="https://community.d2l.com/brightspace/kb/articles/18042-manage-course-events-with-the-calendar-tool" target="_blank" rel="noreferrer" className="underline underline-offset-2">Brightspace’s calendar guide</a>
+    </div>
+  );
+}
+
+function AppleCalendarHelp() {
+  return (
+    <div className="flex flex-col gap-2 text-sm text-body">
+      <p className="m-0">Connect one iCloud calendar at a time. Boiler Hub reads it when you sync; it cannot edit your events.</p>
+      <details className="text-sm">
+        <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-fg">Get your iCloud calendar link</summary>
+        <p className="mt-0 mb-2"><strong>iPhone or iPad:</strong> open Calendar → Calendars, tap the info button beside an iCloud calendar, then turn on Public Calendar. Tap Share Link → Copy.</p>
+        <p className="mt-0 mb-2"><strong>Mac:</strong> open Calendar, show the calendar list, click the share button beside an iCloud calendar, then select Public Calendar and copy the link.</p>
+        <p className="mt-0 mb-2">Paste the webcal:// link below. Calendars stored only on your device need to be moved to iCloud first. For Google or Outlook calendars shown in Apple Calendar, use their original provider.</p>
+        <a href="https://support.apple.com/guide/calendar/share-calendars-icl32362/mac" target="_blank" rel="noreferrer" className="underline underline-offset-2">Apple’s calendar sharing guide</a>
+      </details>
+      <p className="m-0 text-sm text-muted">Public Calendar lets anyone with the link read that calendar. Removing it from Boiler Hub stops our reads; turn off Public Calendar in Apple Calendar to revoke the link for everyone. Your Apple Account password is never needed.</p>
     </div>
   );
 }

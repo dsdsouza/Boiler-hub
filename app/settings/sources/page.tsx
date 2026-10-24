@@ -26,7 +26,7 @@ export default async function SourcesPage() {
         <div>
           <h1 className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">Sources</h1>
           <p className="mt-2 mb-0 text-[15px] text-muted">
-            Pull deadlines in from your coursework so you do not have to type them. Your teams still only see a number.
+            Connect Apple Calendar, coursework feeds and GitHub to bring events and deadlines into your boiler. Your teams still only see your gauge and status.
           </p>
         </div>
         {error && (
