@@ -121,7 +121,7 @@ export async function main(argv) {
   if (options.help) { console.log(HELP); return 0; }
   if (options.plan) {
     console.log(JSON.stringify({ ...options, target: options.url ?? 'local production build on a free port',
-      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions', 'complete local workflows'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts', 'complete live personal workflows'] : [])] }, null, 2));
+      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions', 'complete local workflows', 'UI consistency'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts', 'complete live personal workflows'] : [])] }, null, 2));
     return 0;
   }
   const target = options.url ?? `http://localhost:${await freePort()}`;
@@ -207,6 +207,13 @@ export async function main(argv) {
         { QA_WORKFLOW_REPORT_DIR: resolve(runDir, 'workflows'), QA_WORKFLOW_RUN_ID: runDir.split('/').at(-1) });
       const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'workflows/summary.json'));
       entry.workflowReport = 'workflows/index.html';
+      if (!healthyStats(entry.stats)) entry.status = 'failed';
+    }
+    if (!options.quick && !interrupted) {
+      await stage('UI consistency across screens', ['test:ui', `--workers=${Math.min(options.workers, 2)}`, `--repeat-each=${options.repeat}`, '--retries=0'],
+        { QA_UI_REPORT_DIR: resolve(runDir, 'ui-consistency') });
+      const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'ui-consistency/summary.json'));
+      entry.workflowReport = 'ui-consistency/index.html';
       if (!healthyStats(entry.stats)) entry.status = 'failed';
     }
     if (options.accounts && !interrupted) {
