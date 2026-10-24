@@ -3,6 +3,40 @@ import { applyTaskToRaw, zoneFor } from "@/lib/pressure";
 
 // Pure assignment logic shared by the preview and post routes (and the summary by the UI).
 
+const HOUR_MS = 60 * 60 * 1000;
+/** Boilers older than this are dimmed in the Engine Room. */
+export const DIM_AFTER_MS = 24 * HOUR_MS;
+/** Boilers older than this are "Stale", and left out of preview summaries. */
+export const STALE_AFTER_MS = 72 * HOUR_MS;
+/** Fewer hidden members than this and no hidden count is shown anywhere (k-anonymity). */
+export const HIDDEN_MIN = 2;
+
+/** Hidden count safe to show: 0 when it could single someone out. */
+export function safeHiddenCount(n: number): number {
+  return n >= HIDDEN_MIN ? n : 0;
+}
+
+export type Freshness = "fresh" | "dim" | "stale" | "never";
+
+/** How current a boiler is, from its last snapshot time ("" or null = never synced). */
+export function freshness(updatedAt: string | null | undefined, now: Date): Freshness {
+  if (!updatedAt) return "never";
+  const age = now.getTime() - Date.parse(updatedAt);
+  if (age > STALE_AFTER_MS) return "stale";
+  if (age > DIM_AFTER_MS) return "dim";
+  return "fresh";
+}
+
+/**
+ * AssignmentPreview (frozen in lib/types.ts) plus what the panel needs to stay honest:
+ * visible members with no snapshot, or one older than 72h, are listed apart from the summary.
+ */
+export interface TeamAssignmentPreview extends AssignmentPreview {
+  noRecentData: { userId: string; name: string }[];
+  /** Everyone who will get the task, or null when that would reveal a hidden count below HIDDEN_MIN. */
+  recipients: number | null;
+}
+
 export interface AssignmentInput {
   title: string;
   due: string; // ISO
@@ -18,6 +52,8 @@ export interface AssignmentTarget {
   raw: number | null;
   score: number | null;
   zone: Zone | null;
+  /** computed_at of the snapshot; null when never synced. */
+  updatedAt: string | null;
 }
 
 export interface TargetResult {
@@ -28,6 +64,8 @@ export interface TargetResult {
   zoneBefore: Zone;
   zoneAfter: Zone;
   rawAfter: number;
+  /** Has a snapshot no older than STALE_AFTER_MS. Others are excluded from summaries. */
+  recent: boolean;
 }
 
 const SIZES: Size[] = ["S", "M", "L"];
@@ -63,14 +101,16 @@ export function computeTargets(targets: AssignmentTarget[], input: AssignmentInp
       zoneBefore,
       zoneAfter: next.zone,
       rawAfter: next.raw,
+      recent: t.raw !== null && freshness(t.updatedAt, now) !== "stale" && freshness(t.updatedAt, now) !== "never",
     };
   });
 }
 
-export function toPreview(targets: AssignmentTarget[], results: TargetResult[]): AssignmentPreview {
+export function toPreview(targets: AssignmentTarget[], results: TargetResult[]): TeamAssignmentPreview {
   const names = new Map(targets.map((t) => [t.userId, t.name]));
-  const visible = results.filter((r) => r.visible);
+  const visible = results.filter((r) => r.visible && r.recent);
   const hidden = results.filter((r) => !r.visible);
+  const shownHidden = safeHiddenCount(hidden.length);
   return {
     members: visible
       .map((r) => ({
@@ -83,9 +123,16 @@ export function toPreview(targets: AssignmentTarget[], results: TargetResult[]):
       }))
       .sort((a, b) => b.after - a.after),
     hidden: {
-      count: hidden.length,
-      intoRedline: hidden.filter((r) => r.zoneAfter === "redline" && r.zoneBefore !== "redline").length,
+      count: shownHidden,
+      intoRedline: shownHidden
+        ? hidden.filter((r) => r.recent && r.zoneAfter === "redline" && r.zoneBefore !== "redline").length
+        : 0,
     },
+    noRecentData: results
+      .filter((r) => r.visible && !r.recent)
+      .map((r) => ({ userId: r.userId, name: names.get(r.userId) ?? "Unnamed" }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    recipients: hidden.length > 0 && shownHidden === 0 ? null : results.length,
   };
 }
 
