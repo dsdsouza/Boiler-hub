@@ -14,3 +14,14 @@ export function parseDue(v: unknown): string | null | undefined | false {
   const ms = Date.parse(v);
   return Number.isNaN(ms) ? false : new Date(ms).toISOString();
 }
+
+const COURSE_MAX = 60;
+
+/** Trimmed course label, null (clear it; also for blank), undefined (not given), or false if invalid. */
+export function parseCourse(v: unknown): string | null | undefined | false {
+  if (v === undefined || v === null) return v;
+  if (typeof v !== "string") return false;
+  const t = v.trim();
+  if (!t) return null;
+  return t.length <= COURSE_MAX ? t : false;
+}

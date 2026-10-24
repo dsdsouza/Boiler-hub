@@ -15,6 +15,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export const LOOKBACK_DAYS = 60;
 
+// Brightspace's "Quiz 4 - Available" / "- Availability Starts|Ends" entries mark when an item opens
+// or closes for viewing, not a deadline (the "- Due" entry is). They are skipped entirely.
+const AVAILABILITY_RE = /\s[-–—]\s*Availab(?:le|ility)(?:\s+(?:Starts?|Ends?|Opens?|Closes?))?\s*$/i;
 const DEADLINE_RE = /\b(due|assignments?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?)\b/i;
 // Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
 // reading, and any other deadline) is S.
@@ -34,6 +37,48 @@ export interface ClassifyOptions {
   now: Date;
   /** Zone for all-day deadlines (due 23:59 that day). The feed's X-WR-TIMEZONE wins when present. */
   timeZone: string;
+  /** The source's label, the course when the feed does not name one. */
+  label?: string;
+}
+
+/** Longest course label we pass on (matches tasks.course in 0004). */
+export const COURSE_MAX = 60;
+
+// " - Due", " – Due Date", ": Due", " (Due)" at the end; "Due:", "Due Date -" at the start.
+const DUE_SUFFIX_RE = /\s*(?:[-–—:]\s*Due(?:\s+Date)?|\(\s*Due(?:\s+Date)?\s*\))\s*$/i;
+const DUE_PREFIX_RE = /^\s*Due(?:\s+Date)?\s*[:\-–—]\s*/i;
+
+/** A deadline title without its "Due" decoration. Never empty: a title that is only "Due" is kept. */
+export function cleanTitle(title: string): string {
+  const t = title.replace(DUE_SUFFIX_RE, "").replace(DUE_PREFIX_RE, "").trim();
+  return t || title.trim();
+}
+
+const TERM_SUFFIX_RE = /\s*[-–—]\s*(?:Fall|Spring|Summer|Winter)(?:\s+(?:Session|Term|Quarter|Semester))?\s+\d{4}\s*$/i;
+const COURSE_CODE_RE = /^([A-Z]{2,5})\s?(\d{3,4}[A-Z]?)(?!\w)/;
+
+/**
+ * The course in a Brightspace LOCATION, or undefined if it names none. Brightspace marks the course
+ * with a leading "-" ("-AMS 210.02 Applied Linear Algebra - Fall 2026"), or "Room (-AMS 210.02 …)"
+ * when the entry also has a room. Anything else (a room, the school, a link) is not a course.
+ * The term is dropped and a course code is shortened to subject and number ("AMS 210").
+ */
+export function courseFromLocation(location: string): string | undefined {
+  const loc = location.trim();
+  const body = loc.startsWith("-") ? loc.slice(1) : loc.match(/\(\s*-(.+)\)\s*$/)?.[1];
+  if (!body) return undefined;
+  const name = body.replace(TERM_SUFFIX_RE, "").trim();
+  const code = name.match(COURSE_CODE_RE);
+  const course = code ? `${code[1]} ${code[2]}` : name.slice(0, COURSE_MAX).trim();
+  return course || undefined;
+}
+
+/** The course label for an entry: from the feed when it names one, else the source label. */
+export function courseFor(entry: VEvent, label: string | undefined): string | undefined {
+  const fromFeed = courseFromLocation(textOf(entry.location));
+  if (fromFeed) return fromFeed;
+  const course = label?.trim();
+  return course ? course.slice(0, COURSE_MAX) : undefined;
 }
 
 /**
@@ -72,12 +117,15 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
       const entry = inst.event;
       if (entry.status === "CANCELLED") continue;
       const title = textOf(entry.summary) || textOf(event.summary) || "Untitled";
+      if (AVAILABILITY_RE.test(title)) continue;
       const start = inst.start.getTime();
       const end = inst.end ? inst.end.getTime() : start;
       const occurrence = inst.isRecurring ? `@${new Date(start).toISOString()}` : "";
       const itemKey = sha256(`${event.uid}${occurrence}`);
       const id = sourceItemId(opts.sourceId, itemKey);
 
+      const course = courseFor(entry.location ? entry : event, opts.label);
+      // Keyword and size read the raw title ("- Due" is itself a deadline keyword); the key never reads it.
       const keyword = DEADLINE_RE.test(title);
       const deadline = inst.isFullDay ? opts.coursework || keyword : end === start || keyword;
 
@@ -94,10 +142,11 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
           source: "ics",
           sourceId: opts.sourceId,
           itemKey,
-          title,
+          title: cleanTitle(title),
           due: new Date(due).toISOString(),
           doneAt: null,
           size: sizeForTitle(title),
+          ...(course ? { course } : {}),
         });
         continue;
       }
@@ -118,6 +167,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         isRecurring: inst.isRecurring,
         attendees: 0,
         isOrganizer: false,
+        ...(course ? { course } : {}),
       });
     }
   }
@@ -132,11 +182,12 @@ export const icsAdapter: SourceAdapter = {
       coursework: source.coursework,
       now: ctx.now,
       timeZone: await ctx.timeZone,
+      label: source.label,
     });
   },
 };
 
-function textOf(v: VEvent["summary"] | undefined): string {
+function textOf(v: VEvent["summary"] | VEvent["location"] | undefined): string {
   if (!v) return "";
   return (typeof v === "string" ? v : v.val).trim();
 }

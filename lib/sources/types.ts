@@ -37,6 +37,8 @@ export interface SourceItem extends LoadItem {
   itemKey: string;
   /** Link to the item (GitHub). */
   url?: string;
+  /** Class or repo the item belongs to (ICS: from the feed, else the source label; GitHub: "owner/repo"). */
+  course?: string;
 }
 
 export interface FetchContext {

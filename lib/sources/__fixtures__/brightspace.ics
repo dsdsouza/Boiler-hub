@@ -42,7 +42,7 @@ UID:d2l-quiz4@school.brightspace.com
 DTSTAMP:20261020T120000Z
 DTSTART;TZID=America/New_York:20261029T100000
 DTEND;TZID=America/New_York:20261029T110000
-SUMMARY:Quiz 4 - Availability Ends
+SUMMARY:Quiz 4
 END:VEVENT
 BEGIN:VEVENT
 UID:d2l-lecture@school.brightspace.com

@@ -70,4 +70,9 @@ export interface BoilerResponse {
   /** Connected task sources and their health. A source in error adds nothing until it recovers. */
   sources: SourceInfo[];
   computedAt: string;
+  /**
+   * The calendar's IANA time zone (e.g. "America/New_York"), the zone the forecast's days are cut in.
+   * Absent when the calendar could not be read this sync; clients then use the browser's zone.
+   */
+  timeZone?: string;
 }
