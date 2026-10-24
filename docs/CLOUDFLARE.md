@@ -33,6 +33,11 @@ Secrets**, and add the variables from `.env.example`:
 - `TOKEN_ENCRYPTION_KEY` (secret; preserve the existing value so saved tokens
   remain decryptable)
 - `CRON_SECRET` (secret)
+- `GEMINI_API_KEY` (secret; enables Pip assignment chat)
+- `GEMINI_MODEL` (optional text variable; defaults to `gemini-3.8-flash`)
+
+See [Pip chat setup](./pip-chat.md) for the exact Gemini key steps. Pip uses the
+key at runtime; do not add it to the public build variables or Supabase secrets.
 
 Runtime variables and secrets stay in Cloudflare across deployments;
 `keep_vars` is enabled in `wrangler.jsonc`. Application secrets are not passed
