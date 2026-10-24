@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { CalendarFeedForm, GitHubTokenForm } from "./SourceForms";
 import type { AddedSource } from "./api";
@@ -28,6 +29,7 @@ export function SourceConnections({ onAdded }: { onAdded: (r: AddedSource) => vo
       <div className="px-5 pt-6 pb-5 sm:px-7">
         <CardTitle id={`${uid}-title`}>Connect a source</CardTitle>
         <p className="mt-2 mb-0 max-w-[65ch] text-sm leading-relaxed text-muted">Bring your classes, calendar events and work into one place.</p>
+        <Link href="/calendar-helper" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">Find a school calendar link</Link>
       </div>
       <div role="tablist" aria-label="Source type" className="grid grid-cols-3 border-y border-line bg-bg-2 px-2 sm:px-5">
         {OPTIONS.map((option, index) => <button

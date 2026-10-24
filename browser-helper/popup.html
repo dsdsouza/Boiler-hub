@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Boiler Hub Calendar Finder</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header><svg aria-hidden="true" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="16" cy="16" r="12"/><path d="m16 16 6-6"/><circle cx="16" cy="16" r="1"/></svg><span>Boiler Hub</span></header>
+  <main>
+    <h1>Find your school calendar</h1>
+    <p class="intro">Scan this page for a subscription link. Open your school’s calendar feed dialog first, if available.</p>
+    <button id="scan" type="button">Scan this page</button>
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="results"></div>
+    <section id="help" hidden><h2>Find the subscription link</h2><p id="steps"></p><div id="navigation"></div></section>
+    <p class="privacy">Scanning stays in this popup. Only a link you choose is handed to Boiler Hub for review. Passwords and hidden fields are skipped.</p>
+    <a href="https://boilerhub.work/calendar-helper" target="_blank" rel="noreferrer">Setup and help</a>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body></html>
