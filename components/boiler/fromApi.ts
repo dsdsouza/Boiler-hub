@@ -5,7 +5,11 @@ import type { MyBoilerData, NewTask, TaskMeta } from "./boilerState";
 // Maps the engine's route shapes (lib/pressure/api-types.ts) onto My Boiler's view model, and the
 // view's actions onto the engine's request bodies. Pure, so it is unit tested.
 
-export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
+// TODO(merge): track/data adds `timeZone?: string` (the calendar's zone) to BoilerResponse. Drop this
+// widening once it lands.
+type BoilerResponseWithZone = BoilerResponse & { timeZone?: string };
+
+export function toMyBoilerData(res: BoilerResponseWithZone): MyBoilerData {
   return {
     result: res.result,
     items: [...res.events.map(eventItem), ...res.tasks.map(taskItem)],
@@ -16,7 +20,18 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     sources: res.sources ?? [],
     taskMeta: taskMeta(res.tasks),
     eventOverrides: Object.fromEntries(res.events.filter((e) => e.override).map((e) => [e.id, e.override!])),
+    courses: courses([...res.tasks, ...res.events]),
+    ...(res.timeZone ? { timeZone: res.timeZone } : {}),
   };
+}
+
+function courses(items: Array<{ id: string; course?: string }>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const i of items) {
+    const c = i.course?.trim();
+    if (c) out[i.id] = c;
+  }
+  return out;
 }
 
 function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
