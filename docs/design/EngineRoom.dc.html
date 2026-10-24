@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boilerplate — Engine Room</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#15120E}
+a{color:#E3BE74}a:hover{color:#F3D79C}
+.plate{background-image:radial-gradient(circle at 12px 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at 12px calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #E3BE74;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 100vh; background-color: #15120E; color: #F1E7D3; font-family: Inter, system-ui, sans-serif">
+
+<div role="note" style="background-color: #D1A85A; color: #15120E; font-size: 14px; font-weight: 600">
+<div style="max-width: 1320px; margin: 0 auto; padding: 10px 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px">
+<span>You are viewing demo data.</span>
+<a href="MyBoiler.dc.html" style="color: #15120E">Sign in with Google to see your own boiler</a>
+</div>
+</div>
+
+<header style="border-bottom: 1px solid #3A3027; background-color: #1A1611">
+<div style="max-width: 1320px; margin: 0 auto; padding: 10px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #F1E7D3">
+<svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#D1A85A" stroke-width="3"></circle><line x1="17" y1="17" x2="25" y2="10" stroke="#F0913A" stroke-width="3" stroke-linecap="round"></line><circle cx="17" cy="17" r="3" fill="#D1A85A"></circle></svg>
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 26px; letter-spacing: 0.06em; line-height: 1">Boilerplate</span>
+</a>
+<nav aria-label="App" style="display: flex; flex-wrap: wrap; gap: 4px">
+<a href="MyBoiler.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-weight: 500; font-size: 15px">My Boiler</a>
+<a href="EngineRoom.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #F1E7D3; text-decoration: none; font-weight: 600; font-size: 15px; border-bottom: 2px solid #D1A85A">Teams</a>
+<a href="Main.dc.html#how" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-weight: 500; font-size: 15px">How it works</a>
+</nav>
+</div>
+<div aria-label="Signed in as Dana Ruiz" style="width: 40px; height: 40px; border-radius: 50%; background-color: #7FB3D5; color: #15120E; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">DR</div>
+</div>
+</header>
+
+<main style="max-width: 1320px; margin: 0 auto; padding: 28px 32px 64px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.16em; color: #E3BE74">ENGINE ROOM · CLASS</div>
+<h1 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 60px; letter-spacing: 0.02em; line-height: 1">AP Bio P3</h1>
+<p style="margin: 0; color: #B3A48C; font-size: 15px">You are the Teacher · 8 students · invite code <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; color: #F1E7D3; font-weight: 700">K7Q2MX</span></p>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<span style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px dashed #6B5A44; border-radius: 8px; font-size: 14px; color: #D9CCB5">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18"></path><path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 5 10 7a14 14 0 0 1-3 3.8M6.6 6.6C4.4 8 2.9 10.2 2 12c1 2 5 7 10 7a9.6 9.6 0 0 0 4.4-1"></path></svg>
+1 hidden student
+</span>
+</div>
+</div>
+
+<div role="group" aria-label="Filter by zone" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{chips}}" as="f" hint-placeholder-count="5">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="{{f.style}}">{{f.label}}</button>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<section aria-label="Student boilers" style="flex: 999 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px">
+<sc-for list="{{boilers}}" as="b" hint-placeholder-count="7">
+<article style="{{b.cardStyle}}">
+<div style="display: flex; gap: 12px; align-items: center">
+<div aria-hidden="true" style="width: 40px; height: 40px; flex: none; border-radius: 50%; background-color: #3A3027; color: #F1E7D3; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">{{b.initials}}</div>
+<div style="min-width: 0">
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">{{b.name}}</h2>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #D9CCB5"><span aria-hidden="true" style="{{b.dot}}"></span>{{b.statusLabel}}</div>
+</div>
+</div>
+<div style="display: flex; justify-content: center"><dc-import name="Boiler" score="{{b.show}}" width="150" hint-size="150px,212px"></dc-import></div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 30px; font-weight: 700; line-height: 1; color: {{b.color}}">{{b.show}}</span>
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 18px; letter-spacing: 0.08em; color: #15120E; background-color: {{b.color}}; border-radius: 4px; padding: 1px 8px">{{b.zone}}</span>
+<sc-if value="{{b.changed}}" hint-placeholder-val="{{false}}">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #B3A48C">was {{b.score}}</span>
+</sc-if>
+</div>
+<sc-if value="{{b.hasNote}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-size: 14px; color: #F1E7D3; font-style: italic">“{{b.note}}”</p>
+</sc-if>
+<div style="font-size: 13px; color: #B3A48C; border-top: 1px solid #3A3027; padding-top: 10px">{{b.counts}}</div>
+</article>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; color: #B3A48C">No visible students in this zone.</p>
+</sc-if>
+</section>
+
+<aside aria-labelledby="na" class="plate" style="flex: 1 1 340px; min-width: 0; background-color: #1F1A14; border: 1px solid #6B5A44; border-radius: 14px; padding: 26px 24px; display: flex; flex-direction: column; gap: 16px">
+<div>
+<h2 id="na" style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 32px; letter-spacing: 0.03em">New assignment</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: #B3A48C">Teacher only. Preview the pressure before you post.</p>
+</div>
+
+<sc-if value="{{drafting}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="at" style="font-size: 13px; color: #D9CCB5; font-weight: 500">Title</label>
+<input id="at" type="text" value="{{title}}" onChange="{{onTitle}}" style="min-height: 44px; box-sizing: border-box; width: 100%; padding: 0 12px; background-color: #15120E; color: #F1E7D3; border: 1px solid #3A3027; border-radius: 8px; font: 15px Inter, system-ui, sans-serif">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span id="dl" style="font-size: 13px; color: #D9CCB5; font-weight: 500">Due</span>
+<div role="group" aria-labelledby="dl" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{dues}}" as="d" hint-placeholder-count="2">
+<button type="button" onClick="{{d.pick}}" aria-pressed="{{d.pressed}}" style="{{d.style}}">{{d.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span id="sl" style="font-size: 13px; color: #D9CCB5; font-weight: 500">Size</span>
+<div role="group" aria-labelledby="sl" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{sizes}}" as="z" hint-placeholder-count="3">
+<button type="button" onClick="{{z.pick}}" aria-pressed="{{z.pressed}}" style="{{z.style}}">{{z.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div role="status" style="background-color: #15120E; border: 1px solid #3A3027; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #B3A48C">PRESSURE PREVIEW</div>
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; line-height: 1.05; letter-spacing: 0.02em; color: {{summaryColor}}">{{summary}}</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #2A231B; font-size: 14px">
+<span style="min-width: 0">{{r.name}}</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; white-space: nowrap"><span style="color: {{r.c0}}">{{r.before}}</span><span style="color: #B3A48C"> → </span><span style="color: {{r.c1}}">{{r.after}}</span><span style="{{r.flagStyle}}">{{r.flag}}</span></span>
+</div>
+</sc-for>
+<div style="padding: 9px 0 0; border-top: 1px solid #2A231B; font-size: 13px; color: #B3A48C">{{hiddenLine}}</div>
+</div>
+</div>
+
+<button type="button" onClick="{{post}}" style="min-height: 52px; background-color: #D1A85A; color: #15120E; border: 0; border-radius: 8px; font-family: 'Bebas Neue', Impact, sans-serif; font-size: 24px; letter-spacing: 0.05em; cursor: pointer; box-shadow: inset 0 -3px 0 #8C6A35">Post to 8 students</button>
+<p style="margin: 0; font-size: 12px; color: #B3A48C">The preview adds this task to each stored snapshot. No calendars are re-read.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{posted}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-direction: column; gap: 14px">
+<div style="background-color: #15120E; border: 1px solid #7FB3D5; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 28px; letter-spacing: 0.03em; color: #7FB3D5">Posted</div>
+<p style="margin: 0; font-size: 14px; color: #D9CCB5; line-height: 1.5">“{{postedTitle}}” is now on every student’s task list, and their boilers have updated.</p>
+</div>
+<button type="button" onClick="{{again}}" style="min-height: 44px; background-color: transparent; color: #F1E7D3; border: 1px solid #6B5A44; border-radius: 8px; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer">Draft another</button>
+</div>
+</sc-if>
+</aside>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      students: [
+        { id: 'maya', name: 'Maya Chen', initials: 'MC', score: 93, status: 'running_hot', note: '3 exams + shifts at work', counts: '6 classes · 4 due · 1 overdue' },
+        { id: 'diego', name: 'Diego Alvarez', initials: 'DA', score: 87, status: 'heads_down', note: 'Robotics regional Saturday', counts: '6 classes · 3 due' },
+        { id: 'priya', name: 'Priya Nair', initials: 'PN', score: 85, status: 'open', note: 'Busy, but I have room', counts: '5 classes · 4 due' },
+        { id: 'jonah', name: 'Jonah Brooks', initials: 'JB', score: 66, status: 'heads_down', note: '', counts: '5 classes · 2 due' },
+        { id: 'aisha', name: 'Aisha Bello', initials: 'AB', score: 61, status: 'open', note: '', counts: '5 classes · 2 due' },
+        { id: 'theo', name: 'Theo Park', initials: 'TP', score: 58, status: 'away', note: 'Out Thu–Fri, family trip', counts: '4 classes · 2 due' },
+        { id: 'lena', name: 'Lena Fischer', initials: 'LF', score: 38, status: 'open', note: 'Free most evenings', counts: '5 classes · 1 due' }
+      ],
+      hiddenScore: 86,
+      filter: 'all',
+      title: 'Lab report: enzyme kinetics',
+      due: 'fri',
+      size: 'L',
+      posted: false,
+      postedTitle: ''
+    };
+  }
+  calc() {
+    const SIZE = { S: 2, M: 4, L: 8 };
+    const FACTOR = { fri: 1.4, tue: 0.45 };
+    const add = SIZE[this.state.size] * FACTOR[this.state.due];
+    return (score) => {
+      const R = -25 * Math.log(1 - Math.min(score, 99.5) / 100);
+      return Math.min(100, Math.round(100 * (1 - Math.exp(-(R + add) / 25))));
+    };
+  }
+  post() {
+    const after = this.calc();
+    this.setState({
+      students: this.state.students.map((s) => Object.assign({}, s, { score: after(s.score) })),
+      hiddenScore: after(this.state.hiddenScore),
+      posted: true,
+      postedTitle: this.state.title || 'Untitled assignment'
+    });
+  }
+  renderVals() {
+    const st = this.state;
+    const ZC = { cool: '#7FB3D5', working: '#D1A85A', hot: '#F0913A', redline: '#F25C45' };
+    const zoneOf = (x) => x < 40 ? 'cool' : x < 70 ? 'working' : x < 90 ? 'hot' : 'redline';
+    const rank = { cool: 0, working: 1, hot: 2, redline: 3 };
+    const SL = { open: ['Open for work', '#7FB3D5'], heads_down: ['Heads down', '#D1A85A'], running_hot: ['Running hot', '#F25C45'], away: ['Away', '#B3A48C'] };
+    const pill = (on) => 'min-height: 44px; padding: 0 14px; border-radius: 8px; cursor: pointer; font: 600 14px Inter, system-ui, sans-serif; border: 1px solid ' + (on ? '#D1A85A' : '#3A3027') + '; background-color: ' + (on ? '#D1A85A' : '#1F1A14') + '; color: ' + (on ? '#15120E' : '#D9CCB5');
+
+    const previewing = !st.posted && (st.title || '').trim().length > 0;
+    const after = this.calc();
+
+    const all = st.students.map((s) => {
+      const a = after(s.score);
+      const show = previewing ? a : s.score;
+      const z0 = zoneOf(s.score), z1 = zoneOf(a), zs = zoneOf(show);
+      const moved = previewing && rank[z1] > rank[z0];
+      return Object.assign({}, s, {
+        after: a, show, zone: zs.toUpperCase(), zoneKey: zs, color: ZC[zs],
+        changed: previewing && a !== s.score,
+        moved, z0, z1,
+        statusLabel: SL[s.status][0],
+        dot: 'width: 9px; height: 9px; border-radius: 50%; flex: none; background-color: ' + SL[s.status][1],
+        hasNote: !!s.note,
+        cardStyle: 'background-color: #1F1A14; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border: ' + (moved ? '2px solid ' + ZC[z1] : '1px solid #3A3027')
+      });
+    });
+    const sorted = all.slice().sort((a, b) => b.show - a.show);
+    const boilers = sorted.filter((b) => st.filter === 'all' || b.zoneKey === st.filter);
+
+    const names = [['all', 'All'], ['redline', 'Redline'], ['hot', 'Hot'], ['working', 'Working'], ['cool', 'Cool']];
+    const chips = names.map((n) => {
+      const c = n[0] === 'all' ? all.length : all.filter((b) => b.zoneKey === n[0]).length;
+      return { label: n[1] + ' · ' + c, pressed: st.filter === n[0] ? 'true' : 'false', style: pill(st.filter === n[0]), pick: () => this.setState({ filter: n[0] }) };
+    });
+
+    let intoHot = 0, intoRed = 0, intoWork = 0;
+    all.forEach((b) => {
+      if (!previewing) return;
+      if (b.z1 === 'redline' && b.z0 !== 'redline') intoRed++;
+      else if (b.z1 === 'hot' && rank[b.z0] < 2) intoHot++;
+      else if (b.z1 === 'working' && b.z0 === 'cool') intoWork++;
+    });
+    const parts = [];
+    if (intoHot) parts.push(intoHot + ' into Hot');
+    if (intoRed) parts.push(intoRed + ' into Redline');
+    if (intoWork) parts.push(intoWork + ' into Working');
+    const summary = !previewing ? 'Add a title to preview' : parts.length ? 'Moves ' + parts.join(', ') : 'No zone changes';
+    const summaryColor = intoRed ? '#F25C45' : intoHot ? '#F0913A' : '#F1E7D3';
+
+    const rows = sorted.map((b) => ({
+      name: b.name, before: b.score, after: b.after,
+      c0: ZC[b.z0], c1: ZC[b.z1],
+      flag: b.moved ? '  ▲ ' + b.z1.toUpperCase() : '',
+      flagStyle: 'font-size: 11px; color: ' + ZC[b.z1]
+    }));
+
+    const ha = after(st.hiddenScore);
+    const hiddenRed = zoneOf(ha) === 'redline' && zoneOf(st.hiddenScore) !== 'redline';
+    const hiddenLine = '+ 1 hidden student' + (hiddenRed ? ' · 1 would cross into Redline' : ' · no Redline crossing');
+
+    const dues = [['fri', 'Fri, Oct 30'], ['tue', 'Tue, Nov 3']].map((d) => ({ label: d[1], pressed: st.due === d[0] ? 'true' : 'false', style: pill(st.due === d[0]), pick: () => this.setState({ due: d[0] }) }));
+    const sizes = [['S', 'S · 2'], ['M', 'M · 4'], ['L', 'L · 8']].map((d) => ({ label: d[1], pressed: st.size === d[0] ? 'true' : 'false', style: pill(st.size === d[0]), pick: () => this.setState({ size: d[0] }) }));
+
+    return {
+      chips, boilers, empty: boilers.length === 0,
+      drafting: !st.posted, posted: st.posted, postedTitle: st.postedTitle,
+      title: st.title, onTitle: (e) => this.setState({ title: e.target.value }),
+      dues, sizes, summary, summaryColor, rows, hiddenLine,
+      post: () => this.post(),
+      again: () => this.setState({ posted: false, title: '' })
+    };
+  }
+}
+</script>
+</body>
+</html>

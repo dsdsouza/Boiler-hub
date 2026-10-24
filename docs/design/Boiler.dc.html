@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boiler component</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: {{w}}px; line-height: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; color: #F1E7D3">
+<svg viewBox="0 -40 240 340" width="100%" role="img" aria-label="{{label}}">
+<defs>
+<clipPath id="{{cid}}"><path d="M47 82 V228 Q47 263 82 263 H158 Q193 263 193 228 V82 Z"></path></clipPath>
+</defs>
+
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b0}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;68" dur="{{sd}}s" begin="-{{b0}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="5;{{pr}}" dur="{{sd}}s" begin="-{{b0}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p0}};0" dur="{{sd}}s" begin="-{{b0}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b1}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;90" dur="{{sd}}s" begin="-{{b1}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="5;{{pr}}" dur="{{sd}}s" begin="-{{b1}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p1}};0" dur="{{sd}}s" begin="-{{b1}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b2}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;62" dur="{{sd}}s" begin="-{{b2}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="6;{{pr}}" dur="{{sd}}s" begin="-{{b2}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p2}};0" dur="{{sd}}s" begin="-{{b2}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b3}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;94" dur="{{sd}}s" begin="-{{b3}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="5;{{pr}}" dur="{{sd}}s" begin="-{{b3}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p3}};0" dur="{{sd}}s" begin="-{{b3}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b4}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;72" dur="{{sd}}s" begin="-{{b4}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="6;{{pr}}" dur="{{sd}}s" begin="-{{b4}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p4}};0" dur="{{sd}}s" begin="-{{b4}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="78" cy="30" r="6" fill="#ECE6DA" opacity="0"><animate attributeName="cy" values="30;-34" dur="{{sd}}s" begin="-{{b5}}s" repeatCount="indefinite"></animate><animate attributeName="cx" values="78;86" dur="{{sd}}s" begin="-{{b5}}s" repeatCount="indefinite"></animate><animate attributeName="r" values="5;{{pr}}" dur="{{sd}}s" begin="-{{b5}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{p5}};0" dur="{{sd}}s" begin="-{{b5}}s" repeatCount="indefinite"></animate></circle>
+
+<circle cx="122" cy="42" r="4" fill="#F4EEE2" opacity="0"><animate attributeName="cy" values="42;0" dur="0.6s" repeatCount="indefinite"></animate><animate attributeName="r" values="3;13" dur="0.6s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{burstOp}};0" dur="0.6s" repeatCount="indefinite"></animate></circle>
+<ellipse cx="196" cy="150" rx="4" ry="3" fill="#F4EEE2" opacity="0"><animate attributeName="cx" values="196;238" dur="0.55s" repeatCount="indefinite"></animate><animate attributeName="rx" values="3;16" dur="0.55s" repeatCount="indefinite"></animate><animate attributeName="ry" values="2;7" dur="0.55s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{burstOp}};0" dur="0.55s" repeatCount="indefinite"></animate></ellipse>
+<ellipse cx="196" cy="164" rx="4" ry="3" fill="#F4EEE2" opacity="0"><animate attributeName="cx" values="196;234" dur="0.7s" begin="-0.3s" repeatCount="indefinite"></animate><animate attributeName="rx" values="3;14" dur="0.7s" begin="-0.3s" repeatCount="indefinite"></animate><animate attributeName="ry" values="2;6" dur="0.7s" begin="-0.3s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{burstOp}};0" dur="0.7s" begin="-0.3s" repeatCount="indefinite"></animate></ellipse>
+
+<g>
+<animateTransform attributeName="transform" type="translate" values="{{shake}}" dur="{{shakeDur}}s" repeatCount="indefinite"></animateTransform>
+
+<path d="M44 80 V228 Q44 266 82 266 H158 Q196 266 196 228 V80" fill="none" stroke="{{c}}" stroke-width="12" opacity="0"><animate attributeName="opacity" values="{{glowLo}};{{glowHi}};{{glowLo}}" dur="0.8s" repeatCount="indefinite"></animate></path>
+
+<path d="M47 82 V228 Q47 263 82 263 H158 Q193 263 193 228 V82 Z" fill="{{c}}" opacity="0.07"></path>
+
+<g clip-path="url(#{{cid}})">
+<g style="transform: translateY({{level}}px); transition: transform 900ms cubic-bezier(.34,1.3,.64,1)">
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 {{bob}};0 0" dur="{{bobDur}}s" repeatCount="indefinite"></animateTransform>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 -5;-80 -5" dur="{{waveDur2}}s" repeatCount="indefinite"></animateTransform>
+<path d="{{wave2}}" fill="{{c}}" opacity="0.3"></path>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;80 0" dur="{{waveDur}}s" repeatCount="indefinite"></animateTransform>
+<path d="{{wave}}" fill="{{c}}" opacity="0.6" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.5"></path>
+</g>
+</g>
+</g>
+<circle cx="70" cy="258" r="3" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c0}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q0}};{{q0}};0" dur="{{bd}}s" begin="-{{c0}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="96" cy="258" r="2" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c1}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q1}};{{q1}};0" dur="{{bd}}s" begin="-{{c1}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="118" cy="258" r="4" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c2}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q2}};{{q2}};0" dur="{{bd}}s" begin="-{{c2}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="140" cy="258" r="2.5" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c3}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q3}};{{q3}};0" dur="{{bd}}s" begin="-{{c3}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="162" cy="258" r="3.5" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c4}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q4}};{{q4}};0" dur="{{bd}}s" begin="-{{c4}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="82" cy="258" r="2.2" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c5}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q5}};{{q5}};0" dur="{{bd}}s" begin="-{{c5}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="130" cy="258" r="3" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c6}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q6}};{{q6}};0" dur="{{bd}}s" begin="-{{c6}}s" repeatCount="indefinite"></animate></circle>
+<circle cx="176" cy="258" r="2" fill="#FFFFFF" opacity="0"><animate attributeName="cy" values="258;{{bt}}" dur="{{bd}}s" begin="-{{c7}}s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="{{q7}};{{q7}};0" dur="{{bd}}s" begin="-{{c7}}s" repeatCount="indefinite"></animate></circle>
+</g>
+
+<path d="M44 80 V228 Q44 266 82 266 H158 Q196 266 196 228 V80" fill="none" stroke="{{c}}" stroke-width="3.5" stroke-linejoin="round"></path>
+<path d="M58 98 V214" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="4" stroke-linecap="round"></path>
+<path d="M66 100 V128" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="2" stroke-linecap="round"></path>
+
+<g opacity="{{crackOp}}" fill="none" stroke="#FFE7E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M150 90 L158 104 L151 116 L162 134 L156 146"></path>
+<path d="M158 104 L168 108"></path>
+<path d="M62 236 L74 224 L70 212 L80 202"></path>
+</g>
+
+<rect x="70" y="40" width="16" height="32" rx="2" fill="#1F1A14" stroke="#D1A85A" stroke-width="2.5"></rect>
+<rect x="64" y="34" width="28" height="8" rx="2" fill="#D1A85A"></rect>
+
+<g>
+<animateTransform attributeName="transform" type="translate" values="{{flutter}}" dur="{{flutterDur}}s" repeatCount="indefinite"></animateTransform>
+<g style="transform: translateY(-{{lift}}px); transition: transform 600ms ease">
+<rect x="118" y="52" width="6" height="20" fill="#D1A85A"></rect>
+<rect x="110" y="46" width="22" height="7" rx="3" fill="#D1A85A"></rect>
+</g>
+</g>
+
+<rect x="38" y="70" width="164" height="12" rx="6" fill="#1F1A14" stroke="#D1A85A" stroke-width="2.5"></rect>
+
+<circle cx="180" cy="66" r="27" fill="#15120E" stroke="#D1A85A" stroke-width="3"></circle>
+<circle cx="180" cy="66" r="20" fill="none" stroke="#3A3027" stroke-width="4" stroke-dasharray="83.78 125.66" transform="rotate(150 180 66)"></circle>
+<circle cx="180" cy="66" r="20" fill="none" stroke="{{c}}" stroke-width="4" stroke-dasharray="{{arc}} 125.66" transform="rotate(150 180 66)" style="transition: stroke-dasharray 900ms ease"></circle>
+<g style="transform: rotate({{angle}}deg); transform-box: fill-box; transform-origin: center; transition: transform 900ms cubic-bezier(.34,1.56,.64,1)">
+<circle cx="180" cy="66" r="17" fill="none"></circle>
+<line x1="180" y1="68" x2="180" y2="51" stroke="#F1E7D3" stroke-width="2.2" stroke-linecap="round"></line>
+<circle cx="180" cy="66" r="3" fill="#D1A85A"></circle>
+</g>
+<text x="180" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="{{c}}" font-family="JetBrains Mono, monospace">{{score}}</text>
+
+<rect x="56" y="270" width="128" height="7" rx="3.5" fill="#D1A85A"></rect>
+<g fill="#F0913A" opacity="{{flame}}">
+<path d="M92 290 q-6 -6 0 -14 q6 8 0 14 z"><animateTransform attributeName="transform" type="scale" values="1 1;1 1.15;1 1" dur="0.9s" repeatCount="indefinite" additive="sum"></animateTransform></path>
+<path d="M120 290 q-7 -7 0 -16 q7 9 0 16 z"></path>
+<path d="M148 290 q-6 -6 0 -14 q6 8 0 14 z"></path>
+</g>
+<rect x="70" y="277" width="6" height="16" fill="#6B5A44"></rect>
+<rect x="164" y="277" width="6" height="16" fill="#6B5A44"></rect>
+</g>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"score":{"editor":"range","default":62,"min":0,"max":100,"step":1},"fire":{"editor":"range","default":0.6,"min":0,"max":1,"step":0.05},"width":{"editor":null,"default":240},"$preview":{"width":240,"height":340}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this._cid = 'bw' + Math.random().toString(36).slice(2, 9);
+  }
+  wave(a) {
+    let d = 'M-160 0 q20 ' + (-a).toFixed(1) + ' 40 0';
+    for (let i = 0; i < 13; i++) d += ' t40 0';
+    return d + ' V340 H-160 Z';
+  }
+  renderVals() {
+    const s = Math.max(0, Math.min(100, Number(this.props.score ?? 62)));
+    const w = Number(this.props.width ?? 240);
+    const zone = s < 40 ? 'cool' : s < 70 ? 'working' : s < 90 ? 'hot' : 'redline';
+    const C = { cool: '#5EAEE8', working: '#EBC44E', hot: '#F2913D', redline: '#F24E3A' }[zone];
+    const red = zone === 'redline';
+    const level = Math.round(248 - s * 1.5);
+    const A = 1.5 + s * 0.1;
+    const sd = Math.max(1.1, 3.6 - s * 0.024);
+    const puffs = { cool: 1, working: 2, hot: 4, redline: 6 }[zone];
+    const pOp = { cool: '0.12', working: '0.35', hot: '0.5', redline: '0.7' }[zone];
+    const bubbles = { cool: 0, working: 2, hot: 6, redline: 8 }[zone];
+    const bd = Math.max(0.6, 2.6 - s * 0.02);
+    const fire = this.props.fire != null ? Number(this.props.fire) : 0.2 + s / 130;
+    const v = {
+      w, score: s, c: C, cid: this._cid,
+      label: 'Boiler at pressure ' + s + ', ' + zone,
+      level,
+      wave: this.wave(A), wave2: this.wave(A * 0.7),
+      waveDur: Math.max(0.8, 4.2 - s * 0.034).toFixed(2),
+      waveDur2: Math.max(1.1, 5.2 - s * 0.04).toFixed(2),
+      bob: (s * 0.045).toFixed(1),
+      bobDur: Math.max(0.45, 2.4 - s * 0.019).toFixed(2),
+      bt: level + 3,
+      sd: sd.toFixed(2), bd: bd.toFixed(2),
+      pr: { cool: 9, working: 13, hot: 17, redline: 22 }[zone],
+      shake: red ? '0 0;2.4 -0.6;-2.4 0.6;1.2 0;0 0' : zone === 'hot' ? '0 0;0.7 0;-0.7 0.3;0 0' : '0 0;0 0',
+      shakeDur: red ? '0.14' : zone === 'hot' ? '0.26' : '1',
+      lift: (s * 0.07).toFixed(1),
+      flutter: red ? '0 0;0 -5;0 0' : zone === 'hot' ? '0 0;0 -2;0 0' : '0 0;0 0',
+      flutterDur: red ? '0.12' : '0.3',
+      burstOp: red ? '0.85' : '0',
+      crackOp: red ? '0.9' : '0',
+      glowLo: red ? '0.15' : '0', glowHi: red ? '0.5' : '0',
+      arc: (83.78 * s / 100).toFixed(2),
+      angle: (-120 + 2.4 * s).toFixed(1),
+      flame: Math.min(1, fire).toFixed(2)
+    };
+    for (let i = 0; i < 8; i++) {
+      v['c' + i] = (bd * i / 8).toFixed(2);
+      v['q' + i] = i < bubbles ? '0.75' : '0';
+      if (i < 6) {
+        v['p' + i] = i < puffs ? pOp : '0';
+        v['b' + i] = (sd * i / 6).toFixed(2);
+      }
+    }
+    return v;
+  }
+}
+</script>
+</body>
+</html>

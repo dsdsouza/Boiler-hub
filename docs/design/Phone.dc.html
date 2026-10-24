@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boilerplate — My Boiler on phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0;background:#15120E}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background-color: #15120E; color: #F1E7D3; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="padding: 18px 20px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3A3027">
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 26px; letter-spacing: 0.06em">My Boiler</span>
+<div style="display: flex; gap: 8px; align-items: center">
+<button type="button" aria-label="Refresh" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background-color: transparent; border: 1px solid #3A3027; border-radius: 8px; color: #D9CCB5"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+<div aria-label="Maya Chen" style="width: 40px; height: 40px; border-radius: 50%; background-color: #C47A45; color: #15120E; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">MC</div>
+</div>
+</header>
+
+<div style="flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 14px">
+<dc-import name="Boiler" score="78" width="170" hint-size="170px,241px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 56px; line-height: 1; color: #F0913A">78</span>
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 22px; letter-spacing: 0.08em; color: #15120E; background-color: #F0913A; border-radius: 5px; padding: 1px 10px; align-self: flex-start">HOT</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600"><span aria-hidden="true" style="width: 9px; height: 9px; border-radius: 50%; background-color: #D1A85A"></span>Heads down</span>
+</div>
+</div>
+
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 14px 14px 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: #B3A48C; margin-bottom: 10px">7-DAY FORECAST</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; align-items: end">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 47px; background-color: #F0913A"></div></div><span style="font-size: 11px; font-weight: 700">Sat</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 26px; background-color: #D1A85A"></div></div><span style="font-size: 11px; color: #B3A48C">Sun</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 40px; background-color: #D1A85A"></div></div><span style="font-size: 11px; color: #B3A48C">Mon</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 53px; background-color: #F0913A"></div></div><span style="font-size: 11px; color: #B3A48C">Tue</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 44px; background-color: #F0913A"></div></div><span style="font-size: 11px; color: #B3A48C">Wed</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 55px; background-color: #F25C45"></div></div><span style="font-size: 11px; color: #B3A48C">Thu</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><div style="height: 60px; width: 100%; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 4px; overflow: hidden"><div style="width: 100%; height: 35px; background-color: #D1A85A"></div></div><span style="font-size: 11px; color: #B3A48C">Fri</span></div>
+</div>
+</div>
+
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 6px 14px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0">
+<button type="button" aria-label="Complete: Review Sam’s PR" style="width: 44px; height: 44px; flex: none; border: 2px solid #6B5A44; border-radius: 8px; background-color: transparent"></button>
+<div style="flex: 1"><div style="font-weight: 600; font-size: 15px">Review Sam’s PR</div><div style="font-size: 12px; color: #B3A48C">Due today · S</div></div>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 13px; color: #E3BE74">+6.0</span>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #3A3027">
+<button type="button" aria-label="Complete: Expense report" style="width: 44px; height: 44px; flex: none; border: 2px solid #6B5A44; border-radius: 8px; background-color: transparent"></button>
+<div style="flex: 1"><div style="font-weight: 600; font-size: 15px">Expense report</div><div style="font-size: 12px; color: #B3A48C">Overdue · S</div></div>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 13px; color: #E3BE74">+6.0</span>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #3A3027">
+<button type="button" aria-label="Mark not done: Ship onboarding copy" style="width: 44px; height: 44px; flex: none; border: 2px solid #7FB3D5; border-radius: 8px; background-color: #7FB3D5; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#15120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></button>
+<div style="flex: 1"><div style="font-weight: 600; font-size: 15px; text-decoration: line-through; color: #B3A48C">Ship onboarding copy</div><div style="font-size: 12px; color: #B3A48C">Done · steam vented</div></div>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 13px; color: #7FB3D5">−2.0</span>
+</div>
+</div>
+</div>
+
+<nav aria-label="App" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #3A3027; background-color: #1A1611; padding-bottom: 14px">
+<a href="MyBoiler.dc.html" aria-current="page" style="min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #E3BE74; font-size: 12px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 13l4-4"></path></svg>Boiler</a>
+<a href="EngineRoom.dc.html" style="min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B3A48C; font-size: 12px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="9" r="3"></circle><circle cx="16" cy="9" r="3"></circle><path d="M3 19c1-3 3-4 5-4s4 1 5 4M11 19c1-3 3-4 5-4s4 1 5 4"></path></svg>Teams</a>
+<a href="Main.dc.html#how" style="min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #B3A48C; font-size: 12px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg>How</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

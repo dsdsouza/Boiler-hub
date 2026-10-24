@@ -20,9 +20,13 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 | Track | Owns |
 | --- | --- |
 | engine | `lib/pressure`, `lib/google`, `app/api/me`, `app/api/sync`, `app/api/tasks`, `app/api/event-weights` |
-| ui | `components/boiler`, `components/ui`, `app/page.tsx`, `app/boiler`, `app/how`, `app/demo` |
+| ui | `components/boiler`, `components/ui`, `app/page.tsx`, `app/boiler`, `app/how`, `app/demo`, `app/layout.tsx`, `app/globals.css` |
 | teams | `app/teams`, `app/api/teams`, `lib/data/teams.ts` |
-| foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `app/layout.tsx`, `app/globals.css`, `middleware.ts`, `supabase/`, `fixtures/`, config files |
+| foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `middleware.ts`, `supabase/`, `fixtures/`, config files |
+
+## Visual source of truth (ui track)
+
+`docs/design/` holds the chosen designs and is the UI track's visual source of truth. Start with `docs/design/README.md`: it lists each screen's template (`*.dc.html`), the fonts and the palette tokens. The `.dc.html` files are design templates, not runnable pages; rebuild them as React components and match their layout, copy, SVG geometry and colors. Other tracks should reuse `components/ui` once it exists rather than restyling. Only the human edits `docs/design/`.
 
 ## Shared building blocks (read-only for tracks)
 
