@@ -199,7 +199,7 @@ export function AssignmentPanel({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Lab report: enzyme kinetics"
               className="min-h-11 w-full rounded-lg px-3 text-base outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight }}
+              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.control}`, outlineColor: C.brassLight }}
             />
           </div>
 
@@ -227,8 +227,8 @@ export function AssignmentPanel({
               value={date}
               min={addDays(0)}
               onChange={(e) => setDate(e.target.value)}
-              className={`min-h-11 w-full rounded-lg px-3 text-base ${MONO}`}
-              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}` }}
+              className={`bp-field min-h-11 w-full rounded-lg px-3 text-base ${MONO}`}
+              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.control}` }}
             />
           </div>
 

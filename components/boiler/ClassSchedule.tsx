@@ -47,7 +47,7 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
             aria-controls="class-schedule-events"
             aria-label={`${day.date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, ${day.entries.length} ${day.entries.length === 1 ? "event" : "events"}`}
             onClick={() => setSelected(day.key)}
-            className={`flex min-h-16 min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-1 py-2 ${day.key === active.key ? "border-brass bg-surface-2 text-fg" : "border-line text-muted hover:border-rivet hover:text-fg"}`}
+            className={`bp-control flex min-h-16 min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-1 py-2 ${day.key === active.key ? "border-brass bg-surface-2 text-fg" : "border-line text-muted hover:border-rivet hover:text-fg"}`}
           >
             <span className="text-[11px] font-semibold sm:text-xs">{i === 0 ? "Today" : day.date.toLocaleDateString("en-US", { weekday: "short" })}</span>
             <span className="font-mono text-lg leading-none tabular-nums">{day.date.getDate()}</span>
@@ -77,7 +77,7 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
       </>}
 
       {demo ? <LinkButton plain href="/auth/signin?next=/boiler" variant="ghost">Sign in to import your schedule</LinkButton> : <>
-        <details open={!hasFeed} className={hasFeed ? "border-t border-line pt-2" : ""}>
+        <details className={hasFeed ? "border-t border-line pt-2" : ""}>
           <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-fg">Import from Brightspace</summary>
           <div className="pt-2">
             <CalendarFeedForm initialProvider="brightspace" showProvider={false} idPrefix="schedule-feed" onAdded={onImported} />

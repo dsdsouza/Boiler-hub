@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { SourceInfo } from "@/lib/pressure/api-types";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { timeAgo } from "@/components/boiler/format";
 import { foundLine, sourcesCall, type TestResult } from "./api";
-import { CalendarFeedForm, GitHubTokenForm } from "./SourceForms";
 import { CalendarSubscription } from "./CalendarSubscription";
+import { SourceConnections } from "./SourceConnections";
+import { Feedback } from "@/components/ui/Feedback";
 
 const KIND_LABEL: Record<SourceInfo["kind"], string> = { ics: "Calendar feed", github: "GitHub" };
 
@@ -18,12 +19,12 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
   const upsert = (s: SourceInfo) => setSources((list) => (list.some((x) => x.id === s.id) ? list.map((x) => (x.id === s.id ? s : x)) : [...list, s]));
 
   return (
-    <div className="flex flex-col gap-6">
-      <CalendarSubscription />
+    <div className="bp-arrive bp-arrive-next flex flex-col gap-6">
       <Card as="section" aria-labelledby="yours" className="px-5 py-6 sm:px-7">
-        <CardTitle id="yours" className="mb-3">
-          Your sources
-        </CardTitle>
+        <div className="mb-4 flex items-center gap-3">
+          <CardTitle id="yours" tabIndex={-1}>Your sources</CardTitle>
+          <span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-muted tabular-nums">{sources.length}</span>
+        </div>
         {sources.length === 0 ? (
           <p className="m-0 border-t border-line py-3 text-sm text-muted">
             Nothing connected yet. Add Apple Calendar, a coursework feed or GitHub below to include their events and deadlines.
@@ -31,122 +32,79 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
         ) : (
           <ul className="m-0 list-none p-0">
             {sources.map((s) => (
-              <SourceRow key={s.id} source={s} onChange={upsert} onRemoved={() => setSources((l) => l.filter((x) => x.id !== s.id))} />
+              <SourceRow key={s.id} source={s} onChange={upsert} onRemoved={() => { setSources((l) => l.filter((x) => x.id !== s.id)); document.getElementById("yours")?.focus(); }} />
             ))}
           </ul>
         )}
       </Card>
 
-      <Card as="section" id="class-schedule" aria-labelledby="add-brightspace" className="scroll-mt-6 px-5 py-6 sm:px-7">
-        <CardTitle id="add-brightspace" className="mb-1">Import your class schedule</CardTitle>
-        <p className="mt-0 mb-4 text-sm text-muted">Bring classes and deadlines from Brightspace into My Boiler. Your schedule is visible only to you.</p>
-        <CalendarFeedForm initialProvider="brightspace" showProvider={false} idPrefix="brightspace" onAdded={(r) => upsert(r.source)} />
-      </Card>
-
-      <Card as="section" aria-labelledby="add-feed" className="px-5 py-6 sm:px-7">
-        <CardTitle id="add-feed" className="mb-1">
-          Connect a calendar
-        </CardTitle>
-        <p className="mt-0 mb-4 text-sm text-muted">
-          Apple Calendar (iCloud), Brightspace, Canvas, Outlook and other calendar feeds. Deadlines become tasks; other timed entries count as events. Titles and dates are
-          fetched live on each sync and never stored.
-        </p>
-        <CalendarFeedForm onAdded={(r) => upsert(r.source)} />
-      </Card>
-
-      <Card as="section" aria-labelledby="add-gh" className="px-5 py-6 sm:px-7">
-        <CardTitle id="add-gh" className="mb-1">
-          Connect GitHub
-        </CardTitle>
-        <p className="mt-0 mb-4 text-sm text-muted">
-          Assigned issues, review requests and failing CI on your PRs become tasks. Issues you close and PRs that merge vent pressure.
-        </p>
-        <GitHubTokenForm onAdded={(r) => upsert(r.source)} />
-      </Card>
+      <SourceConnections onAdded={(r) => upsert(r.source)} />
+      <CalendarSubscription />
     </div>
   );
 }
 
 function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChange: (s: SourceInfo) => void; onRemoved: () => void }) {
+  const uid = useId();
   const [busy, setBusy] = useState<"test" | "remove" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const removeButton = useRef<HTMLButtonElement>(null);
+  const confirmButton = useRef<HTMLButtonElement>(null);
   const ok = source.status === "ok";
+  useEffect(() => { if (confirming) confirmButton.current?.focus(); }, [confirming]);
 
   async function test() {
-    setBusy("test");
-    setNote(null);
+    if (busy) return;
+    setBusy("test"); setNote(null);
     try {
       const r = await sourcesCall<TestResult>(`/api/sources/${source.id}/test`, "POST");
       onChange(r.source);
       const found = source.kind === "github" ? `Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}` : foundLine(r);
       setNote(r.ok ? { ok: true, text: `${found}.` } : { ok: false, text: r.error ?? "The source did not respond" });
-    } catch (e) {
-      setNote({ ok: false, text: (e as Error).message });
-    } finally {
-      setBusy(null);
-    }
+    } catch (e) { setNote({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(null); }
   }
-
   async function remove() {
-    setBusy("remove");
-    setNote(null);
-    try {
-      await sourcesCall(`/api/sources/${source.id}`, "DELETE");
-      onRemoved();
-    } catch (e) {
+    if (busy) return;
+    setBusy("remove"); setNote(null);
+    try { await sourcesCall(`/api/sources/${source.id}`, "DELETE"); onRemoved(); }
+    catch (e) {
       setNote({ ok: false, text: (e as Error).message });
-      setBusy(null);
-      setConfirming(false);
+      setBusy(null); setConfirming(false); removeButton.current?.focus();
     }
   }
-
   return (
-    <li className="flex flex-col gap-2 border-t border-line py-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
+    <li className="flex flex-col gap-2 border-t border-line py-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+        <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] text-muted uppercase">
-              {KIND_LABEL[source.kind]}
-            </span>
-            <span className="truncate text-[15px] font-semibold text-fg">{source.label}</span>
+            <span className="break-words text-base font-semibold text-fg">{source.label}</span>
+            {source.label.toLowerCase() !== KIND_LABEL[source.kind].toLowerCase() && <span className="rounded border border-line px-1.5 text-[11px] font-medium text-muted">{KIND_LABEL[source.kind]}</span>}
             {source.kind === "ics" && source.coursework && <span className="text-xs text-muted">coursework</span>}
           </div>
-          <div className="flex flex-wrap items-center gap-x-2 text-[13px]">
-            <span className={`inline-flex items-center gap-1.5 font-semibold ${ok ? "text-cool-ink" : "text-redline-ink"}`}>
-              <span aria-hidden="true" className={`size-2 rounded-full ${ok ? "bg-zone-cool" : "bg-zone-redline"}`} />
-              {ok ? "Working" : "Error"}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+            <span className={`inline-flex items-center gap-1.5 font-medium ${ok ? "text-cool-ink" : "text-redline-ink"}`}>
+              <span aria-hidden="true" className={`size-1.5 rounded-full ${ok ? "bg-zone-cool" : "bg-zone-redline"}`} />
+              {ok ? "Connected" : "Needs attention"}
             </span>
             <span className="text-muted">· {source.lastSyncedAt ? `Last synced ${timeAgo(source.lastSyncedAt)}` : "Never synced"}</span>
           </div>
-          {!ok && source.error && <p className="m-0 text-[13px] text-body">{source.error}</p>}
+          {!ok && source.error && <p className="m-0 text-[13px] leading-relaxed text-body wrap-anywhere">{source.error}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {confirming ? (
-            <>
-              <span className="text-sm text-body">Remove {source.label}?</span>
-              <Button onClick={() => void remove()} disabled={busy === "remove"} className="border-redline-ink text-redline-ink">
-                {busy === "remove" ? "Removing…" : "Remove"}
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy === "remove"}>
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button onClick={() => void test()} disabled={busy !== null} aria-busy={busy === "test"}>
-                {busy === "test" ? "Testing…" : "Test"}
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirming(true)} disabled={busy !== null}>
-                Remove
-              </Button>
-            </>
-          )}
+          <Button onClick={() => void test()} aria-label={`Test ${source.label}`} aria-disabled={busy !== null} aria-busy={busy === "test"}>
+            {busy === "test" ? "Testing…" : "Test"}
+          </Button>
+          <Button ref={removeButton} variant="ghost" onClick={() => { if (!busy) setConfirming(true); }} aria-expanded={confirming} aria-controls={`${uid}-remove`} aria-label={`Remove ${source.label}`} aria-disabled={busy !== null}>Remove</Button>
         </div>
       </div>
-      <p aria-live="polite" className="m-0 text-[13px]">
-        {note && <span className={note.ok ? "text-cool-ink" : "text-redline-ink"}>{note.text}</span>}
-      </p>
+      {confirming && <div id={`${uid}-remove`} role="group" aria-label={`Remove ${source.label}`} className="flex flex-wrap items-center gap-2 rounded-[10px] bg-bg px-3 py-2">
+        <p className="m-0 mr-auto text-sm text-body">Remove this connection?</p>
+        <Button ref={confirmButton} onClick={() => void remove()} aria-disabled={busy !== null} aria-busy={busy === "remove"} className="border-redline-ink text-redline-ink">{busy === "remove" ? "Removing…" : "Confirm removal"}</Button>
+        <Button variant="ghost" onClick={() => { if (busy) return; setConfirming(false); removeButton.current?.focus(); }} aria-disabled={busy !== null}>Cancel</Button>
+      </div>}
+      <Feedback message={note?.text} tone={note?.ok ? "success" : "error"} />
     </li>
   );
 }
