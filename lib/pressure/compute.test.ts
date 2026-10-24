@@ -167,4 +167,18 @@ describe("computePressure", () => {
       "cool", "cool", "working", "working", "hot", "hot", "redline", "redline",
     ]);
   });
+
+  it.each([
+    ["2026-03-07T12:00:00Z", "2026-03-09T04:30:00Z", "2026-03-09"],
+    ["2026-10-31T12:00:00Z", "2026-11-02T05:30:00Z", "2026-11-02"],
+  ])("forecast keeps New York midnight boundaries across DST from %s", (now, due, date) => {
+    const result = computePressure([
+      { id: "dst-task", kind: "task", source: "manual", title: "After midnight", due, size: "L" },
+    ], new Date(now), { timeZone: "America/New_York" });
+    const day = result.forecast.findIndex((entry) => entry.date === date);
+    expect(day).toBe(2);
+    // The task is still ahead at local midnight, including the shifted offset.
+    expect(result.forecast[day].score).toBeGreaterThan(0);
+    expect(result.forecast[day + 1].score).toBe(0);
+  });
 });
