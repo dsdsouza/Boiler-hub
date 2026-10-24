@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Contribution, LoadItem, Weight } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_WEIGHT } from "@/lib/pressure/config";
@@ -13,14 +13,20 @@ const COLLAPSED = 6;
 export function Breakdown({
   contributions,
   items,
+  overrides = {},
   onWeight,
   className = "",
 }: {
   contributions: Contribution[];
   items: LoadItem[];
-  onWeight: (id: string, weight: Weight, series: boolean) => void;
+  /** Events the owner tagged, and whether the tag is on the event alone or its series. */
+  overrides?: Record<string, "event" | "series">;
+  /** clearIds: single-event tags in the series that the series tag should replace. */
+  onWeight: (id: string, weight: Weight, series: boolean, clearIds?: string[]) => void;
   className?: string;
 }) {
+  // Unique per instance: My Boiler renders one breakdown per breakpoint.
+  const titleId = useId();
   const [expanded, setExpanded] = useState(false);
   const sorted = [...contributions].sort((a, b) => b.points - a.points);
   const max = Math.max(0.01, ...sorted.map((c) => Math.abs(c.points)));
@@ -28,14 +34,22 @@ export function Breakdown({
   const byId = new Map(items.map((i) => [i.id, i]));
 
   return (
-    <Card as="section" aria-labelledby="why" className={`px-5 py-6 sm:px-7 ${className}`}>
-      <CardTitle id="why">Why is my needle here?</CardTitle>
+    <Card as="section" aria-labelledby={titleId} className={`px-5 py-6 sm:px-7 ${className}`}>
+      <CardTitle id={titleId}>Why is my needle here?</CardTitle>
       <p className="mt-1 mb-3 text-sm text-muted">
         Only you see this breakdown. Teams see a number, a zone and counts. Tag an event Light, Normal or Heavy to tune it.
       </p>
       <ul className="m-0 list-none p-0">
         {shown.map((c) => (
-          <BreakdownRow key={c.itemId} c={c} item={byId.get(c.itemId)} max={max} onWeight={onWeight} />
+          <BreakdownRow
+            key={c.itemId}
+            c={c}
+            item={byId.get(c.itemId)}
+            max={max}
+            override={overrides[c.itemId] ?? null}
+            ownTagsInSeries={ownTagsInSeries(byId.get(c.itemId), items, overrides)}
+            onWeight={onWeight}
+          />
         ))}
       </ul>
       {sorted.length > COLLAPSED && (
@@ -52,16 +66,26 @@ export function Breakdown({
   );
 }
 
+/** Ids of events in `item`'s series that carry their own single-event tag. */
+function ownTagsInSeries(item: LoadItem | undefined, items: LoadItem[], overrides: Record<string, "event" | "series">): string[] {
+  if (!item?.isRecurring || !item.seriesKey) return [];
+  return items.filter((i) => i.kind === "event" && i.seriesKey === item.seriesKey && overrides[i.id] === "event").map((i) => i.id);
+}
+
 function BreakdownRow({
   c,
   item,
   max,
+  override,
+  ownTagsInSeries,
   onWeight,
 }: {
   c: Contribution;
   item?: LoadItem;
   max: number;
-  onWeight: (id: string, weight: Weight, series: boolean) => void;
+  override: "event" | "series" | null;
+  ownTagsInSeries: string[];
+  onWeight: (id: string, weight: Weight, series: boolean, clearIds?: string[]) => void;
 }) {
   const [series, setSeries] = useState(true);
   const release = c.points < 0;
@@ -98,12 +122,26 @@ function BreakdownRow({
                   key={w}
                   type="button"
                   aria-pressed={on}
-                  onClick={() => !on && onWeight(c.itemId, w, recurring && series)}
+                  onClick={() => {
+                    if (on) return;
+                    const toSeries = recurring && series;
+                    if (!toSeries) return onWeight(c.itemId, w, false);
+                    // This event's own tag is replaced (it was clicked). Others in the series keep theirs unless confirmed.
+                    const others = ownTagsInSeries.filter((id) => id !== c.itemId);
+                    const replace =
+                      others.length > 0 &&
+                      window.confirm(
+                        `${others.length} other ${others.length === 1 ? "event in this series has its" : "events in this series have their"} own tag. Change ${others.length === 1 ? "it" : "them"} to ${WEIGHT_LABEL[w]} too?`,
+                      );
+                    const mine = override === "event" ? [c.itemId] : [];
+                    onWeight(c.itemId, w, true, replace ? [...mine, ...others] : mine);
+                  }}
                   className={`min-h-11 cursor-pointer rounded-md border px-3.5 text-[13px] font-semibold ${
                     on ? "border-brass bg-brass text-soot" : "border-line bg-transparent text-body hover:border-rivet hover:text-fg"
                   }`}
                 >
                   {WEIGHT_LABEL[w]}
+                  {on && !override && <span className="font-normal"> (default)</span>}
                 </button>
               );
             })}

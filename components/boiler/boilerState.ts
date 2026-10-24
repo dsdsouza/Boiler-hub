@@ -31,6 +31,8 @@ export interface MyBoilerData {
   sources?: SourceInfo[];
   /** Per-task extras for source items, keyed by item id. */
   taskMeta?: Record<string, TaskMeta>;
+  /** Where each event's tag comes from, when the owner set one: this event alone, or its series. */
+  eventOverrides?: Record<string, "event" | "series">;
 }
 
 /** What a source item (ICS, GitHub) needs beyond its LoadItem: where it came from and its state key. */
@@ -123,12 +125,27 @@ export function clearTasks(data: MyBoilerData, ids: ReadonlySet<string>): MyBoil
   return settle({ ...data, items }, contributions, -removed, null);
 }
 
-/** Retag one event, or every event in its series. Points scale by the weight ratio. */
-export function setEventWeight(data: MyBoilerData, id: string, weight: Weight, series: boolean): MyBoilerData {
+/**
+ * Retag one event, or every event in its series. Points scale by the weight ratio.
+ * `clearIds`: single-event tags the series tag replaces. Other single-event tags in the series win, as on the server.
+ */
+export function setEventWeight(
+  data: MyBoilerData,
+  id: string,
+  weight: Weight,
+  series: boolean,
+  clearIds: readonly string[] = [],
+): MyBoilerData {
   const target = data.items.find((i) => i.id === id && i.kind === "event");
   if (!target) return data;
-  const affected = data.items.filter((i) =>
-    i.kind === "event" && !i.release && (i.id === id || (series && !!target.seriesKey && i.seriesKey === target.seriesKey)),
+  const own = data.eventOverrides ?? {};
+  const cleared = new Set(clearIds);
+  const affected = data.items.filter(
+    (i) =>
+      i.kind === "event" &&
+      !i.release &&
+      (i.id === id ||
+        (series && !!target.seriesKey && i.seriesKey === target.seriesKey && (own[i.id] !== "event" || cleared.has(i.id)))),
   );
   let contributions = data.result.contributions;
   let delta = 0;
@@ -144,7 +161,9 @@ export function setEventWeight(data: MyBoilerData, id: string, weight: Weight, s
   }
   const ids = new Set(affected.map((i) => i.id));
   const items = data.items.map((i) => (ids.has(i.id) ? { ...i, weight } : i));
-  return settle({ ...data, items }, contributions, delta, latest);
+  const eventOverrides = { ...own };
+  for (const i of affected) eventOverrides[i.id] = series ? "series" : "event";
+  return settle({ ...data, items, eventOverrides }, contributions, delta, latest);
 }
 
 export function setStatus(data: MyBoilerData, status: Status, statusNote: string): MyBoilerData {

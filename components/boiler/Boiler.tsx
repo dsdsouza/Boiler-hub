@@ -50,6 +50,9 @@ export function Boiler({
   const v = boilerVisuals(s, zone);
   const reduced = useReducedMotion();
   const still = !animate || !!reduced;
+  // Off-screen (reported by Steam's IntersectionObserver): CSS loops pause in place and the shake stops.
+  const [onScreen, setOnScreen] = useState(true);
+  const paused = !still && !onScreen;
   const w = width ?? WIDTH[size];
   // Shake amplitude in CSS px per viewBox unit; fluid boilers assume ~240px.
   const px = w === "fluid" ? 1 : w / VIEW.w;
@@ -77,11 +80,11 @@ export function Boiler({
   const label = `Boiler at pressure ${s}, ${ZONE_LABEL[zone]}${status ? `, ${STATUS_META[status].label}` : ""}`;
   const lift = v.lift + (whistling ? 6 : 0);
 
-  const shake = !still && v.shake;
+  const shake = !still && onScreen && v.shake;
   const dur = (sec: number) => ({ "--dur": `${sec.toFixed(2)}s` }) as CSSProperties;
 
   return (
-    <div className={`relative shrink-0 ${className}`} style={{ width: w === "fluid" ? "100%" : w }} data-still={still ? "" : undefined}>
+    <div className={`relative shrink-0 ${className}`} style={{ width: w === "fluid" ? "100%" : w }} data-still={still ? "" : undefined} data-paused={paused ? "" : undefined}>
       <motion.div
         className="relative"
         animate={shake ? { x: v.shake!.x.map((n) => n * px), y: v.shake!.y.map((n) => n * px) } : { x: 0, y: 0 }}
@@ -217,7 +220,7 @@ export function Boiler({
           <rect x="70" y="277" width="6" height="16" fill="#6B5A44" />
           <rect x="164" y="277" width="6" height="16" fill="#6B5A44" />
         </svg>
-        <Steam score={s} zone={zone} level={v.level} active={!still} vent={vent} whistle={whistleKey} />
+        <Steam score={s} zone={zone} level={v.level} active={!still} vent={vent} whistle={whistleKey} onVisibility={setOnScreen} />
       </motion.div>
     </div>
   );
