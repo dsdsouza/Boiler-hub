@@ -7,7 +7,7 @@ import { DEFAULT_WEIGHT } from "@/lib/pressure/config";
 import { WEIGHT_LABEL, formatPoints } from "./format";
 
 const WEIGHTS: Weight[] = ["light", "normal", "heavy"];
-const COLLAPSED = 6;
+const COLLAPSED = 3;
 
 /** "Why is my needle here?" Owner-only, sorted by points. Events get a Light/Normal/Heavy tag. */
 export function Breakdown({
@@ -107,10 +107,10 @@ function BreakdownRow({
           {formatPoints(c.points)}
         </span>
       </div>
-      <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-[3px] bg-surface-2">
+      <div aria-hidden="true" className="h-1 overflow-hidden rounded-sm bg-surface-2">
         <div
-          className="h-1.5 rounded-[3px] transition-[width] duration-500 ease-out motion-reduce:transition-none"
-          style={{ width: `${Math.round((Math.abs(c.points) / max) * 100)}%`, backgroundColor: release ? "#7FB3D5" : "#E3BE74" }}
+          className="h-full w-full origin-left rounded-sm transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none"
+          style={{ transform: `scaleX(${Math.abs(c.points) / max})`, backgroundColor: release ? "#7FB3D5" : "#E3BE74" }}
         />
       </div>
       {tunable && (
@@ -137,7 +137,7 @@ function BreakdownRow({
                     const mine = override === "event" ? [c.itemId] : [];
                     onWeight(c.itemId, w, true, replace ? [...mine, ...others] : mine);
                   }}
-                  className={`min-h-11 cursor-pointer rounded-md border px-3.5 text-[13px] font-semibold ${
+                  className={`bp-control min-h-11 cursor-pointer rounded-md border px-3.5 text-[13px] font-semibold ${
                     on ? "border-brass bg-brass text-soot" : "border-line bg-transparent text-body hover:border-rivet hover:text-fg"
                   }`}
                 >
