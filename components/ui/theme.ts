@@ -1,7 +1,6 @@
 export type ThemePref = "light" | "dark";
 
 export const THEME_KEY = "bp-theme";
-export const SOUND_KEY = "bp-sound";
 
 // Runs in <head> before paint so a saved theme never flashes the other one.
 export const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
