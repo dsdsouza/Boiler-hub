@@ -70,7 +70,7 @@ export function CalendarHelper({ signedIn }: { signedIn: boolean }) {
       </Card>}
       {pending && <Card as="section" aria-labelledby="helper-review" className="px-5 py-6 sm:px-7">
         <CardTitle id="helper-review">Review your calendar link</CardTitle>
-        <p className="mt-2 mb-5 max-w-[65ch] text-sm leading-relaxed text-body">Found on <strong className="wrap-anywhere">{new URL(pending).hostname}</strong>. Connecting saves this private link encrypted so Boiler Hub can read it when you refresh.</p>
+        <p className="mt-2 mb-5 max-w-[65ch] text-sm leading-relaxed text-body">Found on <strong className="wrap-anywhere">{new URL(pending).hostname}</strong>. Connecting saves this private link encrypted so Boilerplate can read it when you refresh.</p>
         {signedIn ? <CalendarFeedForm key={pending} initialUrl={pending} idPrefix="helper" onBusyChange={setImporting} onAdded={(r) => {
           clear(); setSuccess(`${r.source.label} connected. ${foundLine(r)}.${r.warning ? ` ${r.warning}` : ""}`);
         }} /> : <div className="flex flex-col items-start gap-3">
@@ -106,9 +106,9 @@ export function CalendarHelper({ signedIn }: { signedIn: boolean }) {
             <ol className="my-5 max-w-[70ch] list-decimal space-y-3 pl-5 text-sm leading-relaxed text-body">
               <li>Unzip the download. Open <code>chrome://extensions</code> or <code>edge://extensions</code>, turn on Developer mode, and choose <strong>Load unpacked</strong>. Select the <strong>boiler-calendar-helper</strong> folder.</li>
               <li>Open your school calendar’s Subscribe, Calendar Feed or Export dialog, then open Calendar Finder from the extensions menu.</li>
-              <li>Choose <strong>Review in Boiler Hub</strong> beside a result and check the link before connecting it. You can also copy the link into Sources.</li>
+              <li>Choose <strong>Review in Boilerplate</strong> beside a result and check the link before connecting it. You can also copy the link into Sources.</li>
             </ol>
-            <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-muted">Scanning happens in your browser when you open the extension or choose Scan this page. Passwords and hidden fields are skipped. You choose which link to bring into Boiler Hub.</p>
+            <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-muted">Scanning happens in your browser when you open the extension or choose Scan this page. Passwords and hidden fields are skipped. You choose which link to bring into Boilerplate.</p>
           </div>
         </details>
       </section>

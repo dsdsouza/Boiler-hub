@@ -515,11 +515,11 @@ export function NotificationsScene({ score }: { score: number }) {
     <div className="grid items-start gap-6 @3xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
       <div
         role="img"
-        aria-label="Phone lock screen mockup with four BoilerHub notifications"
+        aria-label="Phone lock screen mockup with four Boilerplate notifications"
         className="mx-auto w-full max-w-[360px] overflow-hidden rounded-[40px] border-[6px] border-[#2A231B] bg-[radial-gradient(120%_80%_at_50%_0%,#3a2f22_0%,#15120e_70%)] px-3 pt-4 pb-8 text-[#F1E7D3] shadow-xl"
       >
         <div className="flex justify-between px-4 font-mono text-[11px] opacity-80">
-          <span>BoilerHub</span>
+          <span>Boilerplate</span>
           <span>100%</span>
         </div>
         <div className="mt-5 text-center">
@@ -534,7 +534,7 @@ export function NotificationsScene({ score }: { score: number }) {
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex justify-between gap-2 text-[11px] opacity-70">
-                  <span className="font-semibold tracking-[0.06em] uppercase">BoilerHub</span>
+                  <span className="font-semibold tracking-[0.06em] uppercase">Boilerplate</span>
                   <span>{n.time}</span>
                 </span>
                 <span className="text-[14px] leading-snug font-semibold">{n.title}</span>

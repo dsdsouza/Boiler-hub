@@ -6,7 +6,7 @@ import type { Reaction } from "./voice";
 import type { AccessoryId } from "./wardrobe";
 import "./mascot.css";
 
-// Pip, the BoilerHub companion: a glass boiler with a gauge eye, brass rim,
+// Pip, the Boilerplate companion: a glass boiler with a gauge eye, brass rim,
 // chimney, little arms and feet (from .local/references/selected-mascot-four-states.png),
 // rebuilt as plain vector shapes so it stays crisp from 24px to hero size.
 

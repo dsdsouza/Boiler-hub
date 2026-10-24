@@ -99,7 +99,7 @@ function BreakdownRow({
     <li className="flex flex-col gap-2 border-t border-line py-3.5">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[15px] font-semibold">{c.title}</div>
+          <div className="break-words text-[15px] font-semibold">{c.title}</div>
           <div className="text-[13px] text-muted">{c.reason}</div>
         </div>
         <span className="font-mono text-[15px] font-bold whitespace-nowrap" style={{ color }}>

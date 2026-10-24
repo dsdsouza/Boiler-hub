@@ -4,13 +4,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
-import { timeAgo } from "@/components/boiler/format";
 import { LinkButton } from "@/components/ui/Button";
-import { readStorage, writeStorage } from "@/components/ui/storage";
+import { readStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
-import { PipWardrobe } from "./PipWardrobe";
+import { PipChat } from "./PipChat";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
@@ -30,7 +29,6 @@ export function PipDock() {
   const [load, setLoad] = useState<Load>({ kind: "none" });
   const [hidden, setHidden] = useState(true);
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"message" | "wardrobe">("message");
   const [now, setNow] = useState(0);
   const accessory = usePipAccessory();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -76,14 +74,11 @@ export function PipDock() {
   }, [pathname, routeHidden]);
 
   useEffect(() => {
-    if (open && view === "message") headingRef.current?.focus();
-  }, [open, view]);
+    if (open) headingRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      setView("message");
-      return;
-    }
+    if (!open) return;
     const onPointer = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -109,11 +104,6 @@ export function PipDock() {
     setOpen(false);
     toggleRef.current?.focus();
   };
-  const hide = () => {
-    writeStorage(PIP_HIDDEN_KEY, "1");
-    setOpen(false);
-    setHidden(true);
-  };
 
   return (
     // On phones, sit above the bottom tab bar (MobileTabBar: 56px + safe-area padding).
@@ -130,17 +120,15 @@ export function PipDock() {
           id={panelId}
           role="dialog"
           aria-modal="false"
-          aria-labelledby={view === "message" ? headingId : undefined}
-          aria-label={view === "wardrobe" ? `Dress up ${MASCOT_NAME}` : undefined}
-          className="mp-pop w-[min(340px,calc(100vw-32px))] rounded-[14px] border border-rivet bg-surface px-4 pt-3 pb-4 shadow-xl"
+          aria-labelledby={headingId}
+          className={`mp-pop flex w-[min(380px,calc(100vw-32px))] flex-col overflow-hidden rounded-[14px] border border-rivet bg-surface px-4 pt-3 pb-4 shadow-xl ${raised ? "max-h-[calc(100dvh-240px)] sm:max-h-[calc(100dvh-176px)]" : "max-h-[calc(100dvh-176px)] sm:max-h-[calc(100dvh-124px)]"}`}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
-              {MASCOT_NAME}
+          <div className="flex shrink-0 items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with {MASCOT_NAME}</h2>
               {snap && (
-                <span className="text-muted">
-                  {" "}
-                  · {ZONE_LABEL[snap.zone]} {snap.score}
+                <span className="font-mono text-[11px] tracking-[0.14em] text-muted uppercase">
+                  {ZONE_LABEL[snap.zone]} {snap.score}
                 </span>
               )}
             </div>
@@ -155,39 +143,12 @@ export function PipDock() {
               </svg>
             </button>
           </div>
-          {view === "wardrobe" ? (
-            <div className="pt-1">
-              <PipWardrobe score={snap?.score ?? 0} onDone={() => setView("message")} autoFocus />
-            </div>
-          ) : (
-            <>
-              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">
-                {message.headline}
-              </h2>
-              <p className="m-0 mt-1 text-sm leading-normal text-body">{message.body}</p>
-              {snap && <p className="m-0 mt-2 text-xs text-muted">Last reading {timeAgo(snap.computedAt, new Date(now))}.</p>}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <LinkButton href={message.action.href} variant="primary" onClick={() => setOpen(false)}>
-                  {message.action.label}
-                </LinkButton>
-                <button
-                  type="button"
-                  onClick={() => setView("wardrobe")}
-                  className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-transparent px-3 text-sm font-medium text-body hover:border-rivet hover:text-fg"
-                >
-                  Dress up
-                </button>
-                <button
-                  type="button"
-                  onClick={hide}
-                  title={`Bring ${MASCOT_NAME} back from My Boiler`}
-                  className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border-0 bg-transparent px-2 text-sm font-medium text-muted hover:text-fg"
-                >
-                  Hide
-                </button>
-              </div>
-            </>
-          )}
+          <PipChat />
+          <div className="mt-3 shrink-0">
+            <LinkButton href={message.action.href} variant="ghost" onClick={() => setOpen(false)}>
+              {message.action.label}
+            </LinkButton>
+          </div>
         </section>
       )}
       <button
@@ -196,7 +157,7 @@ export function PipDock() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-label={open ? `Close ${MASCOT_NAME}` : `${MASCOT_NAME}: ${message.headline}`}
+        aria-label={open ? `Close ${MASCOT_NAME}` : `Chat with ${MASCOT_NAME}`}
         className="relative flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border border-rivet bg-surface shadow-lg hover:border-brass"
       >
         <Mascot score={snap?.score ?? 0} size={44} reaction={message.reaction} empty={message.empty} accessory={accessory} />

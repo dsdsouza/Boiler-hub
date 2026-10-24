@@ -360,7 +360,7 @@ export function MascotPreview() {
                 <span className="h-2.5 w-2.5 rounded-full bg-rivet" />
                 <span className="h-2.5 w-2.5 rounded-full bg-rivet" />
               </span>
-              <span className="truncate rounded-md bg-bg px-3 py-0.5 font-mono text-[11px] text-muted">boilerhub · {pageTitle.toLowerCase()} · demo data</span>
+              <span className="truncate rounded-md bg-bg px-3 py-0.5 font-mono text-[11px] text-muted">boilerplate · {pageTitle.toLowerCase()} · demo data</span>
             </div>
             <AppChrome title={pageTitle} />
             <div className="@container p-4 sm:p-6">{scene}</div>
