@@ -42,16 +42,16 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </p>
         )}
 
-        <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-[72px] sm:pb-20">
+        <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-14 sm:pb-20">
           <div className="flex flex-col gap-6">
-            <h1 className={`${display} text-[clamp(48px,7vw,88px)] leading-[0.95] tracking-[0.01em]`}>
+            <h1 className={`${display} bp-arrive text-[clamp(48px,6.4vw,80px)] leading-[0.98] tracking-[0.01em]`}>
               You can see everyone’s calendar. You can’t see their pressure.
             </h1>
-            <p className="m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
+            <p className="bp-arrive bp-arrive-next m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
               Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finishing work
               lowers it. Teams see who is near the red line, only with their permission.
             </p>
-            <div className="flex flex-wrap gap-3.5 pt-2">
+            <div className="bp-arrive bp-arrive-last flex flex-wrap gap-3.5 pt-2">
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
                 Try the demo
               </LinkButton>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import { PipDock } from "@/components/mascot/PipDock";
+import { AppMotion } from "@/components/ui/AppMotion";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import "./globals.css";
 
@@ -30,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bebas.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="antialiased">
-        {children}
-        <SiteFooter />
-        <PipDock />
+        <AppMotion>
+          {children}
+          <SiteFooter />
+          <PipDock />
+        </AppMotion>
       </body>
     </html>
   );
