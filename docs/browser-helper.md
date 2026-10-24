@@ -4,7 +4,7 @@ The desktop Chrome/Edge helper finds subscription links on a school page the use
 
 ## Use it
 
-1. Open **Sources → How to find your school calendar link** in Boilerplate. The page first explains how to copy a link without installing anything. To try automatic scanning, expand **Extension preview and setup**, download the optional extension and unzip it.
+1. Open **Onboarding → Find your calendar link**, the first setup step in Boilerplate. Choose **Download Calendar Finder** and unzip it, then expand **Set up Calendar Finder** for installation instructions. Choose **Find a link manually** to use the school guides without installing anything.
 2. Open `chrome://extensions` or `edge://extensions`, turn on Developer mode, select **Load unpacked**, then choose the extracted `boiler-calendar-helper` folder.
 3. Sign in to the school in that browser and open its Calendar. Open Subscribe, Calendar Feed or Export calendar. Click Calendar Finder in the browser’s extensions menu.
 4. Choose **Review in Boilerplate**, review the URL/name/coursework setting, and connect it. A signed-out user signs into Boilerplate first; the tab retains the link for up to ten minutes. A copy-link fallback is available.
