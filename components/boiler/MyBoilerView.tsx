@@ -10,6 +10,7 @@ import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { Boiler } from "./Boiler";
 import { Breakdown } from "./Breakdown";
+import { ClassSchedule } from "./ClassSchedule";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
 import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
@@ -48,8 +49,8 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
 
 /**
  * The full My Boiler screen body (MyBoiler.dc.html / Phone.dc.html).
- * Desktop: gauge plate on the left, forecast / breakdown / tasks on the right.
- * Phone: hero row, forecast, tasks, breakdown, status, in that order.
+ * Desktop: gauge plate on the left, forecast / schedule / breakdown / tasks on the right.
+ * Phone: hero row, forecast, schedule, tasks, breakdown, status, in that order.
  */
 export function MyBoilerView({
   boiler,
@@ -90,7 +91,9 @@ export function MyBoilerView({
         <div>
           <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
           <p className="mt-1.5 mb-0 text-[15px] text-muted">
-            {data.calendar !== "ok" ? "Tasks only" : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
+            {data.calendar !== "ok"
+              ? data.sources?.some((s) => s.kind === "ics" && s.status === "ok") ? "Calendar feeds and tasks" : "Tasks only"
+              : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
           </p>
         </div>
         <button
@@ -118,8 +121,8 @@ export function MyBoilerView({
 
       {/*
         DOM order is the reading order at each width, so Tab follows what is on screen:
-        phone: hero, forecast, tasks, breakdown, status; desktop: gauge plate (hero, status), then
-        forecast, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
+        phone: hero, forecast, schedule, tasks, breakdown, status; desktop: gauge plate (hero, status), then
+        forecast, schedule, breakdown, tasks. Status and breakdown render twice, one copy per breakpoint;
         display:none keeps the hidden copy out of the Tab order and the accessibility tree.
       */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
@@ -168,6 +171,8 @@ export function MyBoilerView({
               <ForecastStrip days={result.forecast} />
             </div>
           </Card>
+
+          <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
 
           <Breakdown
             className="hidden lg:block"
