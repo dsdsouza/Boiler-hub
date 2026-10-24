@@ -22,7 +22,7 @@ export function HeroBoiler() {
             Drag to add pressure
           </label>
           <span className={`font-mono text-[15px] font-bold ${ZONE_INK[zone]}`} aria-hidden="true">
-            {score} · {ZONE_LABEL[zone].toUpperCase()}
+            {ZONE_LABEL[zone].toUpperCase()}
           </span>
         </div>
         <input
