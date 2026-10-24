@@ -52,6 +52,7 @@ export function applyTaskToRaw(
 
 // Stand-in for the engine's full resync (fetch Google + tasks, compute, upsert snapshot).
 // Until it merges, the assignment route bumps snapshots with applyTaskToRaw instead.
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function syncUser(
   _admin: SupabaseClient,
   _userId: string,
@@ -59,3 +60,4 @@ export async function syncUser(
 ): Promise<{ synced: boolean }> {
   return { synced: false };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
