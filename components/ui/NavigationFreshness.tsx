@@ -7,12 +7,14 @@ import { usePathname, useRouter } from "next/navigation";
 export function NavigationFreshness() {
   const pathname = usePathname();
   const router = useRouter();
-  const checkedAt = useRef(Date.now());
+  const mountedAt = useRef(Date.now());
+  const checkedAt = useRef(new Map<string, number>());
   useEffect(() => {
     const privatePage = /^\/(boiler|teams|settings)(\/|$)/.test(pathname);
     const refresh = (force = false) => {
-      if (privatePage && (force || Date.now() - checkedAt.current >= 30_000)) {
-        checkedAt.current = Date.now();
+      const lastCheck = checkedAt.current.get(pathname) ?? mountedAt.current;
+      if (privatePage && (force || Date.now() - lastCheck >= 30_000)) {
+        checkedAt.current.set(pathname, Date.now());
         router.refresh();
       }
     };
