@@ -3,6 +3,7 @@ import { requireUser } from "@/app/api/me/_lib/http";
 import { MAX_CHAT_BODY, parseChatBody } from "@/lib/pip/contracts";
 import { assignmentContext } from "@/lib/pip/context";
 import { askGemini } from "@/lib/pip/gemini";
+import { pipFailure, type PipStage } from "@/lib/pip/failure";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,6 +28,7 @@ async function boundedBody(request: Request): Promise<string | null> {
 }
 
 export async function POST(request: Request) {
+  let stage: PipStage = "setup";
   try {
     const origin = request.headers.get("origin");
     if (origin && origin !== new URL(request.url).origin) return error("This request could not be verified.", 403);
@@ -43,11 +45,14 @@ export async function POST(request: Request) {
     const { data: quota, error: quotaError } = await auth.supabase.rpc("pip_chat_take_quota");
     if (quotaError || !quota || typeof quota.allowed !== "boolean") return error("Pip chat is temporarily unavailable. Please try again later.", 503);
     if (!quota.allowed) return error("You’ve reached Pip’s chat limit. Please try again later.", 429, { "Retry-After": String(Math.max(1, Math.min(86400, Number(quota.retryAfter) || 60))) });
+    stage = "assignments";
     const context = await assignmentContext(auth.supabase, auth.user.id, chat.timeZone);
+    stage = "gemini";
     const reply = await askGemini(chat.messages, context, request.signal);
     return NextResponse.json({ reply, asOf: context.asOf }, { headers });
-  } catch {
-    // Do not log provider errors: they can include prompts, assignment data, or credentials.
+  } catch (failure) {
+    // Provider error objects can include prompts, assignment data, or credentials.
+    console.warn("[pip] chat failed", pipFailure(stage, failure));
     return error("Pip couldn’t answer right now. Your assignments are unchanged. Please try again.", 503);
   }
 }
