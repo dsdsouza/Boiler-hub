@@ -16,6 +16,8 @@ Regression coverage includes first-sync backlog preservation, completion credit 
 
 [Model defaults and rationale](pressure-model.md) records the retained 2/4/8 task sizes and K=8.5 scale. Final validation in an isolated copy of this change passed: **190 tests in 26 files, TypeScript, ESLint and a production build**. The UI source detector returned no findings. Temporary QA routes were removed before the build. The live domain requires deployment of staging.
 
+The final combined staging tree also retains the upstream Pip hero and QA infrastructure. It passed **236 tests, with 5 pre-existing quarantined expected failures**, TypeScript, ESLint and a production build. The old negative-credit browser assertion was updated, and completed-task resizing now has a normal regression case. The demo uses a manageable set of upcoming deadlines so its gauge has visible room for added work at every hour. Computer use rechecked the merged interface: the false-zero sample displayed 61, a new demo task changed 78 → 85, completion returned to 78, undo restored 85, and resizing the completed task kept 78. The merged demo fit a 320-pixel viewport without horizontal overflow or observed console errors. The remaining quarantined SQL/date/assignment-retry cases are documented in [QA automation](qa-automation.md).
+
 # QA status
 
 ## LMS import follow-up — October 24, 2026

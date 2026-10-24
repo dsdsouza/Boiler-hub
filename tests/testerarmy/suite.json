@@ -1,0 +1,752 @@
+{
+  "projectId": "0e6f9a8c-04c0-48df-9403-6652a305ca80",
+  "url": "https://boilerhub.work/",
+  "existingTests": [
+    {
+      "id": "e1e9ab65-63b4-42d6-a65e-3db42261d611",
+      "title": "Formula Weights",
+      "description": "From the public homepage, open \u201cCurious about the maths? See the formula and weights.\u201d Confirm that the destination visibly explains the pressure formula and its weights. No account is needed.",
+      "enabled": true,
+      "platform": "web",
+      "settings": {},
+      "steps": [
+        {
+          "type": "act",
+          "title": "Open the public homepage."
+        },
+        {
+          "type": "act",
+          "title": "Open \u201cCurious about the maths? See the formula and weights.\u201d"
+        },
+        {
+          "type": "assert",
+          "title": "Confirm the page explains the formula and its weights."
+        }
+      ],
+      "createdAt": "2026-10-24T16:40:51.423Z"
+    },
+    {
+      "id": "b7ce8517-b26c-4c17-9501-68e6fd7346c1",
+      "title": "Sharing Choices",
+      "description": "On the public homepage, review the \u201cShared on your terms\u201d explanation. Confirm that Hidden is the default and that the listed choices are Hidden, Lead only, and Everyone. This checks the visible explanation only, not a private setting change.",
+      "enabled": true,
+      "platform": "web",
+      "settings": {},
+      "steps": [
+        {
+          "type": "act",
+          "title": "Open the public homepage."
+        },
+        {
+          "type": "act",
+          "title": "Review the \u201cShared on your terms\u201d section."
+        },
+        {
+          "type": "assert",
+          "title": "Confirm Hidden is the default and all three sharing choices are listed."
+        }
+      ],
+      "createdAt": "2026-10-24T16:40:51.423Z"
+    },
+    {
+      "id": "62d859a2-0783-476e-b436-75296e5c0aba",
+      "title": "Boiler Task Flow",
+      "description": "Strictly verify creation and completion of an undated task in the seeded public demo. The formula documentation describes tasks without a due date. The 2026-10-24 run incorrectly passed after substituting Tomorrow; this version must fail if an undated task cannot be created. No authentication or real data changes.",
+      "enabled": true,
+      "platform": "web",
+      "settings": {},
+      "steps": [
+        {
+          "type": "act",
+          "title": "Open the no-sign-in demo at https://boilerhub.work/demo and note Maya\u2019s baseline pressure."
+        },
+        {
+          "type": "assert",
+          "title": "Verify that the New task form has a way to create a task without a due date. If the available Due choices are only Today, Tomorrow, In 3 days, and In a week, fail this step. Do not silently substitute a deadline or mark the requirement passed."
+        },
+        {
+          "type": "act",
+          "title": "Add a task titled TA QA undated task with no due date. Do not choose Tomorrow or any other deadline."
+        },
+        {
+          "type": "assert",
+          "title": "Verify TA QA undated task exists without a deadline and the pressure is greater than the recorded baseline."
+        },
+        {
+          "type": "act",
+          "title": "Mark TA QA undated task complete."
+        },
+        {
+          "type": "assert",
+          "title": "Verify the task is marked done and the pressure drops from its value before completion."
+        }
+      ],
+      "projectId": "0e6f9a8c-04c0-48df-9403-6652a305ca80",
+      "createdAt": "2026-10-24T16:40:51.423Z",
+      "updatedAt": "2026-10-24T16:48:09.780Z"
+    }
+  ],
+  "newGroups": [
+    {
+      "id": "59caf6b7-3d16-4006-b4d9-d9f90707d977",
+      "name": "Public site regression",
+      "tests": [
+        {
+          "id": "fdd1a4f0-22a3-4267-9be8-bdb15c786dd2",
+          "title": "Homepage pressure zones",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open the public homepage at https://boilerhub.work/."
+            },
+            {
+              "type": "act",
+              "title": "Use the Drag to add pressure slider to set the pressure to 25."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the interactive boiler shows pressure 25 with the Cool zone."
+            },
+            {
+              "type": "act",
+              "title": "Set the same pressure slider to 55."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the interactive boiler shows pressure 55 with the Working zone."
+            },
+            {
+              "type": "act",
+              "title": "Set the same pressure slider to 80."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the interactive boiler shows pressure 80 with the Hot zone."
+            },
+            {
+              "type": "act",
+              "title": "Set the same pressure slider to 95."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the interactive boiler shows pressure 95 with the Redline zone."
+            }
+          ]
+        },
+        {
+          "id": "4ea6d1fe-240a-4527-9955-acc7d57fa513",
+          "title": "Theme and sound control persistence",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open the public homepage and note the current light or dark theme."
+            },
+            {
+              "type": "act",
+              "title": "Toggle the theme using the theme button."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the visible theme changes and the theme button offers the opposite theme."
+            },
+            {
+              "type": "act",
+              "title": "Reload the page."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the chosen theme survives reload."
+            },
+            {
+              "type": "act",
+              "title": "Toggle Sound off to Sound on, then turn sound back off."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the final sound button reads Sound off and no page error is shown."
+            }
+          ]
+        },
+        {
+          "id": "97a4fa16-2ca0-43a5-af2f-d78e898dbb45",
+          "title": "Public navigation and privacy disclosures",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open the homepage and follow How it works from the header."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the page shows The formula, Weights, Zones, and Our privacy promise."
+            },
+            {
+              "type": "act",
+              "title": "Open Privacy from the footer."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Privacy explains read-only Google Calendar access, encrypted source links/tokens, what is stored, Hidden as the default per team, and how to request deletion. Do not send an email."
+            },
+            {
+              "type": "act",
+              "title": "Use the footer Try the demo link."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the no-sign-in demo opens with its demo-data notice and both Engine Room and Maya\u2019s boiler sections."
+            }
+          ]
+        },
+        {
+          "id": "8d7e779c-be23-4d06-a551-f47b89aa1ecc",
+          "title": "Signed-out private route boundaries",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "In the fresh signed-out browser open https://boilerhub.work/boiler. Do not complete Google sign-in."
+            },
+            {
+              "type": "assert",
+              "title": "Verify personal calendar data, tasks, and account settings are not exposed; show a usable sign-in screen or redirect rather than an internal error."
+            },
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/teams without signing in."
+            },
+            {
+              "type": "assert",
+              "title": "Verify private teams and members are not exposed and the user is directed to sign in without an internal error."
+            },
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/settings/sources without signing in."
+            },
+            {
+              "type": "assert",
+              "title": "Verify source links/tokens and private data are not exposed and sign-in is required without an internal error."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ba00198b-ba4c-440e-beb5-33d081c30ea3",
+      "name": "Demo workflow regression",
+      "tests": [
+        {
+          "id": "7dc2b7ff-81c2-4574-87e5-e11115ca0658",
+          "title": "Demo task add complete and undo",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "assert",
+              "title": "Note Maya\u2019s current pressure and the baseline task list."
+            },
+            {
+              "type": "act",
+              "title": "Add a manual task named TA QA lifecycle with size M and due Tomorrow."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task appears once, its title and due date are correct, and Maya\u2019s pressure is higher than the baseline."
+            },
+            {
+              "type": "act",
+              "title": "Mark TA QA lifecycle complete."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task is marked done, indicates steam vented, and Maya\u2019s pressure is lower than immediately before completion."
+            },
+            {
+              "type": "act",
+              "title": "Mark TA QA lifecycle not done again."
+            },
+            {
+              "type": "assert",
+              "title": "Verify it returns to an incomplete task and pressure rises back to the same value seen just after creation."
+            }
+          ]
+        },
+        {
+          "id": "e1e6ce76-ef9d-4006-8351-e3a2a7a4e852",
+          "title": "Demo task size and deadline weighting",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "act",
+              "title": "Add a manual task named TA QA weight check with size S and due In a week."
+            },
+            {
+              "type": "assert",
+              "title": "Record the pressure and contribution of the new S task."
+            },
+            {
+              "type": "act",
+              "title": "Change the size of TA QA weight check from S to L using that task\u2019s size control."
+            },
+            {
+              "type": "assert",
+              "title": "Verify its selected size is L and its contribution and overall pressure increase."
+            },
+            {
+              "type": "act",
+              "title": "Change its size back to S."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task contribution and pressure return to the values recorded with size S."
+            }
+          ]
+        },
+        {
+          "id": "73bc4ac5-1229-4cd9-bd0e-6b28229d1a33",
+          "title": "Demo task empty input and literal text validation",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "act",
+              "title": "Clear New task and attempt to add an empty task."
+            },
+            {
+              "type": "assert",
+              "title": "Verify no blank task is created and the task list and pressure do not change."
+            },
+            {
+              "type": "act",
+              "title": "Enter only spaces in New task and attempt to add it."
+            },
+            {
+              "type": "assert",
+              "title": "Verify no whitespace-only task is created and pressure does not change."
+            },
+            {
+              "type": "act",
+              "title": "Add a task with the literal title <b>TA QA literal & Unicode \u2713</b>, size S, due In a week."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the new task title is shown as literal text with its angle brackets and Unicode intact, without interpreting the title as HTML or showing a page error."
+            }
+          ]
+        },
+        {
+          "id": "c09b01f9-b69d-40a6-9fd9-440090b57260",
+          "title": "Demo event weight tuning and restoration",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "assert",
+              "title": "Record Maya\u2019s pressure and Design review contribution with its initial Heavy default weight."
+            },
+            {
+              "type": "act",
+              "title": "In Weight for Design review choose Light."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Light is selected and Design review\u2019s contribution and overall pressure decrease."
+            },
+            {
+              "type": "act",
+              "title": "In Weight for Design review choose Normal."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the contribution and pressure are between the Light and original Heavy values."
+            },
+            {
+              "type": "act",
+              "title": "Restore Design review to Heavy (default)."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the contribution and pressure return to their initial values."
+            }
+          ]
+        },
+        {
+          "id": "d99999c2-c541-40e6-bf62-65b1d36cbd82",
+          "title": "Demo status and note do not alter score",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "assert",
+              "title": "Record Maya\u2019s current pressure and selected status."
+            },
+            {
+              "type": "act",
+              "title": "Change Maya\u2019s status to Running hot."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Running hot is selected and the boiler\u2019s accessible status updates while the pressure number stays unchanged."
+            },
+            {
+              "type": "act",
+              "title": "Change Maya\u2019s status to Away and replace the status note with TA QA status note \u2713."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Away is selected, the note is visible, and pressure remains at the baseline."
+            },
+            {
+              "type": "act",
+              "title": "Restore Heads down and the status note Shipping v2 onboarding."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the original status and note are restored and pressure is still unchanged."
+            }
+          ]
+        },
+        {
+          "id": "920f138b-e56b-4178-a1b4-077f7ce95847",
+          "title": "Demo team zone filters and anonymous hidden members",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "act",
+              "title": "Select AP Bio P3 and the All filter in the Engine Room."
+            },
+            {
+              "type": "assert",
+              "title": "Verify it identifies 10 students, renders 8 visible student cards, and shows only an anonymous count for the 2 hidden students."
+            },
+            {
+              "type": "act",
+              "title": "Filter AP Bio P3 to Redline."
+            },
+            {
+              "type": "assert",
+              "title": "Verify every shown student is Redline with pressure 90 through 100 and the number of cards matches the Redline filter count."
+            },
+            {
+              "type": "act",
+              "title": "Select the Cool filter."
+            },
+            {
+              "type": "assert",
+              "title": "Verify it handles zero matching students with a clear empty state and no unrelated student cards."
+            },
+            {
+              "type": "act",
+              "title": "Switch to Product Squad and choose All."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the work-team heading and Lead role appear, 6 member cards are visible, and the filter counts match the visible pressure zones. Interpret card pressure as assignment preview where shown."
+            }
+          ]
+        },
+        {
+          "id": "c06563f7-396c-46bd-b1d4-3b663fce987e",
+          "title": "Demo assignment preview and post isolation",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "act",
+              "title": "Select AP Bio P3. In New assignment set Title to TA QA assignment preview, Size to S and keep Due Tomorrow."
+            },
+            {
+              "type": "assert",
+              "title": "Record the preview scores and verify the Post button names 10 students including the anonymous hidden count."
+            },
+            {
+              "type": "act",
+              "title": "Change the assignment Size from S to L."
+            },
+            {
+              "type": "assert",
+              "title": "Verify preview scores never decrease and the summary of zone transitions agrees with the visible before/after numbers. Hidden students must remain anonymous."
+            },
+            {
+              "type": "act",
+              "title": "Post TA QA assignment preview to the seeded demo class only."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the demo gives clear feedback for the post, with no sign-in requirement or server error, and any stated post/reset behavior is consistent with the displayed preview. Do not infer persistence in the demo."
+            },
+            {
+              "type": "screenshot",
+              "title": "Capture the final state."
+            }
+          ]
+        },
+        {
+          "id": "d75e3d01-aa4a-48f2-8c7f-6df1d2f53e68",
+          "title": "Demo forecast consistency and reload reset",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the forecast has seven days; Today equals Maya\u2019s main pressure and each day\u2019s score matches its Cool/Working/Hot/Redline zone."
+            },
+            {
+              "type": "act",
+              "title": "Add a task named TA QA reset check with size L and due Today."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task appears, Maya\u2019s pressure increases, and the forecast Today score agrees with the updated main gauge."
+            },
+            {
+              "type": "act",
+              "title": "Reload the demo."
+            },
+            {
+              "type": "assert",
+              "title": "Verify TA QA reset check is gone and the seeded tasks, pressure, and forecast are restored, consistent with Nothing you do here is saved."
+            }
+          ]
+        },
+        {
+          "id": "92118648-8e3e-4f37-b270-6403bdec9a64",
+          "title": "Pip customization show and hide controls",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "act",
+              "title": "Open Pip\u2019s Dress up controls and select Top hat."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Top hat is selected as the only accessory and the visible companion reflects it without changing Maya\u2019s pressure."
+            },
+            {
+              "type": "act",
+              "title": "Select Goggles and then Done."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the customization panel closes and Goggles replaces the previous accessory."
+            },
+            {
+              "type": "act",
+              "title": "Use Hide Pip."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Pip is hidden and a discoverable control can show the companion again."
+            },
+            {
+              "type": "act",
+              "title": "Use the visible control to show Pip again."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Pip returns without losing the selected accessory or changing Maya\u2019s pressure."
+            }
+          ]
+        },
+        {
+          "id": "52655710-f6af-4d88-b262-396ba34c5b37",
+          "title": "Demo personal status synchronizes with team card",
+          "viewport": "desktop",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo and select Product Squad in the Engine Room. Use only the seeded demo; do not sign in."
+            },
+            {
+              "type": "act",
+              "title": "In Maya\u2019s boiler change Status note (shown to your teams) to TA QA sync verification and choose Away."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Maya\u2019s personal boiler shows the new note and Away status, and the note reports Saved."
+            },
+            {
+              "type": "assert",
+              "title": "Verify Maya\u2019s member card in Product Squad shows TA QA sync verification and Away. Fail if it still shows Shipping v2 onboarding or Heads down; do not accept the personal boiler alone as proof of team synchronization."
+            },
+            {
+              "type": "screenshot",
+              "title": "Capture Maya\u2019s team card after the status edit."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aafd164e-f216-4838-9e13-809f52a79bd4",
+      "name": "Mobile and tablet regression",
+      "tests": [
+        {
+          "id": "54b5896c-67e0-4788-9083-ef00c52986ef",
+          "title": "Mobile public navigation and pressure interaction",
+          "viewport": "mobile",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open the public homepage on the configured mobile viewport."
+            },
+            {
+              "type": "javascript",
+              "title": "Check homepage fits mobile width",
+              "code": "const width=window.innerWidth; const actual=document.documentElement.scrollWidth; if(actual>width+2) throw new Error('Page overflows horizontally: '+actual+'px at '+width+'px viewport'); return {viewportWidth:width,documentWidth:actual};"
+            },
+            {
+              "type": "act",
+              "title": "Use Drag to add pressure to move the pressure near the maximum."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the slider is usable, the boiler reaches Redline, and controls are not clipped or covered."
+            },
+            {
+              "type": "act",
+              "title": "Use the visible How it works navigation."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the formula and weight table are readable on mobile, with any wide content safely scrollable within its own container."
+            },
+            {
+              "type": "act",
+              "title": "Use Try the demo."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the demo opens without sign-in and its section navigation remains usable."
+            },
+            {
+              "type": "screenshot",
+              "title": "Capture the final state."
+            }
+          ]
+        },
+        {
+          "id": "9c1a8c03-fa86-410e-83bb-b06544fa2554",
+          "title": "Mobile demo tasks filters and keyboard access",
+          "viewport": "mobile",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "javascript",
+              "title": "Check demo fits mobile width",
+              "code": "const width=window.innerWidth; const actual=document.documentElement.scrollWidth; if(actual>width+2) throw new Error('Page overflows horizontally: '+actual+'px at '+width+'px viewport'); return {viewportWidth:width,documentWidth:actual};"
+            },
+            {
+              "type": "act",
+              "title": "Select Product Squad and filter to Redline."
+            },
+            {
+              "type": "assert",
+              "title": "Verify only Redline member cards are visible and no filter or team control is clipped."
+            },
+            {
+              "type": "act",
+              "title": "Go to Maya\u2019s boiler and add TA QA mobile task with size S and due Tomorrow."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task appears once and the New task, Size, Due, and Add task controls remain usable at mobile width."
+            },
+            {
+              "type": "act",
+              "title": "Complete TA QA mobile task."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the task shows done and the pressure drops."
+            },
+            {
+              "type": "screenshot",
+              "title": "Capture the final state."
+            }
+          ]
+        },
+        {
+          "id": "2249d24d-64e4-44e9-abc2-c76c510774ba",
+          "title": "Tablet assignment preview and breakdown layout",
+          "viewport": "tablet",
+          "steps": [
+            {
+              "type": "act",
+              "title": "Open https://boilerhub.work/demo. Use the seeded demo only; no sign-in is needed."
+            },
+            {
+              "type": "javascript",
+              "title": "Check demo fits tablet width",
+              "code": "const width=window.innerWidth; const actual=document.documentElement.scrollWidth; if(actual>width+2) throw new Error('Page overflows horizontally: '+actual+'px at '+width+'px viewport'); return {viewportWidth:width,documentWidth:actual};"
+            },
+            {
+              "type": "act",
+              "title": "In AP Bio P3 change the demo assignment Size from L to S."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the full assignment form, pressure preview, Post button, and member cards are readable and usable without overlapping."
+            },
+            {
+              "type": "act",
+              "title": "Go to Maya\u2019s boiler and expand Show all in Why is my needle here?."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the full breakdown shows positive unfinished event/task contributions, no negative completion credits, and operable Light/Normal/Heavy and Apply to series controls."
+            },
+            {
+              "type": "act",
+              "title": "Collapse the breakdown with Show fewer."
+            },
+            {
+              "type": "assert",
+              "title": "Verify the breakdown collapses and leaves Tasks and forecast accessible."
+            },
+            {
+              "type": "screenshot",
+              "title": "Capture the final state."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "newTestExecution": "Not run: free plan monthly run quota."
+}
