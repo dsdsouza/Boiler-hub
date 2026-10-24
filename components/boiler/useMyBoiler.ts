@@ -91,6 +91,13 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     [mutate],
   );
 
+  // Demo team posts share the same owner state as manual tasks. No server write.
+  const addDemoAssignment = useCallback((task: NewTask) => {
+    if (source !== "fixture") return;
+    const id = `demo-assignment-${Date.now()}-${seq.current++}`;
+    setData((d) => d ? S.addTask(d, task, id, new Date(), "team") : d);
+  }, [source]);
+
   const setTaskDone = useCallback(
     (id: string, done: boolean) => {
       const current = dataRef.current;
@@ -201,7 +208,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     }
   }, [source]);
 
-  return { source, data, error, syncing, vent, addTask, setTaskDone, setTaskSize, removeTask, clearOverdue, setEventWeight, setStatus, refresh };
+  return { source, data, error, syncing, vent, addTask, addDemoAssignment, setTaskDone, setTaskSize, removeTask, clearOverdue, setEventWeight, setStatus, refresh };
 }
 
 export type MyBoiler = ReturnType<typeof useMyBoiler>;

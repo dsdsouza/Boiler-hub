@@ -32,7 +32,7 @@ export function BoilerTile({
 
   return (
     <article
-      className={`flex flex-col gap-3 rounded-xl bg-surface p-3 min-[400px]:p-[18px] sm:p-[18px] shadow-(--shadow) ${moved ? "border-2" : "border border-line"}`}
+      className={`flex min-w-0 flex-col gap-3 rounded-xl bg-surface p-3 min-[400px]:p-[18px] sm:p-[18px] shadow-(--shadow) ${moved ? "border-2" : "border border-line"}`}
       style={moved ? { borderColor: ZONE_FILL[zone] } : undefined}
     >
       <div className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export function BoilerTile({
         <ZoneBadge zone={zone} size="sm" />
         {preview !== undefined && preview !== card.score && <span className="font-mono text-xs text-muted">was {card.score}</span>}
       </div>
-      {card.statusNote && <p className="m-0 text-sm text-fg italic">“{card.statusNote}”</p>}
+      {card.statusNote && <p className="m-0 break-words text-sm text-fg italic">“{card.statusNote}”</p>}
       <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 border-t border-line pt-2.5 text-[13px] text-muted">
         <CountBadges counts={card.counts} teamType={teamType} />
         <span suppressHydrationWarning>

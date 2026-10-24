@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Size, Zone } from "@/lib/types";
 import { BoilerTile } from "@/components/boiler/BoilerTile";
 import { demoTeams, mayaUserId, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
-import type { MyBoilerData } from "@/components/boiler/boilerState";
+import type { MyBoilerData, NewTask } from "@/components/boiler/boilerState";
 import { safeHiddenCount } from "@/app/api/teams/_lib/assignment";
 import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/lib/pressure";
 import { Button } from "@/components/ui/Button";
@@ -55,11 +55,12 @@ function chip(on: boolean) {
   }`;
 }
 
-export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) {
+export function DemoEngineRoom({ personal, onAssign }: { personal: MyBoilerData | null; onAssign: (task: NewTask) => void }) {
   const [storedTeams, setTeams] = useState<DemoTeam[]>(demoTeams);
-  const teams = storedTeams.map((t) => ({ ...t, boilers: t.boilers.map((b) =>
-    personal && b.userId === mayaUserId ? { ...b, status: personal.status, statusNote: personal.statusNote } : b,
-  ) }));
+  const teams = useMemo(() => storedTeams.map((t) => ({ ...t, boilers: t.boilers.map((b) =>
+    personal && b.userId === mayaUserId ? { ...b, raw: personal.result.raw, score: personal.result.score, zone: personal.result.zone,
+      counts: personal.result.counts, updatedAt: personal.syncedAt, status: personal.status, statusNote: personal.statusNote } : b,
+  ) })), [storedTeams, personal]);
   const [teamIdx, setTeamIdx] = useState(1);
   const [filter, setFilter] = useState<Zone | "all">("all");
   const team = teams[teamIdx]!;
@@ -116,6 +117,7 @@ export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) 
   const post = () => {
     const at = new Date();
     const add = (raw: number) => raw + taskPoints({ due, size }, at);
+    if (team.boilers.some((b) => b.userId === mayaUserId)) onAssign({ title: title.trim(), due, size });
     setTeams((all) =>
       all.map((t, i) =>
         i !== teamIdx
@@ -123,6 +125,8 @@ export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) 
           : {
               ...t,
               boilers: t.boilers.map((b) => {
+                // Maya's assignment is computed from her real demo load items.
+                if (b.userId === mayaUserId) return b;
                 const raw = add(b.raw);
                 const score = scoreFromRaw(raw);
                 return { ...b, raw, score, zone: zoneOf(score), counts: { ...b.counts, tasksDue: b.counts.tasksDue + 1 }, updatedAt: at.toISOString() };
@@ -196,6 +200,7 @@ export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) 
                 <input
                   id="at"
                   type="text"
+                  maxLength={200}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg"
@@ -276,7 +281,7 @@ export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) 
             <div role="status" className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5 rounded-[10px] border border-zone-cool bg-bg p-4">
                 <div className="font-display text-[28px] tracking-[0.03em] text-cool-ink">Posted</div>
-                <p className="m-0 text-sm leading-normal text-body">
+                <p className="m-0 break-words text-sm leading-normal text-body">
                   “{posted}” is now on every {n.member}’s task list, and their boilers have updated.
                 </p>
               </div>
