@@ -17,9 +17,14 @@ export const deploymentRecovery = `(() => {
       .then((response) => { if (!leaving && response.status >= 400) recover(); })
       .catch(() => {});
   }
+
   function recover() {
-    if (recovering) return;
+    if (recovering || leaving) return;
     recovering = true;
+    // A canceled request from a departing document is not a broken deployment.
+    // Let its unload event run before deciding whether this document should retry.
+    setTimeout(() => {
+    if (leaving) return;
     const key = 'boilerplate:asset-recovery';
     const now = Date.now();
     let previous = Number(new URL(location.href).searchParams.get('__boiler_reload')) || 0;
@@ -43,6 +48,7 @@ export const deploymentRecovery = `(() => {
       }
       if (document.body) notice(); else addEventListener('DOMContentLoaded', notice, { once: true });
     }
+    }, 0);
   }
   addEventListener('error', (event) => {
     const element = event.target;

@@ -1,0 +1,18 @@
+These unmodified WOFF2 subsets were fetched by next/font/google in a successful
+Next.js 15.5.28 production build on 2026-10-24 and are bundled to keep production
+builds independent of Google Fonts availability and response formats.
+
+Bebas Neue (400): 6c25f6e897d845a3, 8b44c7e6549520b2
+Inter (variable 100-900): 19cfc7226ec3afaa, 21350d82a1f187e9,
+  8e9860b6e62d6359, ba9851c3c22cd980, c5fe6dc8356a8c31,
+  df0a9ae256c0569c, e4af272ccee01ff0
+JetBrains Mono (variable; used at 500/700): 558ca1a6aa3cb55e,
+  64d784ea54a4acde, 6d831b18ae5b01dc, ac0e76ddaeeb7981,
+  edc640959b0c7826, ff71da380fbe67dd
+
+The accompanying OFL license files come from the upstream Google Fonts repository:
+https://github.com/google/fonts/tree/main/ofl/bebasneue
+https://github.com/google/fonts/tree/main/ofl/inter
+https://github.com/google/fonts/tree/main/ofl/jetbrainsmono
+
+app/fonts.css preserves every original Unicode subset, weight and fallback metric.

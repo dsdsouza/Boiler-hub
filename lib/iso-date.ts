@@ -1,9 +1,9 @@
 /** An explicit ISO date-time, with a real calendar date and a timezone. */
 export function parseISODate(value: unknown): string | false {
   if (typeof value !== "string") return false;
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(value);
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(value);
   if (!m) return false;
-  const [, y, mo, d, h, mi, s, , oh = "0", om = "0"] = m;
+  const [, y, mo, d, h, mi, s = "0", , oh = "0", om = "0"] = m;
   const year = +y, month = +mo, day = +d;
   const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
   const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];

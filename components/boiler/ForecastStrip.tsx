@@ -29,8 +29,8 @@ export function ForecastStrip({ days, compact }: { days: ForecastDay[]; compact?
             className={`flex w-full items-end overflow-hidden bg-surface-2 ${compact ? "h-[60px] rounded" : "h-[100px] max-w-11 rounded-md"}`}
           >
             <div
-              className="w-full transition-[height] duration-500 ease-out motion-reduce:transition-none"
-              style={{ height: `${Math.max(4, d.score)}%`, backgroundColor: ZONE_FILL[d.zone] }}
+              className="bp-progress-fill h-full w-full"
+              style={{ transform: `scaleY(${Math.max(4, d.score) / 100})`, backgroundColor: ZONE_FILL[d.zone] }}
             />
           </div>
           <span aria-hidden="true" className={`text-xs ${i === 0 ? "font-bold text-fg" : "font-medium text-muted"} ${compact ? "text-[11px]" : ""}`}>

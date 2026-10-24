@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { DemoPlayground } from "./DemoPlayground";
+import { DemoContent } from "./DemoContent";
 
 export const metadata: Metadata = {
   title: "Demo · Boilerplate",
@@ -46,7 +46,7 @@ export default function DemoPage() {
       </nav>
 
       <main className="mx-auto flex max-w-[1320px] flex-col gap-16 px-4 pt-7 pb-16 sm:px-8">
-        <DemoPlayground />
+        <DemoContent />
       </main>
     </div>
   );

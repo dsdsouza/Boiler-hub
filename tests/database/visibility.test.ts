@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import { PGlite } from '@electric-sql/pglite';
+import type { PGlite } from '@electric-sql/pglite';
+import { createDatabase } from './database';
 import { accountBank, uuidFor } from '../../scripts/qa/accounts.mjs';
 
 const bank = accountBank('database');
@@ -9,24 +10,7 @@ const sqlFile = (path: string) => readFile(new URL(`../../${path}`, import.meta.
 const iso = new Date('2026-10-24T12:00:00Z');
 
 beforeAll(async () => {
-  db = new PGlite();
-  await db.exec(`
-    create role anon; create role authenticated; create role service_role bypassrls;
-    create schema auth;
-    create table auth.users (id uuid primary key, instance_id uuid, aud text, role text,
-      email text unique, raw_user_meta_data jsonb default '{}'::jsonb);
-    create function auth.uid() returns uuid language sql stable as $$
-      select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
-        nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
-    $$;
-    grant usage on schema auth, public to anon, authenticated, service_role;
-    grant execute on function auth.uid() to anon, authenticated, service_role;
-    alter default privileges in schema public grant all on tables to authenticated, service_role;
-    alter default privileges in schema public grant all on sequences to authenticated, service_role;
-  `);
-  for (const file of ['0001_init.sql', '0002_sources.sql', '0003_assignment_client_key.sql', '0004_calendar_subscriptions.sql', '0005_hidden_count_privacy.sql', '0006_atomic_assignments.sql', '0007_assignment_snapshot_comparison.sql']) {
-    await db.exec(await sqlFile(`supabase/migrations/${file}`));
-  }
+  db = await createDatabase();
   for (const user of bank.users) {
     await db.query('insert into auth.users (id,email,raw_user_meta_data) values ($1,$2,$3)',
       [user.id, user.email, JSON.stringify({ full_name: user.name })]);
@@ -82,6 +66,9 @@ describe('32 real SQL identities against the shipped RLS policies', () => {
           const expected = actor.team !== team.key ? [] : bank.users.filter((target) => target.team === team.key &&
             (target.id === actor.id || target.visibility === 'everyone' || (actor.role === 'lead' && target.visibility === 'lead'))).map((u) => u.id);
           expect(result.rows.map((r) => r.user_id).sort()).toEqual(expected.sort());
+          const hidden = await db.query<{ count: number }>('select team_hidden_count($1) as count', [team.id]);
+          const hiddenOthers = bank.users.filter((u) => u.team === team.key && u.visibility === 'hidden' && u.id !== actor.id).length;
+          expect(hidden.rows[0].count).toBe(actor.team === team.key && actor.role === 'lead' && hiddenOthers >= 2 ? hiddenOthers : 0);
         }
         const other = bank.users.find((u) => u.id !== actor.id)!;
         const write = await db.query("update tasks set title='unauthorized' where owner_id=$1 returning id", [other.id]);
@@ -94,7 +81,7 @@ describe('32 real SQL identities against the shipped RLS policies', () => {
     try { await db.exec(await sqlFile('supabase/tests/teams_visibility.sql')); }
     finally { await db.exec('rollback'); }
   });
-  it('runs the calendar-subscription token isolation SQL contract', async () => {
+  it('runs the calendar subscription ownership and revocation contract', async () => {
     try { await db.exec(await sqlFile('supabase/tests/calendar_subscriptions.sql')); }
     finally { await db.exec('rollback'); }
   });
@@ -142,7 +129,6 @@ describe('32 real SQL identities against the shipped RLS policies', () => {
   });
 });
 
-// These exercise the actual PostgreSQL transaction, including a failure in its middle.
 describe('QA-006 atomic assignment posts', () => {
   const team = bank.teams[0];
   const lead = bank.users.find((u) => u.team === team.key && u.role === 'lead')!;

@@ -53,7 +53,7 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
   );
 
   return (
-    <main className="mx-auto flex max-w-[1320px] flex-col gap-[22px] px-4 pb-16 pt-7 sm:px-8">
+    <main className="mx-auto flex max-w-[1320px] flex-col gap-[22px] px-4 pb-24 pt-7 sm:px-8 sm:pb-16">
       <Link href="/teams" className="inline-flex min-h-11 items-center self-start text-sm" style={{ color: C.brassLight }}>
         ← My Teams
       </Link>
