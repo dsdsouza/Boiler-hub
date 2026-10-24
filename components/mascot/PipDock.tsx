@@ -6,7 +6,6 @@ import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { LinkButton } from "@/components/ui/Button";
 import { readStorage } from "@/components/ui/storage";
-import { ZONE_LABEL } from "@/components/ui/zones";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
 import { PipChat } from "./PipChat";
@@ -127,11 +126,6 @@ export function PipDock() {
           <div className="flex shrink-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">
               <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with {MASCOT_NAME}</h2>
-              {snap && (
-                <span className="font-mono text-[11px] tracking-[0.14em] text-muted uppercase">
-                  {ZONE_LABEL[snap.zone]} {snap.score}
-                </span>
-              )}
             </div>
             <button
               type="button"
