@@ -9,6 +9,23 @@ export const maxDuration = 60;
 const headers = { "Cache-Control": "private, no-store" };
 const error = (message: string, status: number, extra?: Record<string, string>) => NextResponse.json({ error: message }, { status, headers: { ...headers, ...extra } });
 
+async function boundedBody(request: Request): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > MAX_CHAT_BODY) { await reader.cancel(); return null; }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  return Buffer.concat(chunks, length).toString("utf8");
+}
+
 export async function POST(request: Request) {
   try {
     const origin = request.headers.get("origin");
@@ -16,8 +33,8 @@ export async function POST(request: Request) {
     const auth = await requireUser();
     if (auth instanceof NextResponse) return error("Sign in to chat with Pip about your assignments.", 401);
     if (!request.headers.get("content-type")?.startsWith("application/json")) return error("Send a text message to Pip.", 400);
-    const raw = await request.text();
-    if (Buffer.byteLength(raw) > MAX_CHAT_BODY) return error("This conversation is too long. Start a new chat.", 413);
+    const raw = await boundedBody(request);
+    if (raw === null) return error("This conversation is too long. Start a new chat.", 413);
     let body: unknown;
     try { body = JSON.parse(raw); } catch { return error("That message could not be read.", 400); }
     const chat = parseChatBody(body);
