@@ -2,9 +2,16 @@
 // One cache-bypassing reload per five minutes, then an explicit retry link.
 export const deploymentRecovery = `(() => {
   let recovering = false;
+  let leaving = false;
+  addEventListener('beforeunload', () => { leaving = true; });
+  addEventListener('pagehide', () => { leaving = true; });
   function recover() {
-    if (recovering) return;
+    if (recovering || leaving) return;
     recovering = true;
+    // A canceled request from a departing document is not a broken deployment.
+    // Let its unload event run before deciding whether this document should retry.
+    setTimeout(() => {
+    if (leaving) return;
     const key = 'boilerplate:asset-recovery';
     const now = Date.now();
     let previous = Number(new URL(location.href).searchParams.get('__boiler_reload')) || 0;
@@ -28,6 +35,7 @@ export const deploymentRecovery = `(() => {
       }
       if (document.body) notice(); else addEventListener('DOMContentLoaded', notice, { once: true });
     }
+    }, 0);
   }
   addEventListener('error', (event) => {
     const element = event.target;
