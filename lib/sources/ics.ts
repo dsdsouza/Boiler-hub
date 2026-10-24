@@ -9,8 +9,11 @@ import { SourceError, sourceItemId, type AdapterSource, type SourceAdapter, type
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Deadlines overdue by up to this many days still count (as overdue tasks). */
-export const OVERDUE_DAYS = 14;
+/**
+ * Deadlines overdue by up to this many days are listed. Past OVERDUE_STALE_DAYS (14) they no longer
+ * add pressure and show as stale until marked done; a new feed's backlog is cleared on its first sync.
+ */
+export const LOOKBACK_DAYS = 60;
 
 const DEADLINE_RE = /\b(due|assignments?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?)\b/i;
 // Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
@@ -49,7 +52,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
 
   const t = opts.now.getTime();
   const feedZone = validZone(cal.vcalendar?.["WR-TIMEZONE"]) ?? opts.timeZone;
-  const from = new Date(t - (OVERDUE_DAYS + 1) * DAY_MS);
+  const from = new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
   const to = new Date(t + (WINDOW_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
 
@@ -84,7 +87,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         const due = inst.isFullDay
           ? zonedTime(inst.start.getFullYear(), inst.start.getMonth() + 1, inst.start.getDate(), 23, 59, feedZone)
           : end;
-        if (due < t - OVERDUE_DAYS * DAY_MS || due > t + WINDOW_DAYS * DAY_MS) continue;
+        if (due < t - LOOKBACK_DAYS * DAY_MS || due > t + WINDOW_DAYS * DAY_MS) continue;
         items.push({
           id,
           kind: "task",

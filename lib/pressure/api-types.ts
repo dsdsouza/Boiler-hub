@@ -49,8 +49,12 @@ export interface OwnerEvent {
   release: boolean;
 }
 
-/** `reconnect`: Google tokens are missing or expired; the score uses tasks only and is not saved. */
-export type CalendarState = "ok" | "reconnect";
+/**
+ * `reconnect`: Google tokens are missing, revoked or expired; the user must sign in again.
+ * `unavailable`: Google failed some other way (outage, network); it usually recovers by itself.
+ * Both: the score uses tasks and sources only, and the snapshot is not saved.
+ */
+export type CalendarState = "ok" | "reconnect" | "unavailable";
 
 export interface BoilerResponse {
   result: PressureResult;
