@@ -6,7 +6,7 @@ import { C, DISPLAY, MONO } from "../_theme";
 import { api } from "./api";
 
 const input =
-  "min-h-11 w-full rounded-lg px-3 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2";
+  "min-h-11 w-full rounded-lg px-3 text-base outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2";
 const inputStyle = { backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight };
 const primary = `min-h-11 rounded-lg px-4 text-xl tracking-[0.05em] disabled:opacity-50 ${DISPLAY}`;
 const primaryStyle = { backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" };

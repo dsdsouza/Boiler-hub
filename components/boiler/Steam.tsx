@@ -38,6 +38,8 @@ interface SteamProps {
   vent: number;
   /** Increment to fire a whistle jet (crossed 90). */
   whistle: number;
+  /** Called when the boiler scrolls in or out of view, so the rest of it can pause too. */
+  onVisibility?: (visible: boolean) => void;
 }
 
 const MAX_PARTICLES = 160;
@@ -63,8 +65,10 @@ function toHex(color: string) {
   return "#ece6da";
 }
 
-export function Steam({ score, zone, level, active, vent, whistle }: SteamProps) {
+export function Steam({ score, zone, level, active, vent, whistle, onVisibility }: SteamProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const visibilityCb = useRef(onVisibility);
+  visibilityCb.current = onVisibility;
   // Latest props, read by the loop without restarting it.
   const live = useRef({ score, zone, level });
   const events = useRef({ vent, whistle, calmUntil: 0, jetUntil: 0 });
@@ -292,6 +296,7 @@ export function Steam({ score, zone, level, active, vent, whistle }: SteamProps)
     ro.observe(canvas);
     const io = new IntersectionObserver(([entry]) => {
       visible = !!entry?.isIntersecting;
+      visibilityCb.current?.(visible);
       if (visible) start();
       else stop();
     });
