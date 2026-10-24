@@ -1,6 +1,6 @@
 import type { LoadItem, Size, Status, Weight } from "@/lib/types";
 import type { BoilerResponse, OwnerEvent, Task } from "@/lib/pressure/api-types";
-import type { MyBoilerData, NewTask } from "./boilerState";
+import type { MyBoilerData, NewTask, TaskMeta } from "./boilerState";
 
 // Maps the engine's route shapes (lib/pressure/api-types.ts) onto My Boiler's view model, and the
 // view's actions onto the engine's request bodies. Pure, so it is unit tested.
@@ -13,7 +13,18 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     statusNote: res.status.note ?? "",
     syncedAt: res.computedAt,
     calendar: res.calendar,
+    sources: res.sources ?? [],
+    taskMeta: taskMeta(res.tasks),
   };
+}
+
+function taskMeta(tasks: Task[]): Record<string, TaskMeta> {
+  const out: Record<string, TaskMeta> = {};
+  for (const t of tasks) {
+    if (!t.sourceId || !t.itemKey) continue;
+    out[t.id] = { sourceId: t.sourceId, itemKey: t.itemKey, ...(t.sourceLabel ? { label: t.sourceLabel } : {}), ...(t.url ? { url: t.url } : {}) };
+  }
+  return out;
 }
 
 function eventItem(e: OwnerEvent): LoadItem {
@@ -51,6 +62,16 @@ export function newTaskBody(task: NewTask): { title: string; due_at?: string; si
 /** PATCH /api/tasks/[id] */
 export function taskDoneBody(done: boolean): { done: boolean } {
   return { done };
+}
+
+/** PATCH /api/sources/items: done and/or size for one source item. */
+export function sourceItemBody(meta: TaskMeta, patch: { done?: boolean; size?: Size }) {
+  return { sourceId: meta.sourceId, itemKey: meta.itemKey, ...patch };
+}
+
+/** PATCH /api/sources/items: clear several items without a vent. */
+export function clearItemsBody(metas: TaskMeta[]) {
+  return { items: metas.map((m) => ({ sourceId: m.sourceId, itemKey: m.itemKey })), clear: true as const };
 }
 
 /** PUT /api/event-weights. `weight: null` clears the override. */

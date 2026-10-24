@@ -6,6 +6,7 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
+import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { Boiler } from "./Boiler";
 import { Breakdown } from "./Breakdown";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
@@ -97,6 +98,7 @@ export function MyBoilerView({
       </div>
 
       {data.calendar === "reconnect" && <ReconnectBanner />}
+      {data.sources && <SourcesBanner sources={data.sources} />}
 
       {error && (
         <p role="alert" className="m-0 rounded-lg border border-redline-ink px-4 py-3 text-sm text-redline-ink">
@@ -165,6 +167,10 @@ export function MyBoilerView({
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}
             onAdd={(t) => void boiler.addTask(t)}
+            onSize={(id, size) => void boiler.setTaskSize(id, size)}
+            onClearOverdue={() => void boiler.clearOverdue()}
+            meta={data.taskMeta}
+            sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
         </div>
       </div>
