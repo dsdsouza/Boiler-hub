@@ -1,9 +1,9 @@
 import demo from "@/fixtures/demo.json";
-import type { BoilerCard, EngineRoom, LoadItem, PressureResult, Status, Zone } from "@/lib/types";
+import type { BoilerCard, EngineRoom, LoadItem, Status, Zone } from "@/lib/types";
 import type { MyBoilerData } from "./boilerState";
+import { computePressure } from "@/lib/pressure";
 
-// Typed views over fixtures/demo.json for the demo and for /boiler until the
-// engine's /api/me/boiler is wired.
+// Team snapshots for the demo. Maya's interactive gauge uses the real engine below.
 
 export type DemoBoiler = BoilerCard & { raw: number };
 export type DemoTeam = Omit<EngineRoom, "boilers"> & { boilers: DemoBoiler[]; hiddenRaw: number[] };
@@ -17,10 +17,6 @@ function at(now: Date, offsetMs: number, hour?: number) {
   const d = new Date(now.getTime() + offsetMs);
   if (hour !== undefined) d.setHours(hour, 0, 0, 0);
   return d.toISOString();
-}
-
-function ymd(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /**
@@ -50,18 +46,16 @@ function mayaItems(now: Date): LoadItem[] {
 }
 
 export function mayaBoiler(now: Date = new Date()): MyBoilerData {
-  const result = demo.maya.result as PressureResult;
+  const items = mayaItems(now);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const result = computePressure(items, now, { timeZone });
   const maya = demoTeams[0]!.boilers.find((b) => b.userId === demo.maya.userId)!;
   return {
     name: "Maya Chen",
     avatarUrl: null,
-    result: {
-      ...result,
-      contributions: result.contributions.map((c) => (c.itemId === "tsk-done-bugfix" ? { ...c, title: "Fix signup bug" } : c)),
-      // Re-date the strip so it always starts today.
-      forecast: result.forecast.map((f, i) => ({ ...f, date: ymd(new Date(now.getTime() + i * D)) })),
-    },
-    items: mayaItems(now),
+    result,
+    items,
+    timeZone,
     status: maya.status as Status,
     statusNote: maya.statusNote ?? "",
     syncedAt: new Date(now.getTime() - 4 * 60_000).toISOString(),

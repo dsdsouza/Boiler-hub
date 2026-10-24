@@ -42,14 +42,14 @@ describe("computePressure", () => {
     expect(scoreFromRaw(1e9)).toBe(100);
   });
 
-  it("focus time lowers the score", () => {
+  it("focus time adds no load and cannot cancel remaining work", () => {
     const base = managerWeek();
     const focus = event(1, 8.5, 1, "Focus time", { release: true });
     const before = computePressure(base, NOW);
     const after = computePressure([...base, focus], NOW);
-    expect(after.raw).toBeLessThan(before.raw);
-    expect(after.score).toBeLessThanOrEqual(before.score);
-    expect(after.contributions.find((c) => c.itemId === focus.id)?.points).toBeLessThan(0);
+    expect(after.raw).toBe(before.raw);
+    expect(after.score).toBe(before.score);
+    expect(after.contributions.find((c) => c.itemId === focus.id)).toBeUndefined();
     // Releases are not meetings.
     expect(after.counts.meetings).toBe(before.counts.meetings);
   });
@@ -60,17 +60,17 @@ describe("computePressure", () => {
     const open = computePressure([...others, essay], NOW);
     const done = computePressure([...others, { ...essay, doneAt: iso(-HOUR) }], NOW);
     expect(done.score).toBeLessThan(open.score);
-    expect(done.contributions.find((c) => c.itemId === essay.id)?.points).toBeLessThan(0);
+    expect(done.contributions.find((c) => c.itemId === essay.id)).toBeUndefined();
     expect(done.counts.tasksDue).toBe(open.counts.tasksDue - 1);
   });
 
-  it("completed-task release fades to 0 over 48h", () => {
+  it("completed tasks add no load or negative credit at any age", () => {
     const t = task("Old", "M", -3);
     const fresh = computePressure([{ ...t, doneAt: iso(0) }], NOW).raw;
     const half = computePressure([{ ...t, doneAt: iso(-24 * HOUR) }], NOW).raw;
     const gone = computePressure([{ ...t, doneAt: iso(-49 * HOUR) }], NOW);
-    expect(fresh).toBeCloseTo(-2);
-    expect(half).toBeCloseTo(-1);
+    expect(fresh).toBe(0);
+    expect(half).toBe(0);
     expect(gone.raw).toBe(0);
     expect(gone.contributions).toEqual([]);
   });
@@ -107,12 +107,12 @@ describe("computePressure", () => {
     expect(r.counts).toMatchObject({ tasksDue: 1, overdue: 1 });
   });
 
-  it("overdue tasks stop adding pressure after 14 days, and leave the counts", () => {
+  it("older overdue tasks keep a reduced backlog weight and remain counted", () => {
     expect(computePressure([task("13d late", "L", -13)], NOW).raw).toBe(24);
     const stale = computePressure([task("15d late", "L", -15)], NOW);
-    expect(stale.raw).toBe(0);
-    expect(stale.contributions).toEqual([]);
-    expect(stale.counts.overdue).toBe(0);
+    expect(stale.raw).toBe(4);
+    expect(stale.contributions[0]?.reason).toContain("older overdue backlog");
+    expect(stale.counts.overdue).toBe(1);
   });
 
   it("a task due right now says so", () => {

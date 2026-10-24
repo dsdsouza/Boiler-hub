@@ -21,11 +21,11 @@ describe("classifyIcs (Brightspace-style feed)", () => {
     expect(items.get("Midterm Exam")).toMatchObject({ kind: "task", size: "L", due: "2026-10-31T03:59:00.000Z" });
   });
 
-  it("lists deadlines overdue up to 60 days (stale past 14) and drops those more than 7 days out", () => {
+  it("lists overdue backlog and deadlines beyond the first week", () => {
     const items = byTitle(classify(true));
     expect(items.get("Problem Set 5 - Due")).toMatchObject({ kind: "task", size: "S", due: "2026-10-16T03:59:00.000Z" });
     expect(items.get("Reading Response 1 - Due")).toMatchObject({ kind: "task", due: "2026-10-01T03:59:00.000Z" }); // 25 days back: listed, stale
-    expect(items.has("Final Project Proposal - Due")).toBe(false); // 8.6 days out
+    expect(items.get("Final Project Proposal - Due")).toMatchObject({ kind: "task", due: "2026-11-04T03:59:00.000Z" }); // inside the two-week preparation window
   });
 
   it("other timed entries become events; Free, cancelled and ended ones are skipped", () => {

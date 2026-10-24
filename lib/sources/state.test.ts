@@ -35,7 +35,7 @@ describe("applyItemState", () => {
     ]);
   });
 
-  it("drops done items past the release window and keeps a source's own completion", () => {
+  it("normally drops older done items and keeps a source's own completion", () => {
     const old = task("old", "2026-10-20T00:00:00Z");
     const closed = task("gh", "2026-10-20T00:00:00Z", { doneAt: "2026-10-26T09:00:00Z" });
     const out = applyItemState([old, closed], [
@@ -43,9 +43,22 @@ describe("applyItemState", () => {
       { source_id: SRC, item_key: "gh", done_at: "2026-10-20T00:00:00Z", size_override: null },
     ], NOW);
     expect(out.map((i) => [i.itemKey, i.doneAt])).toEqual([["gh", "2026-10-26T09:00:00Z"]]);
+    expect(out[0]?.completedInSource).toBe(true);
   });
 
-  it("silent done marks vent nothing and leave the list", () => {
+  it("keeps legacy cleared work available for owner review and restoration", () => {
+    const late = task("late", "2026-10-20T00:00:00Z");
+    const mark = { source_id: SRC, item_key: "late", done_at: silentDoneAt(NOW), size_override: "L" as const };
+    const cleared = applyItemState([late], [mark], NOW, { includeCompleted: true });
+    expect(cleared).toHaveLength(1);
+    expect(computePressure(cleared, NOW).raw).toBe(0);
+    const restored = applyItemState([late], [{ ...mark, done_at: null }], NOW, { includeCompleted: true });
+    expect(restored[0]?.size).toBe("L");
+    expect(computePressure(restored, NOW).counts.overdue).toBe(1);
+    expect(computePressure(restored, NOW).raw).toBeGreaterThan(0);
+  });
+
+  it("legacy silent done marks add no credit and can be omitted from compact results", () => {
     const late = task("late", "2026-10-20T00:00:00Z");
     expect(overdueOpen([late, task("soon", "2026-10-27T00:00:00Z")], NOW).map((i) => i.itemKey)).toEqual(["late"]);
     const done_at = silentDoneAt(NOW);

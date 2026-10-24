@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { computePressure } from "@/lib/pressure/compute";
+import { toMyBoilerData } from "@/components/boiler/fromApi";
+import type { GoogleEvent } from "./calendar";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 vi.mock("server-only", () => ({}));
@@ -9,11 +12,11 @@ vi.mock("./client", () => ({
   GoogleReconnectError: class extends Error {},
   getAccessToken: async () => "token",
 }));
-const calendar = vi.hoisted(() => ({ fail: null as Error | null }));
+const calendar = vi.hoisted(() => ({ fail: null as Error | null, events: [] as GoogleEvent[] }));
 vi.mock("./calendar", () => ({
   fetchPrimaryEvents: async () => {
     if (calendar.fail) throw calendar.fail;
-    return { events: [], timeZone: "America/New_York" };
+    return { events: calendar.events, timeZone: "America/New_York" };
   },
 }));
 
@@ -81,6 +84,17 @@ const source = (id: string, url: string, extra: Record<string, unknown> = {}) =>
 });
 
 describe("syncUser with sources", () => {
+  it("preserves every event factor and the forecast zone through the owner response", async () => {
+    calendar.events = [{ id: "meeting", summary: "Organized review", start: { dateTime: "2026-10-27T12:00:00Z" }, end: { dateTime: "2026-10-27T14:00:00Z" }, organizer: { self: true }, attendees: Array.from({ length: 5 }, () => ({ responseStatus: "accepted" as const })) }];
+    try {
+      const { admin } = fakeAdmin({ profiles: [{ status: "open", status_note: null }] });
+      const res = await syncUser(admin, USER, NOW);
+      const view = toMyBoilerData(res);
+      expect(res.events[0]).toMatchObject({ attendees: 5, isOrganizer: true });
+      expect(view.timeZone).toBe("America/New_York");
+      expect(computePressure(view.items, NOW, { timeZone: view.timeZone })).toEqual(res.result);
+    } finally { calendar.events = []; }
+  });
   it("still computes when one source errors, marks it, and counts the healthy one", async () => {
     const { admin, writes } = fakeAdmin({
       tasks: [{ id: "t1", title: "Essay", due_at: "2026-10-28T17:00:00Z", size: "M", done_at: null, source: "manual", assignment_id: null }],
@@ -110,7 +124,7 @@ describe("syncUser with sources", () => {
     expect(writes.some((w) => w.table === "pressure_snapshots" && w.op === "upsert")).toBe(true);
   });
 
-  it("on a feed's first sync, clears its overdue backlog without a vent", async () => {
+  it("on a feed's first sync, preserves unfinished overdue work", async () => {
     const { admin, writes } = fakeAdmin({
       profiles: [{ status: "open", status_note: null }],
       sources: [source(GOOD, "https://school.example.com/feed.ics", { last_synced_at: null })],
@@ -118,11 +132,10 @@ describe("syncUser with sources", () => {
 
     const res = await syncUser(admin, USER, NOW, { freshSources: true });
 
-    const marks = writes.find((w) => w.table === "source_item_state" && w.op === "upsert")?.payload as { done_at: string }[];
-    expect(marks).toHaveLength(2); // Problem Set 5 (10 days overdue) and Reading Response 1 (25, stale)
-    expect(res.tasks.some((t) => t.title === "Problem Set 5 - Due")).toBe(false);
-    expect(res.tasks.some((t) => t.title === "Reading Response 1 - Due")).toBe(false);
-    expect(res.result.counts.overdue).toBe(0);
+    expect(writes.some((w) => w.table === "source_item_state")).toBe(false);
+    expect(res.tasks.find((t) => t.title === "Problem Set 5 - Due")?.doneAt).toBeNull();
+    expect(res.tasks.find((t) => t.title === "Reading Response 1 - Due")?.doneAt).toBeNull();
+    expect(res.result.counts.overdue).toBe(2);
     expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
   });
 
