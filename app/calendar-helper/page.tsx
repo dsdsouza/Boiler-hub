@@ -19,7 +19,7 @@ export default async function CalendarHelperPage() {
     <main className="mx-auto flex max-w-[860px] flex-col gap-6 px-4 pt-8 pb-16 sm:px-8">
       <div className="bp-arrive">
         <h1 className="m-0 font-display text-[44px] leading-none sm:text-[56px]">Find your school calendar</h1>
-        <p className="mt-3 mb-0 max-w-[65ch] text-base leading-relaxed text-muted">A browser helper for bringing school calendar links into Boiler Hub.</p>
+        <p className="mt-3 mb-0 max-w-[65ch] text-base leading-relaxed text-muted">Copy your school’s calendar subscription link into Boiler Hub. No extension required.</p>
       </div>
       <CalendarHelper signedIn={!!viewer} />
     </main>

@@ -81,18 +81,40 @@ export function CalendarHelper({ signedIn }: { signedIn: boolean }) {
       </Card>}
       <section aria-labelledby="helper-setup" className="border-t border-line pt-6">
         <h2 id="helper-setup" tabIndex={-1} className="mt-0 mb-3 font-display text-[30px] leading-none">Find a link in your browser</h2>
-        <p className="mt-0 mb-5 max-w-[65ch] text-base leading-relaxed text-body">Use the Calendar Finder in desktop Chrome or Edge. It checks the school page you choose for links in calendar dialogs, fields and menus.</p>
-        <LinkButton plain href="/downloads/boiler-calendar-helper.zip" download variant="primary">Download Calendar Finder</LinkButton>
-        <ol className="my-6 max-w-[70ch] list-decimal space-y-4 pl-5 text-[15px] leading-relaxed text-body marker:font-semibold marker:text-brass-ink">
-          <li><strong className="text-fg">Install the helper.</strong> Unzip the download. In Chrome, open <code className="text-sm text-brass-ink">chrome://extensions</code>; in Edge, <code className="text-sm text-brass-ink">edge://extensions</code>. Turn on Developer mode, choose <strong>Load unpacked</strong>, and select the <strong>boiler-calendar-helper</strong> folder.</li>
-          <li><strong className="text-fg">Open your school calendar.</strong> Sign in to your school as usual. Look for Subscribe, Calendar Feed or Export calendar, and leave the link dialog open.</li>
-          <li><strong className="text-fg">Find and review the link.</strong> Open Calendar Finder from your browser’s extensions menu. Choose <strong>Review in Boiler Hub</strong> beside a result, then check the feed before connecting.</li>
-        </ol>
-        <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-muted">Scanning happens in your browser when you open the helper or choose Scan this page. Passwords and hidden fields are skipped. You choose which calendar link to bring into Boiler Hub for review.</p>
+        <p className="mt-0 mb-5 max-w-[65ch] text-base leading-relaxed text-body">You can connect your calendar without installing anything. Copy the subscription link from your school’s calendar, then paste it into Sources.</p>
+        <LinkButton href="/settings/sources" variant="primary">Open Sources</LinkButton>
+        <div className="mt-6 flex flex-col border-y border-line">
+          {[
+            ["Brightspace (D2L)", "Open Calendar → Settings and enable Calendar Feeds. Choose Subscribe → All Calendars and Tasks, then copy the subscription link."],
+            ["Canvas", "Open Calendar, choose Calendar Feed in the sidebar, then copy the feed URL."],
+            ["Moodle", "Open Calendar → Export calendar. Select your courses and a range covering the term, then choose Get calendar URL and copy it."],
+            ["Blackboard", "Open Calendar and its settings. Choose Share calendar (Ultra) or Get External Calendar Link (Original), then copy the iCalendar link."],
+          ].map(([name, instructions]) => <details key={name} className="border-b border-line last:border-0">
+            <summary className="bp-summary flex min-h-11 cursor-pointer items-center py-2 text-sm font-semibold text-fg">{name}</summary>
+            <p className="mt-0 mb-4 max-w-[65ch] pl-4 text-sm leading-relaxed text-body">{instructions}</p>
+          </details>)}
+        </div>
+      </section>
+      <section aria-labelledby="helper-extension" className="border-t border-line pt-6">
+        <h2 id="helper-extension" className="mt-0 mb-3 font-display text-[30px] leading-none">Automatic link finder · optional</h2>
+        <p className="mt-0 mb-3 max-w-[65ch] text-sm leading-relaxed text-body">The Calendar Finder extension can look for subscription links on the school page you choose. It is a developer preview for desktop Chrome and Edge.</p>
+        <details>
+          <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-brass-ink">Extension preview and setup</summary>
+          <div className="pt-2">
+            <p className="mt-0 mb-4 max-w-[65ch] text-sm leading-relaxed text-muted">The scanner and import flow have been tested with sample school pages. Installation and live school accounts still need verification.</p>
+            <LinkButton plain href="/downloads/boiler-calendar-helper.zip" download variant="secondary">Download optional extension</LinkButton>
+            <ol className="my-5 max-w-[70ch] list-decimal space-y-3 pl-5 text-sm leading-relaxed text-body">
+              <li>Unzip the download. Open <code>chrome://extensions</code> or <code>edge://extensions</code>, turn on Developer mode, and choose <strong>Load unpacked</strong>. Select the <strong>boiler-calendar-helper</strong> folder.</li>
+              <li>Open your school calendar’s Subscribe, Calendar Feed or Export dialog, then open Calendar Finder from the extensions menu.</li>
+              <li>Choose <strong>Review in Boiler Hub</strong> beside a result and check the link before connecting it. You can also copy the link into Sources.</li>
+            </ol>
+            <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-muted">Scanning happens in your browser when you open the extension or choose Scan this page. Passwords and hidden fields are skipped. You choose which link to bring into Boiler Hub.</p>
+          </div>
+        </details>
       </section>
       <section aria-labelledby="helper-missing" className="border-t border-line pt-6">
-        <h2 id="helper-missing" className="mt-0 mb-3 font-display text-[30px] leading-none">No link found?</h2>
-        <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-body">The helper offers instructions for Brightspace, Canvas, Moodle and Blackboard. Open the feed dialog and scan again. If your school has disabled feeds, ask its support team for a calendar subscription. For a calendar embedded from another website, open it in its own tab first.</p>
+        <h2 id="helper-missing" className="mt-0 mb-3 font-display text-[30px] leading-none">Can’t find your calendar link?</h2>
+        <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-body">Look for Subscribe, Calendar Feed or Export in your school calendar. If your school has disabled feeds, ask its support team whether calendar subscriptions are available.</p>
         <LinkButton href="/settings/sources" variant="ghost" className="mt-5">Paste a link in Sources</LinkButton>
       </section>
     </div>
