@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({ sources: vi.fn(), admin: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/sources/load", () => ({ loadSources: mocks.sources }));
+vi.mock("./schedule-context", () => ({ scheduleContext: vi.fn(async () => ({ state: "disconnected", windows: [], busy: [] })) }));
 import { assignmentContext } from "./context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 afterEach(() => vi.resetAllMocks());

@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Boilerplate · Focus with Pip",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pause five distracting websites during the study commitments you choose in Boilerplate.",
   "minimum_chrome_version": "120",
-  "permissions": ["declarativeNetRequest", "storage", "alarms", "tabs"],
+  "permissions": ["declarativeNetRequest", "storage", "alarms", "tabs", "notifications"],
   "host_permissions": [
     "*://*.youtube.com/*",
     "*://*.instagram.com/*",
