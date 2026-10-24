@@ -16,14 +16,14 @@ describe("classifyIcs (Brightspace-style feed)", () => {
   it("turns deadlines into tasks with sizes and due times", () => {
     const items = byTitle(classify(true));
     expect(items.get("Lab Report 3 - Due")).toMatchObject({ kind: "task", source: "ics", size: "M", due: "2026-10-28T03:59:00.000Z" });
-    expect(items.get("Quiz 4 - Availability Ends")).toMatchObject({ kind: "task", size: "S", due: "2026-10-29T15:00:00.000Z" });
+    expect(items.get("Quiz 4 - Availability Ends")).toMatchObject({ kind: "task", size: "M", due: "2026-10-29T15:00:00.000Z" });
     // All-day: due 23:59 that day in the feed's zone (X-WR-TIMEZONE America/New_York, EDT).
     expect(items.get("Midterm Exam")).toMatchObject({ kind: "task", size: "L", due: "2026-10-31T03:59:00.000Z" });
   });
 
   it("keeps deadlines overdue up to 14 days and drops older or later than 7 days", () => {
     const items = byTitle(classify(true));
-    expect(items.get("Problem Set 5 - Due")).toMatchObject({ kind: "task", due: "2026-10-16T03:59:00.000Z" });
+    expect(items.get("Problem Set 5 - Due")).toMatchObject({ kind: "task", size: "S", due: "2026-10-16T03:59:00.000Z" });
     expect(items.has("Reading Response 1 - Due")).toBe(false); // 25 days back
     expect(items.has("Final Project Proposal - Due")).toBe(false); // 8.6 days out
   });
@@ -41,7 +41,7 @@ describe("classifyIcs (Brightspace-style feed)", () => {
   });
 
   it("all-day entries are deadlines only in coursework feeds, unless the title says so", () => {
-    expect(byTitle(classify(true)).get("Fall Break")).toMatchObject({ kind: "task", size: "M" });
+    expect(byTitle(classify(true)).get("Fall Break")).toMatchObject({ kind: "task", size: "S" });
     const plain = byTitle(classify(false));
     expect(plain.has("Fall Break")).toBe(false);
     expect(plain.get("Midterm Exam")).toMatchObject({ kind: "task", size: "L" });
@@ -75,10 +75,30 @@ describe("classifyIcs (Brightspace-style feed)", () => {
 });
 
 describe("sizeForTitle", () => {
-  it("L for exams, S for quizzes, M otherwise", () => {
-    expect(["Final Exam", "Midterm 2", "Finals week", "Quiz 3", "Pop quizzes", "Essay due", "Project"].map(sizeForTitle)).toEqual([
-      "L", "L", "L", "S", "S", "M", "M",
+  const sizes = (titles: string[]) => titles.map(sizeForTitle);
+
+  it("L for exams, midterms and finals", () => {
+    expect(sizes(["Final Exam", "Midterm 2", "Finals week", "Exams"])).toEqual(["L", "L", "L", "L"]);
+  });
+
+  it("M for quizzes, projects, labs, papers, essays, reports and presentations", () => {
+    expect(sizes(["Quiz 3", "Pop quizzes", "Group Project", "Lab 4", "Position paper", "Essay 2 due", "Lab Report 3", "Presentations"])).toEqual([
+      "M", "M", "M", "M", "M", "M", "M", "M",
     ]);
+  });
+
+  it("L wins over M", () => {
+    expect(sizes(["Final presentation", "Midterm project"])).toEqual(["L", "L"]);
+  });
+
+  it("S for homework, assignments, discussions, readings and anything else", () => {
+    expect(sizes(["Homework 5", "Assignment 2 due", "Discussion post", "Reading Response 1", "Problem Set 5 - Due", "Fall Break"])).toEqual([
+      "S", "S", "S", "S", "S", "S",
+    ]);
+  });
+
+  it("matches whole words only", () => {
+    expect(sizes(["Collaboration due", "Examples due", "Reportedly due"])).toEqual(["S", "S", "S"]);
   });
 });
 

@@ -13,13 +13,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const OVERDUE_DAYS = 14;
 
 const DEADLINE_RE = /\b(due|assignments?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?)\b/i;
+// Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
+// reading, and any other deadline) is S.
 const LARGE_RE = /\b(exams?|midterms?|finals?)\b/i;
-const SMALL_RE = /\bquiz(?:zes)?\b/i;
+const MEDIUM_RE = /\b(quiz(?:zes)?|projects?|labs?|papers?|essays?|reports?|presentations?)\b/i;
 
 export function sizeForTitle(title: string): Size {
   if (LARGE_RE.test(title)) return "L";
-  if (SMALL_RE.test(title)) return "S";
-  return "M";
+  if (MEDIUM_RE.test(title)) return "M";
+  return "S";
 }
 
 export interface ClassifyOptions {
