@@ -1,6 +1,6 @@
 /**
  * Shown when the engine reports calendar: "reconnect" (Google tokens missing or expired).
- * The score then uses tasks only and is not shared with teams until the calendar is back.
+ * The score then uses tasks and connected sources; teams retain the previous snapshot.
  */
 export function ReconnectBanner({ next = "/boiler", className = "" }: { next?: string; className?: string }) {
   return (
@@ -9,8 +9,8 @@ export function ReconnectBanner({ next = "/boiler", className = "" }: { next?: s
       className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hot-ink bg-surface px-4 py-3 ${className}`}
     >
       <p className="m-0 text-sm text-body">
-        <strong className="text-fg">Google Calendar is disconnected.</strong> Your score only counts tasks until you reconnect, and
-        your teams keep seeing your last synced score.
+        <strong className="text-fg">Google Calendar is disconnected.</strong> Tasks and connected sources still count.
+        Your teams keep seeing your last synced score until you reconnect.
       </p>
       {/* Route handler, not a page: plain anchor so Next does not prefetch the OAuth redirect. */}
       <a
@@ -28,8 +28,8 @@ export function CalendarUnavailableBanner({ className = "" }: { className?: stri
   return (
     <div role="status" className={`rounded-lg border border-hot-ink bg-surface px-4 py-3 ${className}`}>
       <p className="m-0 text-sm text-body">
-        <strong className="text-fg">Google Calendar temporarily unavailable — showing tasks only.</strong> We will try again on the next
-        refresh. Your teams keep seeing your last synced score.
+        <strong className="text-fg">Google Calendar is temporarily unavailable.</strong> Tasks and connected sources still count.
+        We will try again on the next refresh. Your teams keep seeing your last synced score.
       </p>
     </div>
   );
