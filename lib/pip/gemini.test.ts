@@ -28,6 +28,8 @@ it("uses the real Google provider protocol with a server key and parses its repl
   expect(body.previous_interaction_id).toBeUndefined();
   expect(JSON.stringify(body.system_instruction)).toContain("Draft");
   expect(JSON.stringify(body.system_instruction)).toContain("untrusted data");
+  expect(body.system_instruction).toContain("even ungraded practice");
+  expect(body.system_instruction).toContain("For mixed requests");
   expect(JSON.stringify(body.input)).toContain("What should I do?");
 });
 
