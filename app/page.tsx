@@ -1,6 +1,7 @@
 import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
+import { AccountControls, getViewer } from "@/components/ui/Account";
 import { ZONES, ZONE_BEHAVIOR, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
 import { HeroBoiler } from "@/components/boiler/HeroBoiler";
@@ -9,8 +10,10 @@ const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 
 const display = "m-0 font-display font-normal tracking-[0.02em]";
 
+export const dynamic = "force-dynamic";
+
 export default async function LandingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+  const [params, viewer] = await Promise.all([searchParams, getViewer()]);
   const next = safeNext(typeof params.next === "string" ? params.next : null);
   const signin = `/auth/signin?next=${encodeURIComponent(next)}`;
   const failed = params.error === "signin" || params.error === "auth";
@@ -19,21 +22,22 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className="min-h-screen">
       <SiteHeader
         variant="marketing"
-        account={
-          // Route handler, not a page: plain anchor so Next does not prefetch it.
+        account={viewer ? (
+          <AccountControls viewer={viewer} />
+        ) : (
           <span className="hidden sm:inline-flex">
             <GoogleSignInButton href={signin} />
           </span>
-        }
+        )}
       />
 
       <main>
-        {failed && (
+        {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
             Sign-in did not finish. Try again, or take the demo without signing in.
           </p>
         )}
-        {typeof params.next === "string" && !failed && (
+        {!viewer && typeof params.next === "string" && !failed && (
           <p role="note" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-muted sm:px-8">
             Sign in to open that page.
           </p>
@@ -52,7 +56,13 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
                 Try the demo
               </LinkButton>
-              <GoogleSignInButton href={signin} className="max-sm:w-full" />
+              {viewer ? (
+                <LinkButton href="/boiler" variant="ghost" size="lg" className="border-rivet font-semibold text-fg max-sm:w-full">
+                  Open My Boiler
+                </LinkButton>
+              ) : (
+                <GoogleSignInButton href={signin} className="max-sm:w-full" />
+              )}
             </div>
           </div>
           <HeroBoiler />
