@@ -1,166 +1,53 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
-import { LinkButton } from "@/components/ui/Button";
-import { dockMessage, type Snapshot } from "./dockMessage";
-import { Mascot } from "./Mascot";
-import { PipChat } from "./PipChat";
-import { usePipAccessory } from "./useAccessory";
-import { MASCOT_NAME } from "./voice";
+import { FloatingPip } from "./FloatingPip";
+import type { Snapshot } from "./dockMessage";
 
-// Pip in the corner of signed-in pages. Reads the caller's own stored snapshot
-// (owner-only RLS), so moving between pages never triggers a calendar fetch.
-// My Boiler keeps chat in this dock alongside its hero and inline wardrobe.
-// The demo and onboarding provide their own Pip.
-
-const HIDE_ON = ["/boiler", "/demo", "/onboarding", "/mascot-preview", "/auth"];
-
-type Load = { kind: "none" } | { kind: "ready"; snapshot: Snapshot | null };
-
+/** One companion on every signed-in screen, even before a first reading exists. */
 export function PipDock() {
   const pathname = usePathname() ?? "/";
-  const routeHidden = HIDE_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-  // The Engine Room has a lead-only sticky "New assignment" button in this corner (EngineRoom.tsx): sit above it.
-  const raised = /^\/teams\/[^/]+/.test(pathname);
-  const [load, setLoad] = useState<Load>({ kind: "none" });
-  const [open, setOpen] = useState(false);
-  const [now, setNow] = useState(0);
-  const accessory = usePipAccessory();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const panelId = useId();
-  const headingId = useId();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [reading, setReading] = useState<{ userId: string; snapshot: Snapshot | null; now: number } | null>(null);
 
   useEffect(() => {
-    setOpen(false);
-    if (routeHidden || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    let cancelled = false;
-    const supabase = createClient();
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    const client = createClient();
+    let active = true;
+    let observedAuth = false;
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
+      observedAuth = true;
+      if (active) setUserId(session?.user.id ?? null);
+    });
+    void client.auth.getSession().then(({ data }) => {
+      if (active && !observedAuth) setUserId(data.session?.user.id ?? null);
+    }).catch(() => { if (active && !observedAuth) setUserId(null); });
+    return () => { active = false; data.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    const client = createClient();
     void (async () => {
-      const { data: auth } = await supabase.auth.getSession();
-      const user = auth.session?.user;
-      if (!user) {
-        if (!cancelled) setLoad({ kind: "none" });
-        return;
+      try {
+        const { data, error } = await client.from("pressure_snapshots")
+          .select("score, zone, counts, forecast, computed_at").eq("user_id", userId).maybeSingle();
+        if (active) setReading({ userId, now: Date.now(), snapshot: !error && data ? {
+          score: data.score as number, zone: data.zone as Zone, counts: data.counts as Counts,
+          forecast: (data.forecast ?? []) as ForecastDay[], computedAt: data.computed_at as string,
+        } : null });
+      } catch {
+        if (active) setReading({ userId, snapshot: null, now: Date.now() });
       }
-      const { data, error } = await supabase
-        .from("pressure_snapshots")
-        .select("score, zone, counts, forecast, computed_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error) {
-        setLoad({ kind: "ready", snapshot: null });
-        return;
-      }
-      setNow(Date.now());
-      setLoad({
-        kind: "ready",
-        snapshot: data
-          ? { score: data.score as number, zone: data.zone as Zone, counts: data.counts as Counts, forecast: (data.forecast ?? []) as ForecastDay[], computedAt: data.computed_at as string }
-          : null,
-      });
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname, routeHidden]);
+    return () => { active = false; };
+  }, [userId, pathname]);
 
-  useEffect(() => {
-    if (open) headingRef.current?.focus();
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      setOpen(false);
-      toggleRef.current?.focus();
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  if (routeHidden || load.kind !== "ready") return null;
-
-  const snap = load.snapshot;
-  const message = dockMessage(snap, now);
-
-  const close = () => {
-    setOpen(false);
-    toggleRef.current?.focus();
-  };
-
-  return (
-    // On phones, sit above the bottom tab bar (MobileTabBar: 56px + safe-area padding).
-    <div
-      ref={rootRef}
-      className={`fixed right-4 z-40 flex flex-col items-end gap-3 sm:right-6 print:hidden ${
-        raised
-          ? "bottom-[calc(env(safe-area-inset-bottom)_+_136px)] sm:bottom-[84px]"
-          : "bottom-[calc(max(env(safe-area-inset-bottom),8px)_+_68px)] sm:bottom-6"
-      }`}
-    >
-      {open && (
-        <section
-          id={panelId}
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby={headingId}
-          className={`mp-pop flex w-[min(380px,calc(100vw-32px))] flex-col overflow-hidden rounded-[14px] border border-rivet bg-surface px-4 pt-3 pb-4 shadow-xl ${raised ? "max-h-[calc(100dvh-240px)] sm:max-h-[calc(100dvh-176px)]" : "max-h-[calc(100dvh-176px)] sm:max-h-[calc(100dvh-124px)]"}`}
-        >
-          <div className="flex shrink-0 items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-col gap-1">
-              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with {MASCOT_NAME}</h2>
-            </div>
-            <button
-              type="button"
-              onClick={close}
-              aria-label={`Close ${MASCOT_NAME}`}
-              className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
-          <PipChat />
-          <div className="mt-3 shrink-0">
-            <LinkButton
-              href={message.action.href}
-              variant={message.action.href === "/boiler" ? "primary" : "ghost"}
-              className={message.action.href === "/boiler" ? "bp-button-striped" : undefined}
-              onClick={() => setOpen(false)}
-            >
-              {message.action.label}
-            </LinkButton>
-          </div>
-        </section>
-      )}
-      <button
-        ref={toggleRef}
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={open ? panelId : undefined}
-        aria-label={open ? `Close ${MASCOT_NAME}` : `Chat with ${MASCOT_NAME}`}
-        className="relative flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border border-rivet bg-surface px-4 py-2 text-sm font-semibold text-fg shadow-lg hover:border-brass"
-      >
-        <Mascot score={snap?.score ?? 0} size={32} reaction={message.reaction} empty={message.empty} accessory={accessory} />
-        <span>{open ? "Close Pip" : "Chat with Pip"}</span>
-        {message.attention && !open && <span aria-hidden="true" className="absolute top-1 right-1 h-3 w-3 rounded-full bg-hot-ink ring-2 ring-bg" />}
-      </button>
-    </div>
-  );
+  if (!userId) return null;
+  const ownReading = reading?.userId === userId ? reading : null;
+  return <FloatingPip key={userId} snapshot={ownReading?.snapshot ?? null} now={ownReading?.now ?? 0} pathname={pathname} />;
 }
