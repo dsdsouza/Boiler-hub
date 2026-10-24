@@ -6,23 +6,54 @@ import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 import { VisibilityList } from "@/components/ui/VisibilityList";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONES, ZONE_BEHAVIOR, ZONE_RANGE } from "@/components/ui/zones";
+import type { Size, Weight } from "@/lib/types";
+import {
+  ATTENDEE_CAP,
+  ATTENDEE_STEP,
+  COMPLETED_RELEASE,
+  COMPLETED_RELEASE_HOURS,
+  DEFAULT_RECURRING_WEIGHT,
+  DEFAULT_WEIGHT,
+  FOCUS_RELEASE,
+  K,
+  NO_DUE_DAYS,
+  ORGANIZER_FACTOR,
+  PROXIMITY_RATE,
+  SIZE_POINTS,
+  URGENCY_CAP,
+  URGENCY_MIN_DAYS,
+  WEIGHTS,
+  WINDOW_DAYS,
+} from "@/lib/pressure/config";
 
 export const metadata: Metadata = {
   title: "How it works · Boilerplate",
   description: "The pressure formula, its weights, and what teams can and cannot see.",
 };
 
-const WEIGHTS: [string, string][] = [
-  ["Event weight tag", "Light 0.5, Normal 1.0, Heavy 1.6 (your tag, else the default)"],
-  ["Default for recurring events", "Light"],
-  ["Attendees", "× (1 + 0.03 × min(attendees, 10))"],
-  ["You organize it", "× 1.2"],
-  ["Task size points", "S 2, M 4, L 8"],
-  ["Proximity (d days from now)", "1 / (1 + 0.35 × d)"],
-  ["Task urgency", "1 / max(days until due, 0.25), capped at 3; overdue = 3"],
-  ["Completed task (last 48 h)", "Release of 0.5 × size points, fading to 0 over 48 h"],
-  ["Focus time or out of office", "Release of 0.5 × hours × proximity"],
-  ["Scale constant K", "25"],
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const num = (n: number) => (Number.isInteger(n) ? n.toFixed(1) : String(n));
+
+// Every number here comes from lib/pressure/config.ts, so this page always matches the engine.
+const WEIGHT_ROWS: [string, string][] = [
+  [
+    "Event weight tag",
+    `${(Object.keys(WEIGHTS) as Weight[]).map((w) => `${cap(w)} ${num(WEIGHTS[w])}`).join(", ")} (your tag, else the default)`,
+  ],
+  ["Default for one-off events", cap(DEFAULT_WEIGHT)],
+  ["Default for recurring events", cap(DEFAULT_RECURRING_WEIGHT)],
+  ["Attendees", `× (1 + ${ATTENDEE_STEP} × min(attendees, ${ATTENDEE_CAP}))`],
+  ["You organize it", `× ${ORGANIZER_FACTOR}`],
+  ["Task size points", (Object.keys(SIZE_POINTS) as Size[]).map((s) => `${s} ${SIZE_POINTS[s]}`).join(", ")],
+  ["Proximity (d days from now)", `1 / (1 + ${PROXIMITY_RATE} × d)`],
+  ["Task urgency", `1 / max(days until due, ${URGENCY_MIN_DAYS}), capped at ${URGENCY_CAP}; overdue = ${URGENCY_CAP}`],
+  ["Task with no due date", `Counted as due in ${NO_DUE_DAYS} days`],
+  [
+    `Completed task (last ${COMPLETED_RELEASE_HOURS} h)`,
+    `Release of ${COMPLETED_RELEASE} × size points, fading to 0 over ${COMPLETED_RELEASE_HOURS} h`,
+  ],
+  ["Focus time or out of office", `Release of ${FOCUS_RELEASE} × hours × proximity`],
+  ["Scale constant K", String(K)],
 ];
 
 const SKIPPED = [
@@ -42,7 +73,7 @@ export default function HowPage() {
       <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-28 sm:px-8 sm:pb-20">
         <header className="flex flex-col gap-4">
           <div className="font-mono text-[13px] tracking-[0.18em] text-brass-ink">HOW IT WORKS</div>
-          <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure is load over the next 7 days.</h1>
+          <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure is load over the next {WINDOW_DAYS} days.</h1>
           <p className="m-0 max-w-[680px] text-[17px] leading-relaxed text-body">
             Every meeting and task in the coming week adds pressure. Finished tasks, focus time and days off vent it. The same inputs always give the
             same score, and you can see exactly why your needle sits where it does.
@@ -59,7 +90,7 @@ export default function HowPage() {
                 {"R = Σ events (hours × weight × attendees × organizer × proximity)\n"}
                 {"  + Σ tasks  (size points × urgency)\n"}
                 {"  − Σ releases\n\n"}
-                <span className="text-brass-ink">{"score = round(100 × (1 − e^(−max(R, 0) / 25)))"}</span>
+                <span className="text-brass-ink">{`score = round(100 × (1 − e^(−max(R, 0) / ${K})))`}</span>
               </code>
             </pre>
           </Card>
@@ -87,7 +118,7 @@ export default function HowPage() {
                 </tr>
               </thead>
               <tbody>
-                {WEIGHTS.map(([factor, value]) => (
+                {WEIGHT_ROWS.map(([factor, value]) => (
                   <tr key={factor} className="border-t border-line align-top">
                     <th scope="row" className="px-5 py-3 font-semibold">
                       {factor}

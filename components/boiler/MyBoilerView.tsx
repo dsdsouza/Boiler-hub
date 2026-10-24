@@ -9,6 +9,7 @@ import { ZONE_INK } from "@/components/ui/zones";
 import { Boiler } from "./Boiler";
 import { Breakdown } from "./Breakdown";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
+import { ReconnectBanner } from "./ReconnectBanner";
 import { StatusPicker } from "./StatusPicker";
 import { TaskList } from "./TaskList";
 import { timeAgo } from "./format";
@@ -80,7 +81,7 @@ export function MyBoilerView({
         <div>
           <Heading className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">{title}</Heading>
           <p className="mt-1.5 mb-0 text-[15px] text-muted">
-            {sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
+            {data.calendar === "reconnect" ? "Tasks only" : sourceLabel} · next 7 days · synced {timeAgo(data.syncedAt)}
           </p>
         </div>
         <button
@@ -94,6 +95,8 @@ export function MyBoilerView({
           {syncing ? "Syncing…" : "Refresh"}
         </button>
       </div>
+
+      {data.calendar === "reconnect" && <ReconnectBanner />}
 
       {error && (
         <p role="alert" className="m-0 rounded-lg border border-redline-ink px-4 py-3 text-sm text-redline-ink">

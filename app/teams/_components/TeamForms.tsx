@@ -7,9 +7,9 @@ import { api } from "./api";
 
 const input =
   "min-h-11 w-full rounded-lg px-3 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2";
-const inputStyle = { backgroundColor: C.bg, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight };
+const inputStyle = { backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight };
 const primary = `min-h-11 rounded-lg px-4 text-xl tracking-[0.05em] disabled:opacity-50 ${DISPLAY}`;
-const primaryStyle = { backgroundColor: C.brass, color: C.bg, boxShadow: "inset 0 -3px 0 #8C6A35" };
+const primaryStyle = { backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" };
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -80,7 +80,7 @@ export function CreateTeamForm() {
                 style={{
                   border: `1px solid ${type === t ? C.brass : C.line}`,
                   backgroundColor: type === t ? C.brass : C.surface,
-                  color: type === t ? C.bg : C.text2,
+                  color: type === t ? C.onFill : C.text2,
                 }}
               >
                 {t === "work" ? "Work team" : "Class"}

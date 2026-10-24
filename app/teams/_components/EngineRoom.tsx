@@ -16,7 +16,7 @@ const STATUSES: Status[] = ["open", "heads_down", "running_hot", "away"];
 const chip = (on: boolean) => ({
   border: `1px solid ${on ? C.brass : C.line}`,
   backgroundColor: on ? C.brass : C.surface,
-  color: on ? C.bg : C.text2,
+  color: on ? C.onFill : C.text2,
 });
 
 export function EngineRoom({ room }: { room: EngineRoomView }) {

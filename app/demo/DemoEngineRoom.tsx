@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Size, Zone } from "@/lib/types";
 import { BoilerTile } from "@/components/boiler/BoilerTile";
 import { demoTeams, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
-import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/components/boiler/localPressure";
+import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/lib/pressure";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ZONE_INK_VAR, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
@@ -108,7 +108,7 @@ export function DemoEngineRoom() {
 
   const post = () => {
     const at = new Date();
-    const add = (raw: number) => raw + taskPoints(size, due, at);
+    const add = (raw: number) => raw + taskPoints({ due, size }, at);
     setTeams((all) =>
       all.map((t, i) =>
         i !== teamIdx
