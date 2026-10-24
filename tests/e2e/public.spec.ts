@@ -1,6 +1,25 @@
 import { test, expect } from '@playwright/test';
 import { noOverflow } from './helpers';
 
+test('navigation responds immediately while the next page is still downloading', async ({ page }) => {
+  let finish!: () => void;
+  const download = new Promise<void>(resolve => { finish = resolve; });
+  await page.route(url => url.pathname === '/how' && url.searchParams.has('_rsc'), async route => {
+    await download;
+    await route.continue();
+  });
+  try {
+    await page.goto('/');
+    await expect(page.getByRole('slider')).toBeEnabled();
+    const link = page.getByRole('banner').getByRole('link', { name: 'How it works', exact: true });
+    await link.click();
+    await expect(link.getByRole('status')).toHaveText('Opening How it works…');
+    finish();
+    await expect(page).toHaveURL(/\/how$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Pressure tracks');
+  } finally { finish(); }
+});
+
 test('public home offers a working demo and formula link', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('pressure');

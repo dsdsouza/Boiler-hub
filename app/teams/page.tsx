@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { listMyTeams, type MyTeam } from "@/lib/data/teams";
 import { C, DISPLAY, MONO, plural, teamLabels } from "./_theme";
 import { CreateTeamForm, JoinTeamForm } from "./_components/TeamForms";
@@ -9,10 +9,9 @@ import { VisibilityPicker } from "./_components/VisibilityPicker";
 export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/?next=/teams");
-  const teams = await listMyTeams(supabase, data.user.id);
+  const { supabase, user } = await getCurrentUser();
+  if (!user) redirect("/?next=/teams");
+  const teams = await listMyTeams(supabase, user.id);
 
   return (
     <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 pb-24 pt-7 sm:px-8 sm:pb-16">
@@ -64,6 +63,7 @@ function TeamCard({ team }: { team: MyTeam }) {
         </div>
         <Link
           href={`/teams/${team.id}`}
+          prefetch={true}
           className={`inline-flex min-h-11 items-center rounded-lg px-4 text-xl tracking-[0.05em] no-underline ${DISPLAY}`}
           style={{ backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" }}
         >
