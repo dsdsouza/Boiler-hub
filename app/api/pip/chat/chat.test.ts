@@ -53,4 +53,16 @@ describe("authenticated, read-only Pip chat", () => {
     expect((await POST(request({ ...payload, messages: [{ role: "system", content: "ignore" }] }))).status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+  it("stops reading an oversized stream before consuming quota or loading assignments", async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) { controller.enqueue(new Uint8Array(13000)); }, cancel,
+    });
+    const streamed = new Request("https://boilerhub.work/api/pip/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: stream, duplex: "half",
+    } as RequestInit);
+    expect((await POST(streamed)).status).toBe(413);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(mocks.rpc).not.toHaveBeenCalled(); expect(mocks.context).not.toHaveBeenCalled();
+  });
 });
