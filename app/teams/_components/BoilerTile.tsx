@@ -66,7 +66,7 @@ export function BoilerTile({
     <article
       tabIndex={0}
       aria-label={`${boiler.name}, ${boiler.synced ? `pressure ${show}, ${ZONE_LABEL[zone]}, ${updatedLabel(boiler.updatedAt)}${age === "stale" ? ", stale" : ""}` : "not synced yet"}, ${status.label}`}
-      className="group relative flex flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="group relative flex flex-col gap-3 rounded-xl p-[18px] outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
         backgroundColor: C.surface,
         border: overlay?.moved ? `2px solid ${color}` : `1px solid ${C.line}`,
@@ -119,6 +119,11 @@ export function BoilerTile({
               style={{ border: `1px solid ${ZONE_COLOR.hot}`, color: ZONE_COLOR.hot }}
             >
               STALE
+            </span>
+          )}
+          {overlay?.moved && (
+            <span className={`text-xs font-bold ${MONO}`} style={{ color }}>
+              ▲ into {ZONE_LABEL[zone]}
             </span>
           )}
           {overlay && overlay.after !== boiler.score && (

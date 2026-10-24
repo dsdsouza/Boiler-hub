@@ -4,7 +4,9 @@ import { WEIGHT_TAGS, badRequest, oneOf, readJson, requireUser, serverError, syn
 
 const SERIES_KEY_RE = /^[0-9a-f]{64}$/;
 
-// Body: { eventId, weight: 'light' | 'normal' | 'heavy' | null, applyToSeries?, seriesKey? }.
+// Body: { eventId, weight: 'light' | 'normal' | 'heavy' | null, applyToSeries?, seriesKey?, clearEventIds? }.
+// clearEventIds (series only): events in the series whose own single-event tag should be removed, so
+// the series tag applies to them too (a single-event tag otherwise wins over the series).
 // applyToSeries tags the whole series (seriesKey from the event list); otherwise just this event.
 // weight null removes the override. Resyncs, returns the BoilerResponse.
 export async function PUT(request: Request) {
@@ -21,6 +23,21 @@ export async function PUT(request: Request) {
       return badRequest("seriesKey is required to apply to a series");
     }
     key = body.seriesKey;
+    if (body.clearEventIds !== undefined) {
+      const ids = body.clearEventIds;
+      if (!Array.isArray(ids) || ids.length > 200 || !ids.every((id) => typeof id === "string" && id.length > 0 && id.length <= 1024)) {
+        return badRequest("clearEventIds must be up to 200 event ids");
+      }
+      if (ids.length > 0) {
+        // RLS: only the owner's own rows.
+        const { error: clearError } = await auth.supabase
+          .from("event_weights")
+          .delete()
+          .eq("user_id", auth.user.id)
+          .in("series_key", (ids as string[]).map(eventKey));
+        if (clearError) return serverError("PUT /api/event-weights clear", clearError);
+      }
+    }
   } else {
     if (typeof body.eventId !== "string" || body.eventId.length === 0 || body.eventId.length > 1024) {
       return badRequest("eventId is required");
