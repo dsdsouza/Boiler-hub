@@ -27,13 +27,12 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
 
   return (
     <Card as="section" aria-labelledby="class-schedule-title" className="px-4 py-5 sm:px-7 sm:py-6">
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+      <div className="mb-4">
         <CardTitle id="class-schedule-title">Class schedule</CardTitle>
-        <span className="text-xs text-muted">Next 7 days · only you can see this</span>
       </div>
-      <p className="mt-0 mb-4 text-sm text-muted">
-        {hasFeed ? "Classes and timed events from your coursework calendars. Deadlines are in Tasks." : "See what’s on each day. Import the calendar shared by your classes in Brightspace."}
-      </p>
+      {!hasFeed && <p className="mt-0 mb-4 text-sm text-muted">
+        Nothing here? <a href="/settings/sources#class-schedule" className="text-brass-ink underline underline-offset-2">Connect Brightspace or your school provider!</a>
+      </p>}
 
       {hasFeed && <>
         {failed.length > 0 && <p role="status" className="mt-0 mb-4 text-sm text-redline-ink">

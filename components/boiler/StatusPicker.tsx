@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import type { Status } from "@/lib/types";
 import { Eyebrow } from "@/components/ui/Card";
 import { StatusDot } from "@/components/ui/StatusPill";
 import { STATUSES, STATUS_META } from "@/components/ui/zones";
+import { Input } from "@/components/ui/Field";
 
 /** Status buttons plus an 80-character note. The note saves on blur or Enter. */
 export function StatusPicker({
@@ -12,11 +13,13 @@ export function StatusPicker({
   note,
   onChange,
   labelledBy,
+  children,
 }: {
   status: Status;
   note: string;
   onChange: (status: Status, note: string) => void;
   labelledBy?: string;
+  children?: ReactNode;
 }) {
   // Unique per instance: My Boiler renders one picker per breakpoint.
   const uid = useId();
@@ -58,11 +61,10 @@ export function StatusPicker({
           );
         })}
       </div>
-      <p className="m-0 text-[13px] text-muted">{STATUS_META[status].hint}</p>
       <label htmlFor={`${uid}-note`} className="pt-1 text-[13px] font-medium text-body">
         Status note (shown to your teams)
       </label>
-      <input
+      <Input
         id={`${uid}-note`}
         type="text"
         maxLength={80}
@@ -76,12 +78,11 @@ export function StatusPicker({
             commitNote();
           }
         }}
-        className="bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted"
       />
-      <p className="m-0 flex justify-between text-xs text-muted">
-        <span>Status never changes your score.</span>
+      <p className="m-0 flex justify-end text-xs text-muted">
         <span aria-live="polite">{saved ? "Saved" : <span aria-hidden="true">{draft.length}/80</span>}</span>
       </p>
+      {children}
     </div>
   );
 }

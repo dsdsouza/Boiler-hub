@@ -65,7 +65,22 @@ test('exploration: returning to the landing page hydrates without browser errors
   // Keep collecting every pageerror so runtime/hydration failures still fail.
   page.on('pageerror', (e) => errors.push(e.message));
   for (const path of ['/', '/how', '/', '/demo', '/', '/']) {
-    await page.goto(path);
+    // WebKit can render a streamed document without delivering `load`.
+    // Verify readiness and actual hydration on every visit instead.
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('main')).toBeVisible();
+    if (path === '/') {
+      const slider = page.getByRole('slider');
+      await expect(slider).toBeEnabled();
+      await slider.press('Home');
+      await expect(slider).toHaveValue('0');
+      await slider.press('ArrowRight');
+      await expect(page.getByRole('img', { name: /^Boiler at pressure 1, Cool/ })).toBeVisible();
+    } else if (path === '/demo') {
+      await expect(page.getByRole('button', { name: /^Post to / })).toBeEnabled();
+    } else {
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    }
     await page.waitForLoadState('networkidle');
   }
   await expect(page.getByRole('slider')).toBeEnabled();
