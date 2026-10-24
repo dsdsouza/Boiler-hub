@@ -18,8 +18,10 @@ export interface Task {
   itemKey?: string;
   /** The source's label, e.g. "Brightspace". */
   sourceLabel?: string;
-  /** Link to the item (GitHub). */
+  /** Source-provided link to the item (GitHub or LMS). */
   url?: string;
+  /** Course label from the feed, only visible to its owner. */
+  courseName?: string;
 }
 
 /** A connected source as the owner sees it. Never includes the secret. */

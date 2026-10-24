@@ -35,8 +35,10 @@ export interface SourceItem extends LoadItem {
   sourceId: string;
   /** sha256 hex of the external id; the source_item_state key. */
   itemKey: string;
-  /** Link to the item (GitHub). */
+  /** Source-provided link to the item (GitHub or LMS). */
   url?: string;
+  /** Course name supplied by an LMS feed. Fetched live, never stored. */
+  courseName?: string;
 }
 
 export interface FetchContext {
