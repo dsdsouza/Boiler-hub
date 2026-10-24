@@ -9,7 +9,7 @@ export default function BoilerPage() {
   return (
     <div className="min-h-screen">
       <SiteHeader variant="app" current="boiler" account={<AccountMenu />} />
-      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-8 sm:pt-8 sm:pb-16">
+      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-24 sm:px-8 sm:pt-8 sm:pb-16">
         <BoilerClient />
       </main>
       <MobileTabBar current="boiler" />
