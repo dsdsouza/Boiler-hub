@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { Avatar } from "./SiteHeader";
 
 export interface Viewer {
@@ -10,12 +10,11 @@ export interface Viewer {
 export async function getViewer(): Promise<Viewer | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return null;
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return null;
-    const meta = data.user.user_metadata ?? {};
+    const { user } = await getCurrentUser();
+    if (!user) return null;
+    const meta = user.user_metadata ?? {};
     return {
-      name: String(meta.full_name ?? meta.name ?? data.user.email ?? "You"),
+      name: String(meta.full_name ?? meta.name ?? user.email ?? "You"),
       avatarUrl: typeof meta.avatar_url === "string" ? meta.avatar_url : null,
     };
   } catch {
