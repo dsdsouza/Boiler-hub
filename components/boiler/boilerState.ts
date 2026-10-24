@@ -1,6 +1,6 @@
 import type { Contribution, ForecastDay, LoadItem, PressureResult, Size, Status, Weight } from "@/lib/types";
 import { zoneOf } from "@/components/ui/zones";
-import type { CalendarState } from "@/lib/pressure/api-types";
+import type { CalendarState, SourceInfo } from "@/lib/pressure/api-types";
 import {
   COMPLETED_RELEASE,
   COMPLETED_RELEASE_HOURS,
@@ -27,6 +27,18 @@ export interface MyBoilerData {
   syncedAt: string;
   /** "reconnect" when Google tokens are missing or expired: the score uses tasks only. */
   calendar: CalendarState;
+  /** Connected sources (ICS, GitHub) and their health. Absent in the demo. */
+  sources?: SourceInfo[];
+  /** Per-task extras for source items, keyed by item id. */
+  taskMeta?: Record<string, TaskMeta>;
+}
+
+/** What a source item (ICS, GitHub) needs beyond its LoadItem: where it came from and its state key. */
+export interface TaskMeta {
+  sourceId: string;
+  itemKey: string;
+  label?: string;
+  url?: string;
 }
 
 export interface NewTask {
@@ -81,6 +93,34 @@ export function setTaskDone(data: MyBoilerData, id: string, done: boolean, now: 
   const delta = points - before;
   const until = done ? new Date(now.getTime() + COMPLETED_RELEASE_HOURS * 3_600_000).toISOString() : (item.due ?? null);
   return { data: settle({ ...data, items }, contributions, delta, until), vented: round1(Math.max(0, -delta)) };
+}
+
+/** Change an open task's size. Done tasks keep their release until the server answers. */
+export function setTaskSize(data: MyBoilerData, id: string, size: Size, now: Date): MyBoilerData {
+  const item = data.items.find((i) => i.id === id && i.kind === "task");
+  if (!item || item.size === size) return data;
+  const items = data.items.map((i) => (i.id === id ? { ...i, size } : i));
+  if (item.doneAt) return { ...data, items };
+  const before = data.result.contributions.find((c) => c.itemId === id)?.points ?? 0;
+  const points = round1(taskPoints({ due: item.due, size }, now));
+  const reason = `Task ${size}, ${dueText(item.due ?? now.toISOString(), now)}`;
+  const contributions = setPoints(data.result.contributions, id, { points, reason });
+  return settle({ ...data, items }, contributions, points - before, item.due ?? null);
+}
+
+/** Open source tasks already past due ("Mark all overdue done"). */
+export function overdueSourceTasks(data: MyBoilerData, now: Date): LoadItem[] {
+  return data.items.filter(
+    (i) => i.kind === "task" && !i.doneAt && !!data.taskMeta?.[i.id] && !!i.due && Date.parse(i.due) < now.getTime(),
+  );
+}
+
+/** Clear tasks without a vent: they leave the list and stop adding pressure. */
+export function clearTasks(data: MyBoilerData, ids: ReadonlySet<string>): MyBoilerData {
+  const items = data.items.filter((i) => !ids.has(i.id));
+  const removed = data.result.contributions.filter((c) => ids.has(c.itemId)).reduce((s, c) => s + c.points, 0);
+  const contributions = data.result.contributions.filter((c) => !ids.has(c.itemId));
+  return settle({ ...data, items }, contributions, -removed, null);
 }
 
 /** Retag one event, or every event in its series. Points scale by the weight ratio. */
