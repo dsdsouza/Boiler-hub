@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -9,6 +9,7 @@ import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { PipDressUp } from "@/components/mascot/PipDressUp";
+import { PipChat } from "@/components/mascot/PipChat";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -21,6 +22,8 @@ import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
 import { fireFromForecast } from "./geometry";
 import type { MyBoiler } from "./useMyBoiler";
+import { StudyAccountability } from "./StudyAccountability";
+import { useStudyAccountability } from "./useStudyAccountability";
 
 function useTick(ms: number) {
   const [, setTick] = useState(0);
@@ -66,6 +69,9 @@ export function MyBoilerView({
 }) {
   useTick(30_000);
   const accessory = usePipAccessory();
+  const study = useStudyAccountability(boiler);
+  const [chatRequest, setChatRequest] = useState<{ question: string; key: number } | null>(null);
+  const chatTrigger = useRef<HTMLElement | null>(null);
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
 
@@ -109,6 +115,19 @@ export function MyBoilerView({
         </button>
       </div>
 
+      <StudyAccountability boiler={boiler} study={study} onAsk={(question) => {
+        chatTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setChatRequest((previous) => ({ question, key: (previous?.key ?? 0) + 1 }));
+      }} />
+      {chatRequest && boiler.source !== "fixture" && (
+        <Card as="section" aria-label="Study chat" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="m-0 text-lg font-semibold text-fg">Study with Pip</h2>
+            <Button variant="ghost" onClick={() => { setChatRequest(null); chatTrigger.current?.focus(); }}>Close chat</Button>
+          </div>
+          <PipChat autoFocus studyContext={study.context} draftRequest={chatRequest} />
+        </Card>
+      )}
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
       {data.sources && <SourcesBanner sources={data.sources} />}

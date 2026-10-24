@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Boilerplate · Focus with Pip",
+  "version": "0.1.0",
+  "description": "Pause five distracting websites during the study commitments you choose in Boilerplate.",
+  "minimum_chrome_version": "120",
+  "permissions": ["declarativeNetRequest", "storage", "alarms", "tabs"],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.instagram.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.reddit.com/*",
+    "*://*.x.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": {
+    "default_title": "Focus with Pip",
+    "default_popup": "focus.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://boilerhub.work/*",
+        "https://www.boilerhub.work/*",
+        "https://boilerplate.zhomander.workers.dev/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["bridge.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["focus.html", "focus.css", "focus.js"],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.instagram.com/*",
+        "*://*.tiktok.com/*",
+        "*://*.reddit.com/*",
+        "*://*.x.com/*"
+      ]
+    }
+  ]
+}
