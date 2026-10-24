@@ -31,6 +31,14 @@ it('keeps the interactive dashboard bound to localhost', () => {
   expect(args).toContain('--ui-host=127.0.0.1');
   expect(args.some((arg: string) => arg.startsWith('--reporter='))).toBe(false);
 });
+it('selects exploration with a replayable seed and bounded walk sizes', () => {
+  const options = parseOptions(['--explore', '--workers=8', '--walks=12', '--steps=100', '--seed=10424']);
+  expect(options).toMatchObject({ explore: true, walks: 12, steps: 100, seed: 10424 });
+  expect(browserArgs(options, '/tmp/run')).toContain('--config=playwright.explore.config.ts');
+  for (const argv of [['--walks=0'], ['--steps=201'], ['--seed=NaN'], ['--explore', '--accounts', '--url=https://boilerhub.work']]) {
+    expect(() => parseOptions(argv)).toThrow();
+  }
+});
 
 const fake = (outcome: string, expectedStatus = 'passed') => ({ outcome: () => outcome, expectedStatus,
   titlePath: () => ['synthetic test'], location: { file: 'fixture.spec.ts', line: 1 },
