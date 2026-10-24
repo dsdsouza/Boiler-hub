@@ -23,7 +23,7 @@
             "overdue": 2
           },
           "updatedAt": "2026-10-24T08:40:00Z",
-          "raw": 63.14
+          "raw": 21.47
         },
         {
           "userId": "00000000-0000-4000-a000-000000000012",
@@ -39,7 +39,7 @@
             "overdue": 1
           },
           "updatedAt": "2026-10-24T08:10:00Z",
-          "raw": 41.52
+          "raw": 14.12
         },
         {
           "userId": "00000000-0000-4000-a000-000000000010",
@@ -55,7 +55,7 @@
             "overdue": 1
           },
           "updatedAt": "2026-10-24T09:05:00Z",
-          "raw": 33.68
+          "raw": 11.45
         },
         {
           "userId": "00000000-0000-4000-a000-000000000013",
@@ -71,7 +71,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-23T22:30:00Z",
-          "raw": 24.86
+          "raw": 8.45
         },
         {
           "userId": "00000000-0000-4000-a000-000000000014",
@@ -86,7 +86,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T07:55:00Z",
-          "raw": 19.96
+          "raw": 6.79
         },
         {
           "userId": "00000000-0000-4000-a000-000000000015",
@@ -102,7 +102,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T09:00:00Z",
-          "raw": 8.21
+          "raw": 2.79
         }
       ],
       "hiddenCount": 0,
@@ -130,7 +130,7 @@
             "overdue": 2
           },
           "updatedAt": "2026-10-24T07:20:00Z",
-          "raw": 66.48
+          "raw": 22.6
         },
         {
           "userId": "00000000-0000-4000-b000-000000000012",
@@ -146,7 +146,7 @@
             "overdue": 1
           },
           "updatedAt": "2026-10-24T06:45:00Z",
-          "raw": 45.81
+          "raw": 15.58
         },
         {
           "userId": "00000000-0000-4000-b000-000000000013",
@@ -161,7 +161,7 @@
             "overdue": 1
           },
           "updatedAt": "2026-10-23T21:15:00Z",
-          "raw": 37.85
+          "raw": 12.87
         },
         {
           "userId": "00000000-0000-4000-b000-000000000014",
@@ -177,7 +177,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T08:00:00Z",
-          "raw": 31.82
+          "raw": 10.82
         },
         {
           "userId": "00000000-0000-4000-b000-000000000015",
@@ -192,7 +192,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T07:50:00Z",
-          "raw": 18.35
+          "raw": 6.24
         },
         {
           "userId": "00000000-0000-4000-b000-000000000016",
@@ -208,7 +208,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-23T19:30:00Z",
-          "raw": 14.95
+          "raw": 5.08
         },
         {
           "userId": "00000000-0000-4000-b000-000000000017",
@@ -223,7 +223,7 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T08:20:00Z",
-          "raw": 9.28
+          "raw": 3.15
         },
         {
           "userId": "00000000-0000-4000-b000-000000000018",
@@ -239,12 +239,12 @@
             "overdue": 0
           },
           "updatedAt": "2026-10-24T08:25:00Z",
-          "raw": 4.96
+          "raw": 1.69
         }
       ],
       "hiddenCount": 1,
       "hiddenRaw": [
-        49.15
+        16.71
       ]
     }
   ],
@@ -252,79 +252,79 @@
     "userId": "00000000-0000-4000-a000-000000000010",
     "result": {
       "score": 74,
-      "raw": 33.68,
+      "raw": 11.45,
       "zone": "hot",
       "contributions": [
         {
           "itemId": "evt-design-review",
           "title": "Design review",
-          "points": 7.2,
+          "points": 2.45,
           "reason": "2h review, 9 people, Heavy, tomorrow"
         },
         {
           "itemId": "tsk-onboarding-spec",
           "title": "Finish onboarding v2 spec",
-          "points": 6.4,
+          "points": 2.18,
           "reason": "Task L, due in 1.25 days"
         },
         {
           "itemId": "evt-customer-calls",
           "title": "Customer calls",
-          "points": 4.6,
+          "points": 1.56,
           "reason": "3h total, 4 people, you organize"
         },
         {
           "itemId": "tsk-q4-roadmap",
           "title": "Q4 roadmap deck",
-          "points": 4,
+          "points": 1.36,
           "reason": "Task M, overdue"
         },
         {
           "itemId": "evt-sprint-planning",
           "title": "Sprint planning",
-          "points": 3.5,
+          "points": 1.19,
           "reason": "1.5h, 8 people, Normal, Monday"
         },
         {
           "itemId": "evt-1on1s",
           "title": "1:1s",
-          "points": 2.6,
+          "points": 0.88,
           "reason": "4 x 30m, recurring, Light"
         },
         {
           "itemId": "tsk-pr-reviews",
           "title": "Review 3 PRs",
-          "points": 2.4,
+          "points": 0.82,
           "reason": "Task S, due today"
         },
         {
           "itemId": "evt-all-hands",
           "title": "All hands",
-          "points": 2.1,
+          "points": 0.71,
           "reason": "1h, 10+ people, Normal"
         },
         {
           "itemId": "evt-standup",
           "title": "Daily standup",
-          "points": 1.9,
+          "points": 0.65,
           "reason": "5 x 15m, recurring, Light"
         },
         {
           "itemId": "tsk-hiring-loop",
           "title": "Write hiring loop feedback",
-          "points": 1.8,
+          "points": 0.61,
           "reason": "Task S, due in 2 days"
         },
         {
           "itemId": "evt-focus-block",
           "title": "Focus time",
-          "points": -1.2,
+          "points": -0.41,
           "reason": "Release: 3h focus time, Thursday"
         },
         {
           "itemId": "tsk-done-bugfix",
           "title": "Fix signup bug (done)",
-          "points": -1.62,
+          "points": -0.55,
           "reason": "Release: completed task, fading"
         }
       ],

@@ -134,16 +134,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 px-4 py-7 text-sm text-muted sm:px-8">
-          <span>Boilerplate · built for Steam &amp; Steel</span>
-          <span className="flex gap-5">
-            <Link href="/how">How it works</Link>
-            <Link href="/demo">Try the demo</Link>
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }

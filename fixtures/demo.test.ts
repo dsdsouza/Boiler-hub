@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import demo from "./demo.json";
 import type { Zone } from "@/lib/types";
+import { K } from "@/lib/pressure/config";
 
 const ZONES: Zone[] = ["cool", "working", "hot", "redline"];
 const STATUSES = ["open", "heads_down", "running_hot", "away"];
-const scoreOf = (raw: number) => Math.round(100 * (1 - Math.exp(-Math.max(raw, 0) / 25)));
+// Same curve as lib/pressure, written out so this test checks the fixture against K directly.
+// Regenerate the fixture after retuning K: node scripts/gen-demo-fixture.mts
+const scoreOf = (raw: number) => Math.round(100 * (1 - Math.exp(-Math.max(raw, 0) / K)));
 
 describe("fixtures/demo.json", () => {
   it("has Product Squad (6) and AP Bio P3 (8)", () => {
@@ -24,6 +27,14 @@ describe("fixtures/demo.json", () => {
         expect(b.counts).toHaveProperty("meetingHours");
       }
     }
+  });
+
+  it("keeps the AP Bio demo story: 3 Hot, 1 Redline, 1 hidden", () => {
+    const bio = demo.teams.find((t) => t.team.name === "AP Bio P3")!;
+    const zones = bio.boilers.map((b) => b.zone);
+    expect(zones.filter((z) => z === "hot")).toHaveLength(3);
+    expect(zones.filter((z) => z === "redline")).toHaveLength(1);
+    expect(bio.hiddenCount).toBe(1);
   });
 
   it("covers all four zones", () => {

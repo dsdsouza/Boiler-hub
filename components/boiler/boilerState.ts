@@ -1,10 +1,23 @@
 import type { Contribution, ForecastDay, LoadItem, PressureResult, Size, Status, Weight } from "@/lib/types";
 import { zoneOf } from "@/components/ui/zones";
-import { WEIGHT_LABEL, WEIGHT_MULT, completedRelease, dueText, rawFromScore, scoreFromRaw, taskPoints } from "./localPressure";
+import type { CalendarState } from "@/lib/pressure/api-types";
+import {
+  COMPLETED_RELEASE,
+  COMPLETED_RELEASE_HOURS,
+  DEFAULT_WEIGHT,
+  SIZE_POINTS,
+  WEIGHTS,
+  rawFromScore,
+  scoreFromRaw,
+  taskPoints,
+} from "@/lib/pressure";
+import { WEIGHT_LABEL, dueText } from "./format";
 
-// TODO(merge): align with the engine's GET /api/me/boiler response once it lands.
+// View model for My Boiler. Built from the engine's BoilerResponse by toMyBoilerData (useMyBoiler.ts)
+// or from the demo fixture. The optimistic helpers below use the same lib/pressure formulas as the
+// server, and the server result replaces them as soon as it arrives.
 export interface MyBoilerData {
-  name: string;
+  name?: string;
   avatarUrl?: string | null;
   result: PressureResult;
   /** Owner-only load items behind the contributions (events are live, never stored). */
@@ -12,6 +25,8 @@ export interface MyBoilerData {
   status: Status;
   statusNote: string;
   syncedAt: string;
+  /** "reconnect" when Google tokens are missing or expired: the score uses tasks only. */
+  calendar: CalendarState;
 }
 
 export interface NewTask {
@@ -40,7 +55,7 @@ function setPoints(list: Contribution[], itemId: string, patch: Partial<Contribu
 
 export function addTask(data: MyBoilerData, task: NewTask, id: string, now: Date): MyBoilerData {
   const item: LoadItem = { id, kind: "task", source: "manual", title: task.title, due: task.due, size: task.size, doneAt: null };
-  const points = round1(taskPoints(task.size, task.due, now));
+  const points = round1(taskPoints({ due: task.due, size: task.size }, now));
   const contribution: Contribution = { itemId: id, title: task.title, points, reason: `Task ${task.size}, ${dueText(task.due, now)}` };
   const next = { ...data, items: [...data.items, item] };
   return settle(next, [...data.result.contributions, contribution], points, task.due);
@@ -53,8 +68,9 @@ export function setTaskDone(data: MyBoilerData, id: string, done: boolean, now: 
   const before = data.result.contributions.find((c) => c.itemId === id)?.points ?? 0;
   const doneAt = done ? now.toISOString() : null;
   const points = done
-    ? round2(completedRelease(item.size, doneAt!, now))
-    : round1(taskPoints(item.size, item.due ?? now.toISOString(), now));
+    ? // Just completed: the full release, which then fades over COMPLETED_RELEASE_HOURS.
+      round2(-COMPLETED_RELEASE * SIZE_POINTS[item.size])
+    : round1(taskPoints({ due: item.due, size: item.size }, now));
   const reason = done ? "Release: completed task, fading" : `Task ${item.size}, ${dueText(item.due ?? now.toISOString(), now)}`;
   const title = item.title;
   const items = data.items.map((i) => (i.id === id ? { ...i, doneAt } : i));
@@ -63,7 +79,7 @@ export function setTaskDone(data: MyBoilerData, id: string, done: boolean, now: 
     ? setPoints(data.result.contributions, id, { points, reason, title })
     : [...data.result.contributions, { itemId: id, title, points, reason }];
   const delta = points - before;
-  const until = done ? new Date(now.getTime() + 48 * 3_600_000).toISOString() : (item.due ?? null);
+  const until = done ? new Date(now.getTime() + COMPLETED_RELEASE_HOURS * 3_600_000).toISOString() : (item.due ?? null);
   return { data: settle({ ...data, items }, contributions, delta, until), vented: round1(Math.max(0, -delta)) };
 }
 
@@ -78,10 +94,10 @@ export function setEventWeight(data: MyBoilerData, id: string, weight: Weight, s
   let delta = 0;
   let latest: string | null = null;
   for (const item of affected) {
-    const from = item.weight ?? "normal";
+    const from = item.weight ?? DEFAULT_WEIGHT;
     const c = contributions.find((x) => x.itemId === item.id);
     if (!c || from === weight) continue;
-    const points = round2((c.points * WEIGHT_MULT[weight]) / WEIGHT_MULT[from]);
+    const points = round2((c.points * WEIGHTS[weight]) / WEIGHTS[from]);
     delta += points - c.points;
     contributions = setPoints(contributions, item.id, { points, reason: retagReason(c.reason, weight) });
     if (item.start && (!latest || item.start > latest)) latest = item.start;

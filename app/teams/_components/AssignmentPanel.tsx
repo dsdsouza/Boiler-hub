@@ -30,7 +30,7 @@ function dueIso(date: string) {
 const pill = (on: boolean) => ({
   border: `1px solid ${on ? C.brass : C.line}`,
   backgroundColor: on ? C.brass : C.surface,
-  color: on ? C.bg : C.text2,
+  color: on ? C.onFill : C.text2,
 });
 
 type Posted = { title: string; result: AssignmentPreview; matched: boolean };
@@ -167,7 +167,7 @@ export function AssignmentPanel({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Lab report: enzyme kinetics"
               className="min-h-11 w-full rounded-lg px-3 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ backgroundColor: C.bg, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight }}
+              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}`, outlineColor: C.brassLight }}
             />
           </div>
 
@@ -196,7 +196,7 @@ export function AssignmentPanel({
               min={addDays(0)}
               onChange={(e) => setDate(e.target.value)}
               className={`min-h-11 w-full rounded-lg px-3 text-[15px] [color-scheme:dark] ${MONO}`}
-              style={{ backgroundColor: C.bg, color: C.text, border: `1px solid ${C.line}` }}
+              style={{ backgroundColor: C.field, color: C.text, border: `1px solid ${C.line}` }}
             />
           </div>
 
@@ -231,7 +231,7 @@ export function AssignmentPanel({
             onClick={post}
             disabled={!preview || loading || posting || recipients === 0}
             className={`min-h-[52px] rounded-lg text-2xl tracking-[0.05em] disabled:opacity-50 ${DISPLAY}`}
-            style={{ backgroundColor: C.brass, color: C.bg, boxShadow: "inset 0 -3px 0 #8C6A35" }}
+            style={{ backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" }}
           >
             {posting
               ? "Posting…"

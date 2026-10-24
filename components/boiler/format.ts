@@ -1,4 +1,22 @@
-import type { Counts, ForecastDay } from "@/lib/types";
+import type { Counts, ForecastDay, Weight } from "@/lib/types";
+
+export const WEIGHT_LABEL: Record<Weight, string> = { light: "Light", normal: "Normal", heavy: "Heavy" };
+
+const DAY = 86_400_000;
+
+/** "overdue", "due today", "due tomorrow" or "due in N days", by local calendar day. */
+export function dueText(due: string, now: Date): string {
+  if (new Date(due).getTime() < now.getTime()) return "overdue";
+  const dueDay = new Date(due);
+  const dayDiff = Math.round(
+    (new Date(dueDay.getFullYear(), dueDay.getMonth(), dueDay.getDate()).getTime() -
+      new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) /
+      DAY,
+  );
+  if (dayDiff <= 0) return "due today";
+  if (dayDiff === 1) return "due tomorrow";
+  return `due in ${dayDiff} days`;
+}
 
 export function formatPoints(p: number) {
   return `${p < 0 ? "−" : "+"}${Math.abs(p).toFixed(1)}`;

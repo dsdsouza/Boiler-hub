@@ -22,7 +22,7 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 | engine | `lib/pressure`, `lib/google`, `app/api/me`, `app/api/sync`, `app/api/tasks`, `app/api/event-weights` |
 | ui | `components/boiler`, `components/ui`, `app/page.tsx`, `app/boiler`, `app/how`, `app/demo`, `app/layout.tsx`, `app/globals.css` |
 | teams | `app/teams`, `app/api/teams`, `lib/data/teams.ts` |
-| foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `middleware.ts`, `supabase/`, `fixtures/`, config files |
+| foundation / integration (main only) | everything else: `lib/types.ts`, `lib/supabase`, `lib/crypto.ts`, `lib/auth.ts`, `app/auth`, `app/onboarding`, `app/privacy`, `middleware.ts`, `supabase/`, `fixtures/`, `scripts/`, config files |
 
 ## Visual source of truth (ui track)
 
@@ -44,7 +44,7 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
 - `rpc('team_hidden_count', { team_id })` returns the number of members the caller cannot see.
 - `rpc('create_team', { name, type })` creates the team and the caller's lead membership, and returns the team row with a 6-char `invite_code`.
 - `rpc('join_team', { code })` joins as a hidden member and returns the team id.
-- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts), and, when an assignment posts, upserting each recipient's `pressure_snapshots` row (score, raw, zone, counts) with the same preview math so the posted result matches the preview. The last one is a teams-track stand-in until the engine's `syncUser` does a full recompute.
+- These go through the admin client after a lead check: role changes, assignment fan-out to `tasks`, reading `pressure_snapshots.raw` for assignment preview (hidden members appear only as counts), and, when an assignment posts, upserting each recipient's `pressure_snapshots` row (score, raw, zone, counts) with the same preview math so the posted result matches the preview. The route then runs the engine's `syncUser` (`lib/google/sync.ts`) for each recipient for a full recompute; members whose calendar needs a reconnect keep the preview-math snapshot.
 - After a membership check (any role), the Engine Room uses the admin client only to read `memberships.role` for members the caller can already see via `team_boilers`, to tag leads.
 - `google_tokens` is service-role only.
 
@@ -56,6 +56,12 @@ Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, S
   maya: { userId: string; result: PressureResult };
 }
 ```
+
+Every `raw` is derived from its score with the engine's `K`. After retuning `lib/pressure/config.ts`, run `node scripts/gen-demo-fixture.mts`; `fixtures/demo.test.ts` fails until you do.
+
+### Pressure numbers have one source
+
+All formula constants live in `lib/pressure/config.ts` and the math in `lib/pressure` (`scoreFromRaw`, `rawFromScore`, `taskPoints`, `applyTaskToRaw`, `zoneFor`). The UI's optimistic updates, `/demo`, `/how`, zone thresholds (`components/ui/zones.ts`) and the teams preview all import from there. Never copy a constant.
 
 ## Commands
 

@@ -33,6 +33,11 @@ export function scoreFromRaw(raw: number): number {
   return Math.round(100 * (1 - Math.exp(-Math.max(raw, 0) / K)));
 }
 
+/** Inverse of scoreFromRaw: raw = −K × ln(1 − score/100). Capped below 100 so the result stays finite. */
+export function rawFromScore(score: number): number {
+  return -K * Math.log(1 - Math.min(Math.max(score, 0), 99.5) / 100);
+}
+
 export function zoneFor(score: number): Zone {
   if (score >= ZONE_MIN.redline) return "redline";
   if (score >= ZONE_MIN.hot) return "hot";

@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Status, Weight } from "@/lib/types";
+import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "./boilerState";
 import type { MyBoilerData, NewTask } from "./boilerState";
 import { mayaBoiler } from "./fixture";
+import { eventWeightBody, newTaskBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
 
 export type DataSource = "fixture" | "api";
 
-// TODO(merge): flip to "api" once the engine track's /api/me/boiler is merged.
-const SOURCE: DataSource = "fixture";
+const SOURCE: DataSource = "api";
 
 export interface VentEvent {
   key: number;
@@ -18,14 +19,17 @@ export interface VentEvent {
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
-  if (!res.ok) throw new Error(`${init?.method ?? "GET"} ${path} failed (${res.status})`);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? `${init?.method ?? "GET"} ${path} failed (${res.status})`);
+  }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
 /**
- * The one data hook for My Boiler. Every action updates the local state
- * optimistically with the same formula as the engine; in "api" mode it then
- * calls the route and reloads, so the server result always wins.
+ * The one data hook for My Boiler. Every action updates the local state optimistically with the
+ * lib/pressure formulas; in "api" mode it then calls the engine route, and the BoilerResponse that
+ * route returns replaces the local guess, so the server result always wins.
  */
 export function useMyBoiler(source: DataSource = SOURCE) {
   // Fixture data is dated relative to the viewer's clock and timezone, so it is
@@ -44,8 +48,7 @@ export function useMyBoiler(source: DataSource = SOURCE) {
       return;
     }
     try {
-      // TODO(merge): map the engine's response if it differs from MyBoilerData.
-      setData(await api<MyBoilerData>("/api/me/boiler"));
+      setData(toMyBoilerData(await api<BoilerResponse>("/api/me/boiler")));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load your boiler");
@@ -56,13 +59,15 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     void load();
   }, [load]);
 
+  /** Optimistic local update, then the remote call. A returned BoilerResponse replaces local state. */
   const mutate = useCallback(
-    async (local: (d: MyBoilerData) => MyBoilerData, remote?: () => Promise<unknown>) => {
+    async (local: (d: MyBoilerData) => MyBoilerData, remote?: () => Promise<BoilerResponse | null>) => {
       setData((d) => (d ? local(d) : d));
       if (source === "fixture" || !remote) return;
       try {
-        await remote();
-        await load();
+        const fresh = await remote();
+        if (fresh) setData(toMyBoilerData(fresh));
+        setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
         await load();
@@ -76,7 +81,8 @@ export function useMyBoiler(source: DataSource = SOURCE) {
       const id = `local-${Date.now()}-${seq.current++}`;
       return mutate(
         (d) => S.addTask(d, task, id, new Date()),
-        () => api("/api/tasks", { method: "POST", body: JSON.stringify(task) }),
+        async () =>
+          (await api<{ boiler: BoilerResponse }>("/api/tasks", { method: "POST", body: JSON.stringify(newTaskBody(task)) })).boiler,
       );
     },
     [mutate],
@@ -90,8 +96,13 @@ export function useMyBoiler(source: DataSource = SOURCE) {
       if (done) setVent((v) => ({ key: v.key + 1, amount: vented }));
       return mutate(
         (d) => S.setTaskDone(d, id, done, new Date()).data,
-        // TODO(merge): confirm the PATCH body with the engine track.
-        () => api(`/api/tasks/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ done }) }),
+        async () =>
+          (
+            await api<{ boiler: BoilerResponse }>(`/api/tasks/${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              body: JSON.stringify(taskDoneBody(done)),
+            })
+          ).boiler,
       );
     },
     [mutate],
@@ -99,13 +110,14 @@ export function useMyBoiler(source: DataSource = SOURCE) {
 
   const setEventWeight = useCallback(
     (id: string, weight: Weight, series: boolean) => {
+      const item = dataRef.current?.items.find((i) => i.id === id);
       return mutate(
         (d) => S.setEventWeight(d, id, weight, series),
-        () => {
-          const item = dataRef.current?.items.find((i) => i.id === id);
-          const body = series && item?.seriesKey ? { seriesKey: item.seriesKey, weight } : { eventId: id, weight };
-          return api("/api/event-weights", { method: "PUT", body: JSON.stringify(body) });
-        },
+        () =>
+          api<BoilerResponse>("/api/event-weights", {
+            method: "PUT",
+            body: JSON.stringify(eventWeightBody(item ?? { id }, weight, series)),
+          }),
       );
     },
     [mutate],
@@ -115,7 +127,11 @@ export function useMyBoiler(source: DataSource = SOURCE) {
     (status: Status, note: string) =>
       mutate(
         (d) => S.setStatus(d, status, note),
-        () => api("/api/me/status", { method: "PATCH", body: JSON.stringify({ status, note }) }),
+        // Status never changes the score, so there is no boiler to refresh.
+        async () => {
+          await api("/api/me/status", { method: "PATCH", body: JSON.stringify(statusBody(status, note)) });
+          return null;
+        },
       ),
     [mutate],
   );
@@ -127,15 +143,15 @@ export function useMyBoiler(source: DataSource = SOURCE) {
         await new Promise((r) => setTimeout(r, 600));
         setData((d) => (d ? { ...d, syncedAt: new Date().toISOString() } : d));
       } else {
-        await api("/api/sync", { method: "POST" });
-        await load();
+        setData(toMyBoilerData(await api<BoilerResponse>("/api/sync", { method: "POST" })));
+        setError(null);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sync failed");
     } finally {
       setSyncing(false);
     }
-  }, [source, load]);
+  }, [source]);
 
   return { source, data, error, syncing, vent, addTask, setTaskDone, setEventWeight, setStatus, refresh };
 }
