@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boilerplate — Landing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#15120E}
+a{color:#E3BE74}a:hover{color:#F3D79C}
+.plate{background-image:radial-gradient(circle at 12px 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at 12px calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px)}
+input[type=range]{accent-color:#D1A85A}
+</style>
+</helmet>
+<div style="min-height: 100vh; background-color: #15120E; color: #F1E7D3; font-family: Inter, system-ui, sans-serif">
+
+<header style="border-bottom: 1px solid #3A3027">
+<div style="max-width: 1240px; margin: 0 auto; padding: 16px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #F1E7D3">
+<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#D1A85A" stroke-width="3"></circle><line x1="17" y1="17" x2="25" y2="10" stroke="#F0913A" stroke-width="3" stroke-linecap="round"></line><circle cx="17" cy="17" r="3" fill="#D1A85A"></circle></svg>
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; letter-spacing: 0.06em; line-height: 1">Boilerplate</span>
+</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<a href="#how" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-size: 15px; font-weight: 500">How it works</a>
+<a href="EngineRoom.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-size: 15px; font-weight: 500">Demo</a>
+<a href="MyBoiler.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; color: #F1E7D3; text-decoration: none; font-size: 15px; font-weight: 600; border: 1px solid #6B5A44; border-radius: 8px">Sign in with Google</a>
+</nav>
+</div>
+</header>
+
+<section style="max-width: 1240px; margin: 0 auto; padding: 72px 32px 80px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 56px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.18em; color: #E3BE74">STEAM &amp; STEEL · CAPACITY GAUGE</div>
+<h1 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: clamp(52px, 7vw, 88px); line-height: 0.95; letter-spacing: 0.01em">You can see everyone’s calendar. You can’t see their pressure.</h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.6; color: #D9CCB5; max-width: 560px">Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finished tasks and free time vent it. Teams see who is near the red line, only with their permission.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; padding-top: 8px">
+<a href="EngineRoom.dc.html" style="display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 32px; background-color: #D1A85A; color: #15120E; text-decoration: none; border-radius: 8px; font-family: 'Bebas Neue', Impact, sans-serif; font-size: 26px; letter-spacing: 0.05em; box-shadow: inset 0 -3px 0 #8C6A35">Try the demo</a>
+<a href="MyBoiler.dc.html" style="display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 26px; color: #F1E7D3; text-decoration: none; border: 1px solid #6B5A44; border-radius: 8px; font-size: 16px; font-weight: 600">Sign in with Google</a>
+</div>
+<p style="margin: 0; font-size: 14px; color: #B3A48C">The demo needs no sign-in. It loads a seeded class and work team.</p>
+</div>
+
+<div class="plate" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 14px; padding: 36px 32px 28px; display: flex; flex-direction: column; align-items: center; gap: 20px">
+<dc-import name="Boiler" score="{{score}}" width="320" hint-size="320px,453px"></dc-import>
+<div style="width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="pressure" style="font-size: 14px; color: #D9CCB5; font-weight: 500">Drag to add pressure</label>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 15px; font-weight: 700; color: {{zoneColor}}">{{score}} · {{zoneName}}</span>
+</div>
+<input id="pressure" type="range" min="0" max="100" value="{{score}}" onChange="{{onScore}}" style="width: 100%; height: 28px; margin: 0">
+<div style="font-size: 13px; color: #B3A48C">{{zoneDesc}}</div>
+</div>
+</div>
+</section>
+
+<section id="how" style="border-top: 1px solid #3A3027; background-color: #1A1611">
+<div style="max-width: 1240px; margin: 0 auto; padding: 72px 32px; display: flex; flex-direction: column; gap: 36px">
+<h2 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 52px; letter-spacing: 0.02em">How the pressure moves</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px">
+<div class="plate" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 32px 28px; display: flex; flex-direction: column; gap: 12px">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="#F0913A" stroke-width="2.5" stroke-linecap="round"><path d="M20 34V8"></path><path d="M11 17l9-9 9 9"></path></svg>
+<h3 style="margin: 0; font-size: 20px; font-weight: 700">Pressure in</h3>
+<p style="margin: 0; color: #D9CCB5; line-height: 1.6">Connect Google Calendar and add tasks. Meetings, deadlines and homework over the next 7 days build the score from 0 to 100.</p>
+</div>
+<div class="plate" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 32px 28px; display: flex; flex-direction: column; gap: 12px">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="#7FB3D5" stroke-width="2.5" stroke-linecap="round"><path d="M10 28c0-6 6-6 6-12M20 28c0-6 6-6 6-12M30 28c0-6-4-6-4-10"></path></svg>
+<h3 style="margin: 0; font-size: 20px; font-weight: 700">Steam out</h3>
+<p style="margin: 0; color: #D9CCB5; line-height: 1.6">Finished tasks, focus time and days off open the release valve. Complete a task and watch the needle drop.</p>
+</div>
+<div class="plate" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 32px 28px; display: flex; flex-direction: column; gap: 12px">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="#D1A85A" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="18" width="22" height="16" rx="3"></rect><path d="M14 18v-5a6 6 0 0 1 12 0v5"></path></svg>
+<h3 style="margin: 0; font-size: 20px; font-weight: 700">Shared on your terms</h3>
+<p style="margin: 0; color: #D9CCB5; line-height: 1.6">Join a class or work team and choose who sees your gauge: Hidden, Lead only, or Everyone. Hidden is the default.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid #3A3027">
+<div style="max-width: 1240px; margin: 0 auto; padding: 72px 32px; display: flex; flex-direction: column; gap: 36px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 52px; letter-spacing: 0.02em">Four zones, one glance</h2>
+<p style="margin: 0; color: #D9CCB5; font-size: 17px">The gauge measures load, not wellbeing.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 20px">
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<dc-import name="Boiler" score="22" width="150" hint-size="150px,212px"></dc-import>
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; letter-spacing: 0.05em; color: #7FB3D5">Cool · 0–39</div>
+<div style="font-size: 14px; color: #B3A48C; text-align: center">Calm, light steam</div>
+</div>
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<dc-import name="Boiler" score="55" width="150" hint-size="150px,212px"></dc-import>
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; letter-spacing: 0.05em; color: #D1A85A">Working · 40–69</div>
+<div style="font-size: 14px; color: #B3A48C; text-align: center">Steady steam</div>
+</div>
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<dc-import name="Boiler" score="80" width="150" hint-size="150px,212px"></dc-import>
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; letter-spacing: 0.05em; color: #F0913A">Hot · 70–89</div>
+<div style="font-size: 14px; color: #B3A48C; text-align: center">Shaking, heavy steam, amber gauge</div>
+</div>
+<div style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<dc-import name="Boiler" score="95" width="150" hint-size="150px,212px"></dc-import>
+<div style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; letter-spacing: 0.05em; color: #F25C45">Redline · 90–100</div>
+<div style="font-size: 14px; color: #B3A48C; text-align: center">Whistle, red glow, strong shake</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid #3A3027; background-color: #1A1611">
+<div style="max-width: 1240px; margin: 0 auto; padding: 72px 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 48px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 52px; letter-spacing: 0.02em; line-height: 1">We never store what is on your calendar.</h2>
+<p style="margin: 0; color: #D9CCB5; font-size: 17px; line-height: 1.6">Teams see a number, a zone and your status, only if you choose. Never event titles, attendees or times. You can hide from any team at any time.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 16px; align-items: center; padding: 18px 20px; background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 10px">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 14px; color: #15120E; background-color: #B3A48C; border-radius: 6px; padding: 6px 10px; min-width: 96px; text-align: center">HIDDEN</span>
+<span style="color: #D9CCB5">Nobody sees your boiler. The default when you join.</span>
+</div>
+<div style="display: flex; gap: 16px; align-items: center; padding: 18px 20px; background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 10px">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 14px; color: #15120E; background-color: #D1A85A; border-radius: 6px; padding: 6px 10px; min-width: 96px; text-align: center">LEAD ONLY</span>
+<span style="color: #D9CCB5">Only the team’s leads or teacher see it.</span>
+</div>
+<div style="display: flex; gap: 16px; align-items: center; padding: 18px 20px; background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 10px">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 14px; color: #15120E; background-color: #7FB3D5; border-radius: 6px; padding: 6px 10px; min-width: 96px; text-align: center">EVERYONE</span>
+<span style="color: #D9CCB5">Everyone on that team sees your gauge and status.</span>
+</div>
+</div>
+</div>
+</section>
+
+<footer style="border-top: 1px solid #3A3027">
+<div style="max-width: 1240px; margin: 0 auto; padding: 28px 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 14px; color: #B3A48C">
+<span>Boilerplate · built for Steam &amp; Steel</span>
+<a href="EngineRoom.dc.html">Try the demo</a>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { score: 62 };
+  }
+  renderVals() {
+    const s = this.state.score;
+    const zone = s < 40 ? 'cool' : s < 70 ? 'working' : s < 90 ? 'hot' : 'redline';
+    const names = { cool: 'COOL', working: 'WORKING', hot: 'HOT', redline: 'REDLINE' };
+    const colors = { cool: '#7FB3D5', working: '#D1A85A', hot: '#F0913A', redline: '#F25C45' };
+    const desc = {
+      cool: 'Calm, light steam. Plenty of room.',
+      working: 'Steady steam. A full but manageable week.',
+      hot: 'Shaking, heavy steam. Check before adding more.',
+      redline: 'The whistle blows. Something has to give.'
+    };
+    return {
+      score: s,
+      zoneName: names[zone],
+      zoneColor: colors[zone],
+      zoneDesc: desc[zone],
+      onScore: (e) => this.setState({ score: Number(e.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

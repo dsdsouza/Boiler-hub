@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boilerplate — My Boiler</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#15120E}
+a{color:#E3BE74}a:hover{color:#F3D79C}
+.plate{background-image:radial-gradient(circle at 12px 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) 12px,#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at 12px calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 12px) calc(100% - 12px),#6B5A44 2.5px,transparent 3.5px)}
+@keyframes vent{0%{transform:translate(-50%,0) scale(.3);opacity:.95}100%{transform:translate(-50%,-150px) scale(2.6);opacity:0}}
+@keyframes ventText{0%{opacity:0;transform:translateY(8px)}20%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0}}
+.vent{position:absolute;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#F4EEE2 0%,rgba(244,238,226,.55) 45%,rgba(244,238,226,0) 70%);animation:vent 1.4s ease-out forwards}
+.ventText{animation:ventText 1.5s ease-out forwards}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #E3BE74;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){.vent,.ventText{animation:none;opacity:0}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background-color: #15120E; color: #F1E7D3; font-family: Inter, system-ui, sans-serif">
+
+<header style="border-bottom: 1px solid #3A3027; background-color: #1A1611">
+<div style="max-width: 1240px; margin: 0 auto; padding: 10px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #F1E7D3">
+<svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#D1A85A" stroke-width="3"></circle><line x1="17" y1="17" x2="25" y2="10" stroke="#F0913A" stroke-width="3" stroke-linecap="round"></line><circle cx="17" cy="17" r="3" fill="#D1A85A"></circle></svg>
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 26px; letter-spacing: 0.06em; line-height: 1">Boilerplate</span>
+</a>
+<nav aria-label="App" style="display: flex; flex-wrap: wrap; gap: 4px">
+<a href="MyBoiler.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #F1E7D3; text-decoration: none; font-weight: 600; font-size: 15px; border-bottom: 2px solid #D1A85A">My Boiler</a>
+<a href="EngineRoom.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-weight: 500; font-size: 15px">Teams</a>
+<a href="Main.dc.html#how" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #D9CCB5; text-decoration: none; font-weight: 500; font-size: 15px">How it works</a>
+</nav>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<button type="button" onClick="{{toggleSound}}" aria-pressed="{{soundPressed}}" style="min-height: 44px; padding: 0 14px; background-color: transparent; color: #D9CCB5; border: 1px solid #3A3027; border-radius: 8px; font: 500 14px Inter, system-ui, sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M16 9a4 4 0 0 1 0 6"></path></svg>
+{{soundLabel}}
+</button>
+<div aria-label="Signed in as Maya Chen" style="width: 40px; height: 40px; border-radius: 50%; background-color: #C47A45; color: #15120E; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">MC</div>
+</div>
+</div>
+</header>
+
+<main style="max-width: 1240px; margin: 0 auto; padding: 32px 32px 64px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px">
+<div>
+<h1 style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 56px; letter-spacing: 0.02em; line-height: 1">My Boiler</h1>
+<p style="margin: 6px 0 0; color: #B3A48C; font-size: 15px">Google Calendar connected · next 7 days · {{syncLabel}}</p>
+</div>
+<button type="button" onClick="{{refresh}}" style="min-height: 44px; padding: 0 18px; background-color: #2A231B; color: #F1E7D3; border: 1px solid #6B5A44; border-radius: 8px; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
+Refresh
+</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<section aria-label="Gauge and status" class="plate" style="flex: 1 1 360px; min-width: 0; background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 14px; padding: 32px 28px; display: flex; flex-direction: column; align-items: center; gap: 22px">
+<div style="position: relative; display: flex; justify-content: center">
+<dc-import name="Boiler" score="{{score}}" width="290" fire="{{fire}}" hint-size="290px,411px"></dc-import>
+<sc-if value="{{venting}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+<div class="vent" style="left: 30%; top: 30%"></div>
+<div class="vent" style="left: 45%; top: 22%; animation-delay: 0.1s"></div>
+<div class="vent" style="left: 62%; top: 34%; animation-delay: 0.2s"></div>
+<div class="vent" style="left: 38%; top: 46%; animation-delay: 0.15s"></div>
+<div class="vent" style="left: 56%; top: 50%; animation-delay: 0.05s"></div>
+</div>
+<div class="ventText" role="status" style="position: absolute; top: 8px; left: 50%; margin-left: -70px; width: 140px; text-align: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 14px; color: #15120E; background-color: #7FB3D5; border-radius: 6px; padding: 6px 0">{{ventMsg}}</div>
+</sc-if>
+</div>
+
+<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 64px; line-height: 1; color: {{zoneColor}}">{{score}}</span>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Bebas Neue', Impact, sans-serif; font-size: 26px; letter-spacing: 0.08em; color: #15120E; background-color: {{zoneColor}}; border-radius: 6px; padding: 2px 12px; text-align: center">{{zoneName}}</span>
+<sc-if value="{{whistle}}" hint-placeholder-val="{{false}}">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #F25C45; text-align: center">WHISTLE BLOWING</span>
+</sc-if>
+</div>
+</div>
+
+<div style="width: 100%; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #B3A48C">YOUR STATUS</div>
+<div role="group" aria-label="Status" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{statuses}}" as="s" hint-placeholder-count="4">
+<button type="button" onClick="{{s.pick}}" aria-pressed="{{s.pressed}}" style="{{s.style}}">
+<span aria-hidden="true" style="{{s.dot}}"></span>{{s.label}}
+</button>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 13px; color: #B3A48C">{{statusHint}}</p>
+<label for="note" style="font-size: 13px; color: #D9CCB5; font-weight: 500; padding-top: 4px">Status note (shown to your teams)</label>
+<input id="note" type="text" maxlength="80" value="{{note}}" onChange="{{onNote}}" style="min-height: 44px; box-sizing: border-box; width: 100%; padding: 0 12px; background-color: #15120E; color: #F1E7D3; border: 1px solid #3A3027; border-radius: 8px; font: 15px Inter, system-ui, sans-serif">
+<p style="margin: 0; font-size: 12px; color: #B3A48C">Status never changes your score.</p>
+</div>
+</section>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+<section aria-labelledby="fc" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 14px; padding: 24px 28px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 16px">
+<h2 id="fc" style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 30px; letter-spacing: 0.03em">7-day forecast</h2>
+<span style="font-size: 13px; color: #B3A48C">Thursday is already lit</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; align-items: end">
+<sc-for list="{{forecast}}" as="f" hint-placeholder-count="7">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; font-weight: 700; color: {{f.color}}">{{f.s}}</span>
+<div style="height: 100px; width: 100%; max-width: 44px; display: flex; align-items: flex-end; background-color: #2A231B; border-radius: 6px; overflow: hidden">
+<div style="{{f.bar}}"></div>
+</div>
+<span style="{{f.labelStyle}}">{{f.d}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="why" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 14px; padding: 24px 28px">
+<h2 id="why" style="margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 30px; letter-spacing: 0.03em">Why is my needle here?</h2>
+<p style="margin: 4px 0 12px; color: #B3A48C; font-size: 14px">Only you see this breakdown. Teams see a number, a zone and counts. Tag an event Light, Normal or Heavy to tune it.</p>
+<sc-for list="{{contribs}}" as="c" hint-placeholder-count="8">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-top: 1px solid #3A3027">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+<div style="min-width: 0">
+<div style="font-weight: 600; font-size: 15px">{{c.title}}</div>
+<div style="font-size: 13px; color: #B3A48C">{{c.reason}}</div>
+</div>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 15px; color: {{c.color}}; white-space: nowrap">{{c.pts}}</span>
+</div>
+<div style="height: 6px; background-color: #2A231B; border-radius: 3px; overflow: hidden"><div style="{{c.bar}}"></div></div>
+<sc-if value="{{c.isEvent}}" hint-placeholder-val="{{true}}">
+<div role="group" aria-label="Weight for {{c.title}}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<sc-for list="{{c.opts}}" as="o" hint-placeholder-count="3">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+<sc-if value="{{c.series}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; color: #B3A48C; padding-left: 4px">Applies to the whole series</span>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="tasks" style="background-color: #1F1A14; border: 1px solid #3A3027; border-radius: 14px; padding: 24px 28px">
+<h2 id="tasks" style="margin: 0 0 8px; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 30px; letter-spacing: 0.03em">Tasks</h2>
+<sc-for list="{{tasks}}" as="t" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 14px; padding: 10px 0; border-top: 1px solid #3A3027">
+<button type="button" onClick="{{t.toggle}}" aria-pressed="{{t.pressed}}" aria-label="{{t.aria}}" style="{{t.boxStyle}}">
+<sc-if value="{{t.done}}" hint-placeholder-val="{{false}}">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#15120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+</sc-if>
+</button>
+<div style="flex: 1; min-width: 0">
+<div style="{{t.titleStyle}}">{{t.title}}</div>
+<div style="font-size: 13px; color: #B3A48C">{{t.meta}}</div>
+</div>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #D9CCB5; border: 1px solid #6B5A44; border-radius: 4px; padding: 2px 7px">{{t.size}}</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; font-weight: 700; color: {{t.ptsColor}}; min-width: 48px; text-align: right">{{t.pts}}</span>
+</div>
+</sc-for>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: end; padding-top: 16px; border-top: 1px solid #3A3027">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px">
+<label for="nt" style="font-size: 13px; color: #D9CCB5; font-weight: 500">New task</label>
+<input id="nt" type="text" placeholder="e.g. Draft lab report" value="{{newTitle}}" onChange="{{onNewTitle}}" style="min-height: 44px; box-sizing: border-box; width: 100%; padding: 0 12px; background-color: #15120E; color: #F1E7D3; border: 1px solid #3A3027; border-radius: 8px; font: 15px Inter, system-ui, sans-serif">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ns" style="font-size: 13px; color: #D9CCB5; font-weight: 500">Size</label>
+<select id="ns" value="{{newSize}}" onChange="{{onNewSize}}" style="min-height: 44px; padding: 0 10px; background-color: #15120E; color: #F1E7D3; border: 1px solid #3A3027; border-radius: 8px; font: 15px Inter, system-ui, sans-serif">
+<option value="S">S · 2 pts</option>
+<option value="M">M · 4 pts</option>
+<option value="L">L · 8 pts</option>
+</select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="nd" style="font-size: 13px; color: #D9CCB5; font-weight: 500">Due</label>
+<select id="nd" value="{{newDue}}" onChange="{{onNewDue}}" style="min-height: 44px; padding: 0 10px; background-color: #15120E; color: #F1E7D3; border: 1px solid #3A3027; border-radius: 8px; font: 15px Inter, system-ui, sans-serif">
+<option value="today">Today</option>
+<option value="tomorrow">Tomorrow</option>
+<option value="later">In 3 days</option>
+</select>
+</div>
+<button type="button" onClick="{{addTask}}" style="min-height: 44px; padding: 0 22px; background-color: #D1A85A; color: #15120E; border: 0; border-radius: 8px; font-family: 'Bebas Neue', Impact, sans-serif; font-size: 22px; letter-spacing: 0.05em; cursor: pointer">Add task</button>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      events: [
+        { id: 'e1', title: 'Quarterly planning', reason: 'Thu · 3h · 12 people · you organize', base: 6.8, weight: 'normal' },
+        { id: 'e2', title: 'Product sync', reason: 'Tue · 2h · 9 people', base: 4.1, weight: 'heavy' },
+        { id: 'e3', title: 'Daily standup', reason: 'Series · 5× this week', base: 4.4, weight: 'light', series: true },
+        { id: 'e4', title: 'Design crit', reason: 'Wed · 1.5h · 6 people', base: 2.6, weight: 'normal' },
+        { id: 'e5', title: '1:1 with Jordan', reason: 'Mon · 30m · 2 people', base: 1.1, weight: 'normal' }
+      ],
+      tasks: [
+        { id: 't1', title: 'Review Sam’s PR', size: 'S', dueLabel: 'Due today', pts: 6, done: false },
+        { id: 't2', title: 'Expense report', size: 'S', dueLabel: 'Overdue', pts: 6, done: false },
+        { id: 't3', title: 'Ship onboarding copy', size: 'M', dueLabel: 'Due tomorrow', pts: 4, done: false },
+        { id: 't4', title: 'Q4 roadmap draft', size: 'L', dueLabel: 'Due Mon', pts: 4, done: false }
+      ],
+      status: 'heads_down',
+      note: 'Planning week, back to normal Fri',
+      sound: false,
+      venting: false,
+      ventMsg: '',
+      synced: 'synced 4 min ago',
+      newTitle: '', newSize: 'M', newDue: 'tomorrow'
+    };
+  }
+  componentWillUnmount() { clearTimeout(this._vt); }
+  setWeight(id, w) {
+    this.setState({ events: this.state.events.map((e) => e.id === id ? Object.assign({}, e, { weight: w }) : e) });
+  }
+  toggleTask(id) {
+    const SIZE = { S: 2, M: 4, L: 8 };
+    let vented = null;
+    const tasks = this.state.tasks.map((t) => {
+      if (t.id !== id) return t;
+      if (!t.done) vented = 0.5 * SIZE[t.size] + t.pts;
+      return Object.assign({}, t, { done: !t.done });
+    });
+    this.setState({ tasks });
+    if (vented != null) {
+      clearTimeout(this._vt);
+      this.setState({ venting: false });
+      setTimeout(() => this.setState({ venting: true, ventMsg: 'VENTED −' + vented.toFixed(1) }), 20);
+      this._vt = setTimeout(() => this.setState({ venting: false }), 1600);
+    }
+  }
+  addTask() {
+    const s = this.state;
+    const title = (s.newTitle || '').trim();
+    if (!title) return;
+    const SIZE = { S: 2, M: 4, L: 8 };
+    const urg = { today: 3, tomorrow: 1, later: 0.33 };
+    const lab = { today: 'Due today', tomorrow: 'Due tomorrow', later: 'Due in 3 days' };
+    const t = { id: 't' + Date.now(), title, size: s.newSize, dueLabel: lab[s.newDue], pts: Math.round(SIZE[s.newSize] * urg[s.newDue] * 10) / 10, done: false };
+    this.setState({ tasks: s.tasks.concat([t]), newTitle: '' });
+  }
+  renderVals() {
+    const s = this.state;
+    const SIZE = { S: 2, M: 4, L: 8 };
+    const MULT = { light: 0.5, normal: 1, heavy: 1.6 };
+    const WN = { light: 'Light', normal: 'Normal', heavy: 'Heavy' };
+    const ZC = { cool: '#7FB3D5', working: '#D1A85A', hot: '#F0913A', redline: '#F25C45' };
+    const zoneOf = (x) => x < 40 ? 'cool' : x < 70 ? 'working' : x < 90 ? 'hot' : 'redline';
+    const btn = (on) => 'min-height: 44px; padding: 0 14px; border-radius: 6px; cursor: pointer; font: 600 13px Inter, system-ui, sans-serif; border: 1px solid ' + (on ? '#D1A85A' : '#3A3027') + '; background-color: ' + (on ? '#D1A85A' : 'transparent') + '; color: ' + (on ? '#15120E' : '#D9CCB5');
+
+    let R = 0;
+    const items = [];
+    s.events.forEach((e) => {
+      const p = e.base * MULT[e.weight];
+      R += p;
+      items.push({
+        title: e.title, reason: e.reason + ' · ' + WN[e.weight], raw: p, isEvent: true, series: !!e.series,
+        opts: ['light', 'normal', 'heavy'].map((k) => ({ label: WN[k], pressed: e.weight === k ? 'true' : 'false', style: btn(e.weight === k), pick: () => this.setWeight(e.id, k) }))
+      });
+    });
+    R -= 1.4;
+    items.push({ title: 'Focus block', reason: 'Wed · 2h focus time · release valve', raw: -1.4, isEvent: false, series: false, opts: [] });
+    s.tasks.forEach((t) => {
+      const p = t.done ? -0.5 * SIZE[t.size] : t.pts;
+      R += p;
+      items.push({ title: t.title, reason: t.done ? 'Completed · venting, fades over 48h' : 'Task · size ' + t.size + ' · ' + t.dueLabel, raw: p, isEvent: false, series: false, opts: [] });
+    });
+    const score = Math.round(100 * (1 - Math.exp(-Math.max(R, 0) / 25)));
+    const zone = zoneOf(score);
+    const maxAbs = Math.max.apply(null, items.map((i) => Math.abs(i.raw)));
+    items.sort((a, b) => Math.abs(b.raw) - Math.abs(a.raw));
+    const contribs = items.map((i) => {
+      const col = i.raw < 0 ? '#7FB3D5' : '#E3BE74';
+      return Object.assign({}, i, {
+        pts: (i.raw < 0 ? '−' : '+') + Math.abs(i.raw).toFixed(1),
+        color: col,
+        bar: 'height: 6px; border-radius: 3px; transition: width 500ms ease; width: ' + Math.round(Math.abs(i.raw) / maxAbs * 100) + '%; background-color: ' + col
+      });
+    });
+
+    const days = [['Today', score], ['Sun', 44], ['Mon', 67], ['Tue', 88], ['Wed', 73], ['Thu', 92], ['Fri', 58]];
+    const forecast = days.map((d, i) => {
+      const c = ZC[zoneOf(d[1])];
+      return {
+        d: d[0], s: d[1], color: c,
+        bar: 'width: 100%; transition: height 500ms ease; height: ' + Math.max(4, d[1]) + 'px; background-color: ' + c,
+        labelStyle: 'font-size: 12px; font-weight: ' + (i === 0 ? '700' : '500') + '; color: ' + (i === 0 ? '#F1E7D3' : '#B3A48C')
+      };
+    });
+
+    const ST = [
+      ['open', 'Open for work', '#7FB3D5', 'Busy calendar, but I have room.'],
+      ['heads_down', 'Heads down', '#D1A85A', 'Focused, please don’t add anything.'],
+      ['running_hot', 'Running hot', '#F25C45', 'Check in with me.'],
+      ['away', 'Away', '#B3A48C', 'Out or offline.']
+    ];
+    const statuses = ST.map((x) => {
+      const on = s.status === x[0];
+      return {
+        label: x[1], pressed: on ? 'true' : 'false',
+        pick: () => this.setState({ status: x[0] }),
+        style: 'min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; cursor: pointer; text-align: left; font: 600 14px Inter, system-ui, sans-serif; color: #F1E7D3; background-color: ' + (on ? '#2A231B' : 'transparent') + '; border: 1px solid ' + (on ? '#D1A85A' : '#3A3027'),
+        dot: 'width: 10px; height: 10px; border-radius: 50%; flex: none; background-color: ' + x[2]
+      };
+    });
+    const hint = ST.find((x) => x[0] === s.status)[3];
+
+    const tasks = s.tasks.map((t) => ({
+      title: t.title, size: t.size, done: t.done,
+      pressed: t.done ? 'true' : 'false',
+      aria: (t.done ? 'Mark not done: ' : 'Complete: ') + t.title,
+      meta: t.done ? 'Done · steam vented' : t.dueLabel,
+      pts: t.done ? '−' + (0.5 * SIZE[t.size]).toFixed(1) : '+' + t.pts.toFixed(1),
+      ptsColor: t.done ? '#7FB3D5' : '#E3BE74',
+      toggle: () => this.toggleTask(t.id),
+      boxStyle: 'width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; border: 2px solid ' + (t.done ? '#7FB3D5' : '#6B5A44') + '; background-color: ' + (t.done ? '#7FB3D5' : 'transparent'),
+      titleStyle: 'font-weight: 600; font-size: 15px; ' + (t.done ? 'text-decoration: line-through; color: #B3A48C' : 'color: #F1E7D3')
+    }));
+
+    return {
+      score, zoneName: zone.toUpperCase(), zoneColor: ZC[zone], whistle: zone === 'redline',
+      fire: '0.85',
+      venting: s.venting, ventMsg: s.ventMsg,
+      contribs, forecast, statuses, statusHint: hint, tasks,
+      note: s.note, onNote: (e) => this.setState({ note: e.target.value.slice(0, 80) }),
+      soundLabel: s.sound ? 'Sound on' : 'Sound off', soundPressed: s.sound ? 'true' : 'false',
+      toggleSound: () => this.setState({ sound: !s.sound }),
+      syncLabel: s.synced,
+      refresh: () => this.setState({ synced: 'synced just now' }),
+      newTitle: s.newTitle, newSize: s.newSize, newDue: s.newDue,
+      onNewTitle: (e) => this.setState({ newTitle: e.target.value }),
+      onNewSize: (e) => this.setState({ newSize: e.target.value }),
+      onNewDue: (e) => this.setState({ newDue: e.target.value }),
+      addTask: () => this.addTask()
+    };
+  }
+}
+</script>
+</body>
+</html>
