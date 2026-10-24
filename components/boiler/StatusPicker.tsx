@@ -48,8 +48,8 @@ export function StatusPicker({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(s, draft.trim())}
-              className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-left text-sm font-semibold text-fg ${
-                on ? "border-brass bg-surface-2" : "border-line bg-transparent hover:border-rivet"
+              className={`bp-control flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-2.5 text-left text-[13px] font-semibold text-fg ${
+                on ? "border-brass bg-surface-2" : "border-control bg-transparent hover:border-brass"
               }`}
             >
               <StatusDot status={s} size={10} />
@@ -76,7 +76,7 @@ export function StatusPicker({
             commitNote();
           }
         }}
-        className="min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted"
+        className="bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 text-base text-fg placeholder:text-muted"
       />
       <p className="m-0 flex justify-between text-xs text-muted">
         <span>Status never changes your score.</span>

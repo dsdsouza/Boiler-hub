@@ -74,7 +74,7 @@ export function CalendarSubscription() {
   return (
     <Card as="section" aria-labelledby={`${id}-title`} className="px-5 py-6 sm:px-7">
       <CardTitle id={`${id}-title`} className="mb-1">Deadlines in Apple Calendar</CardTitle>
-      <p className="mt-0 mb-4 text-sm text-body">Subscribe to your dated tasks and team assignments. Apple Calendar checks for updates on its refresh schedule; edit or complete deadlines in Boiler Hub. Imported calendar and GitHub items stay with their original source.</p>
+      <p className="mt-0 mb-4 max-w-[70ch] text-sm text-body">Subscribe to your dated tasks and team assignments. Apple Calendar checks for updates on its refresh schedule; edit or complete deadlines in Boiler Hub. Imported calendar and GitHub items stay with their original source.</p>
       <div className="flex flex-wrap items-center gap-3">
         {links ? (
           <>
@@ -90,7 +90,7 @@ export function CalendarSubscription() {
       </div>
       {links && <div className="mt-3 flex flex-col gap-1.5">
         <label htmlFor={`${id}-url`} className="text-[13px] font-medium text-body">Private calendar URL</label>
-        <input id={`${id}-url`} type="url" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="min-h-11 w-full rounded-lg border border-line bg-field px-3 font-mono text-base text-fg" />
+        <input id={`${id}-url`} type="url" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="bp-field min-h-11 w-full rounded-lg border border-line bg-field px-3 font-mono text-base text-fg" />
       </div>}
       <p id={`${id}-privacy`} className="mt-3 mb-0 text-xs text-muted">Anyone with this private link can read these deadlines. Disable the subscription here to stop future access.</p>
       <p role="status" className="mt-2 mb-0 text-sm text-cool-ink">{notice}</p>

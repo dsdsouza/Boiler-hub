@@ -1,17 +1,19 @@
 import { Boiler } from "@/components/boiler/Boiler";
 import { LinkButton } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { ZONES, ZONE_BEHAVIOR, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
+import { AccountControls, getViewer } from "@/components/ui/Account";
+import { ZONES, ZONE_DESCRIPTION, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
 import { HeroBoiler } from "@/components/boiler/HeroBoiler";
-import { VisibilityList } from "@/components/ui/VisibilityList";
 
 const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 
 const display = "m-0 font-display font-normal tracking-[0.02em]";
 
+export const dynamic = "force-dynamic";
+
 export default async function LandingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+  const [params, viewer] = await Promise.all([searchParams, getViewer()]);
   const next = safeNext(typeof params.next === "string" ? params.next : null);
   const signin = `/auth/signin?next=${encodeURIComponent(next)}`;
   const failed = params.error === "signin" || params.error === "auth";
@@ -20,45 +22,47 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className="min-h-screen">
       <SiteHeader
         variant="marketing"
-        account={
-          // Route handler, not a page: plain anchor so Next does not prefetch it.
+        account={viewer ? (
+          <AccountControls viewer={viewer} />
+        ) : (
           <span className="hidden sm:inline-flex">
-            <LinkButton plain href={signin} variant="ghost" className="border-rivet text-fg">
-              Sign in with Google
-            </LinkButton>
+            <GoogleSignInButton href={signin} />
           </span>
-        }
+        )}
       />
 
       <main>
-        {failed && (
+        {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
             Sign-in did not finish. Try again, or take the demo without signing in.
           </p>
         )}
-        {typeof params.next === "string" && !failed && (
+        {!viewer && typeof params.next === "string" && !failed && (
           <p role="note" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-muted sm:px-8">
             Sign in to open that page.
           </p>
         )}
 
-        <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-[72px] sm:pb-20">
+        <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-14 sm:pb-20">
           <div className="flex flex-col gap-6">
-            <h1 className={`${display} text-[clamp(48px,7vw,88px)] leading-[0.95] tracking-[0.01em]`}>
+            <h1 className={`${display} bp-arrive text-[clamp(48px,6.4vw,80px)] leading-[0.98] tracking-[0.01em]`}>
               You can see everyone’s calendar. You can’t see their pressure.
             </h1>
-            <p className="m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
+            <p className="bp-arrive bp-arrive-next m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
               Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finishing work
               lowers it. Teams see who is near the red line, only with their permission.
             </p>
-            <div className="flex flex-wrap gap-3.5 pt-2">
+            <div className="bp-arrive bp-arrive-last flex flex-wrap gap-3.5 pt-2">
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
                 Try the demo
               </LinkButton>
-              <LinkButton plain href={signin} variant="ghost" size="lg" className="border-rivet font-semibold text-fg max-sm:w-full">
-                <GoogleMark />
-                Sign in with Google
-              </LinkButton>
+              {viewer ? (
+                <LinkButton href="/boiler" variant="ghost" size="lg" className="border-rivet font-semibold text-fg max-sm:w-full">
+                  Open My Boiler
+                </LinkButton>
+              ) : (
+                <GoogleSignInButton href={signin} className="max-sm:w-full" />
+              )}
             </div>
           </div>
           <HeroBoiler />
@@ -105,23 +109,10 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                   <h3 className={`m-0 font-display text-[30px] font-normal tracking-[0.05em] ${ZONE_INK[z]}`}>
                     {ZONE_LABEL[z]} · {ZONE_RANGE[z]}
                   </h3>
-                  <div className="text-center text-sm text-muted">{ZONE_BEHAVIOR[z]}</div>
+                  <div className="text-center text-sm text-muted">{ZONE_DESCRIPTION[z]}</div>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="border-t border-line bg-bg-2">
-          <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-start gap-12 px-4 py-16 sm:px-8 sm:py-[72px]">
-            <div className="flex flex-col gap-4">
-              <h2 className={`${display} text-[44px] leading-none sm:text-[52px]`}>We never store what is on your calendar.</h2>
-              <p className="m-0 text-[17px] leading-relaxed text-body">
-                Teams see a number, a zone and your status, only if you choose. Never event titles, attendees or times. You can hide from any team at any
-                time.
-              </p>
-            </div>
-            <VisibilityList />
           </div>
         </section>
       </main>
@@ -138,6 +129,15 @@ function Step({ title, text, icon, color }: { title: string; text: string; icon:
       <h3 className="m-0 text-xl font-bold">{title}</h3>
       <p className="m-0 leading-relaxed text-body">{text}</p>
     </div>
+  );
+}
+
+function GoogleSignInButton({ href, className = "" }: { href: string; className?: string }) {
+  return (
+    <LinkButton plain href={href} variant="ghost" size="lg" className={`border-rivet font-semibold text-fg ${className}`}>
+      <GoogleMark />
+      Sign in with Google
+    </LinkButton>
   );
 }
 

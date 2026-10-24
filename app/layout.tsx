@@ -1,18 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import { PipDock } from "@/components/mascot/PipDock";
-import { SiteFooter } from "@/components/ui/SiteFooter";
+import { AppMotion } from "@/components/ui/AppMotion";
+import "./fonts.css";
 import "./globals.css";
 import { deploymentRecovery } from "@/lib/deployment-recovery";
-
-const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas", display: "swap" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const jetbrains = JetBrains_Mono({
-  weight: ["500", "700"],
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Boilerplate",
@@ -29,12 +20,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bebas.variable} ${inter.variable} ${jetbrains.variable}`}>
-      <head><script dangerouslySetInnerHTML={{ __html: deploymentRecovery }} /></head>
+    <html lang="en">
+      <head>
+        <link rel="preload" href="/fonts/6c25f6e897d845a3-s.p.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/e4af272ccee01ff0-s.p.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/558ca1a6aa3cb55e-s.p.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <script dangerouslySetInnerHTML={{ __html: deploymentRecovery }} />
+      </head>
       <body className="antialiased">
-        {children}
-        <SiteFooter />
-        <PipDock />
+        <AppMotion>
+          {children}
+          <PipDock />
+        </AppMotion>
       </body>
     </html>
   );

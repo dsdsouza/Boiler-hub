@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 import { VisibilityList } from "@/components/ui/VisibilityList";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
-import { ZONES, ZONE_BEHAVIOR, ZONE_RANGE } from "@/components/ui/zones";
+import { ZONES, ZONE_DESCRIPTION, ZONE_RANGE } from "@/components/ui/zones";
 import type { Size, Weight } from "@/lib/types";
 import {
   ATTENDEE_CAP,
@@ -74,7 +72,6 @@ export default function HowPage() {
       <SiteHeader variant="app" current="how" />
       <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-28 sm:px-8 sm:pb-20">
         <header className="flex flex-col gap-4">
-          <div className="font-mono text-[13px] tracking-[0.18em] text-brass-ink">HOW IT WORKS</div>
           <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure tracks the work still ahead.</h1>
           <p className="m-0 max-w-[680px] text-[17px] leading-relaxed text-body">
             Meetings over {WINDOW_DAYS} days and deadlines over {TASK_LOOKAHEAD_DAYS} days add pressure. Unfinished overdue work stays counted.
@@ -158,7 +155,7 @@ export default function HowPage() {
                 <ZoneBadge zone={z} size="md" className="min-w-[110px]" />
                 <span>
                   <span className="font-mono font-bold">{ZONE_RANGE[z]}</span>
-                  <span className="block text-sm text-muted">{ZONE_BEHAVIOR[z]}</span>
+                  <span className="block text-sm text-muted">{ZONE_DESCRIPTION[z]}</span>
                 </span>
               </li>
             ))}
@@ -182,15 +179,6 @@ export default function HowPage() {
           </p>
           <VisibilityList />
         </section>
-
-        <div className="flex flex-wrap gap-3.5">
-          <LinkButton href="/demo" variant="primary" size="lg">
-            Try the demo
-          </LinkButton>
-          <Link href="/" className="inline-flex min-h-14 items-center px-2 font-semibold">
-            Back to the start
-          </Link>
-        </div>
       </main>
       <MobileTabBar current="how" />
     </div>

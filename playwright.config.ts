@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 const external = process.env.PLAYWRIGHT_BASE_URL;
 const port = Number(process.env.PLAYWRIGHT_PORT || 3100);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PLAYWRIGHT_PORT must be an integer from 1024 to 65535');
+// Next normalizes local middleware redirects to localhost. Use that origin for
+// the browser too, so WebKit prefetches do not become cross-origin requests.
 const baseURL = external || `http://localhost:${port}`;
 const ci = Boolean(process.env.CI);
 
@@ -38,8 +40,8 @@ export default defineConfig({
   ],
   webServer: external ? undefined : {
     command: process.env.PLAYWRIGHT_PRODUCTION === '1'
-      ? `pnpm start --hostname localhost --port ${port}`
-      : `pnpm dev --hostname localhost --port ${port}`,
+      ? `pnpm start --hostname 127.0.0.1 --port ${port}`
+      : `pnpm dev --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

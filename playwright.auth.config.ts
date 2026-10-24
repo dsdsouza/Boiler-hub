@@ -22,12 +22,19 @@ const projects = bank ? personas!.users.map((persona) => {
   const visible = personas!.users.filter((target) => target.team === persona.team && persona.team &&
     (target.key === persona.key || target.visibility === 'everyone' || (persona.role === 'lead' && target.visibility === 'lead')))
     .map((target) => bank.users.find((u: { key: string }) => u.key === target.key).id);
+  const hidden = personas!.users.filter((target) => target.team === persona.team && persona.team &&
+    target.key !== persona.key && target.visibility === 'hidden').length;
   return { name: persona.key, use: { storageState: resolve(dirname(bankPath!), 'auth', `${persona.key}.json`) },
-    metadata: { teamId: team?.id, role: persona.role, visibleUserIds: visible } };
+    metadata: { teamId: team?.id, role: persona.role, visibleUserIds: visible,
+      hiddenCount: persona.role === 'lead' && hidden >= 2 ? hidden : 0 } };
 }) : [{ name: 'qa-account', use: { storageState } }];
 
 export default defineConfig({
   testDir: './tests/e2e', testMatch: '**/authenticated.spec.ts',
+  // Keep private integration output separate; concurrent public runs must not
+  // remove each other's trace/video files during browser teardown.
+  outputDir: 'test-results-auth',
+  forbidOnly: true, failOnFlakyTests: true,
   workers, retries: 0, timeout: 45_000, projects,
   reporter: [['list']], // Authenticated traces/reports can contain private data; keep them off by default.
   use: { ...devices['Desktop Chrome'], baseURL, trace: 'off', screenshot: 'off', video: 'off' },

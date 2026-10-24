@@ -32,8 +32,8 @@ function NavLink({ href, label, current }: { href: string; label: string; curren
     <Link
       href={href}
       aria-current={current ? "page" : undefined}
-      className={`inline-flex min-h-11 items-center px-3.5 text-[15px] no-underline ${
-        current ? "border-b-2 border-brass font-semibold text-fg hover:text-fg" : "font-medium text-body hover:text-fg"
+      className={`bp-control inline-flex min-h-11 items-center rounded-t-lg border-b-2 px-3.5 text-[15px] no-underline ${
+        current ? "border-brass bg-surface font-semibold text-fg hover:text-fg" : "border-transparent font-medium text-body hover:bg-surface hover:text-fg"
       }`}
     >
       {label}
@@ -107,7 +107,7 @@ export function Avatar({
     .join("");
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={label ?? ""} width={size} height={size} className="flex-none rounded-full" referrerPolicy="no-referrer" />;
+    return <img src={url} alt={label ?? ""} width={size} height={size} className="flex-none rounded-full outline outline-1 -outline-offset-1 outline-white/10" referrerPolicy="no-referrer" />;
   }
   return (
     <span
@@ -180,8 +180,8 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
           key={t.key}
           href={t.href}
           aria-current={current === t.key ? "page" : undefined}
-          className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold no-underline ${
-            current === t.key ? "text-brass-ink hover:text-brass-ink" : "text-muted hover:text-fg"
+          className={`bp-control relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold no-underline ${
+            current === t.key ? "text-brass-ink after:absolute after:top-0 after:h-0.5 after:w-8 after:rounded-full after:bg-brass hover:text-brass-ink" : "text-muted hover:text-fg"
           }`}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Size, Zone } from "@/lib/types";
 import { BoilerTile } from "@/components/boiler/BoilerTile";
-import { demoTeams, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
+import { demoTeams, mayaUserId, zoneCounts, type DemoTeam } from "@/components/boiler/fixture";
+import type { MyBoilerData } from "@/components/boiler/boilerState";
 import { safeHiddenCount } from "@/app/api/teams/_lib/assignment";
 import { applyTaskToRaw, scoreFromRaw, SIZE_POINTS, taskPoints } from "@/lib/pressure";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ZONE_INK_VAR, ZONE_LABEL, zoneOf } from "@/components/ui/zones";
-import type { MyBoilerData } from "@/components/boiler/boilerState";
-import demo from "@/fixtures/demo.json";
 
 const RANK: Record<Zone, number> = { cool: 0, working: 1, hot: 2, redline: 3 };
 const FILTERS: (Zone | "all")[] = ["all", "redline", "hot", "working", "cool"];
@@ -57,14 +56,13 @@ function chip(on: boolean) {
 }
 
 export function DemoEngineRoom({ personal }: { personal: MyBoilerData | null }) {
-  const [teams, setTeams] = useState<DemoTeam[]>(demoTeams);
+  const [storedTeams, setTeams] = useState<DemoTeam[]>(demoTeams);
+  const teams = storedTeams.map((t) => ({ ...t, boilers: t.boilers.map((b) =>
+    personal && b.userId === mayaUserId ? { ...b, status: personal.status, statusNote: personal.statusNote } : b,
+  ) }));
   const [teamIdx, setTeamIdx] = useState(1);
   const [filter, setFilter] = useState<Zone | "all">("all");
-  const baseTeam = teams[teamIdx]!;
-  const team = useMemo(() => ({ ...baseTeam, boilers: baseTeam.boilers.map((b) =>
-    personal && b.userId === demo.maya.userId
-      ? { ...b, status: personal.status, statusNote: personal.statusNote }
-      : b) }), [baseTeam, personal]);
+  const team = teams[teamIdx]!;
   // Same k-anonymity rule as real teams: no hidden count below two.
   const hiddenShown = safeHiddenCount(team.hiddenCount);
   const n = nouns(team.team.type);
