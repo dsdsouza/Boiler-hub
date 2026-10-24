@@ -21,11 +21,18 @@
     "qa:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e",
     "qa:army": "node scripts/qa/army.mjs",
     "qa:ui": "node scripts/qa/army.mjs --ui",
-    "qa:explore": "node scripts/qa/army.mjs --explore"
+    "qa:explore": "node scripts/qa/army.mjs --explore",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "pnpm build:cloudflare && opennextjs-cloudflare preview",
+    "deploy:cloudflare": "opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "4.0.104",
+    "@opennextjs/cloudflare": "^1.20.13",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "ai": "7.0.152",
     "framer-motion": "^14.6.0",
     "next": "15.5.28",
     "node-ical": "^0.27.3",
@@ -34,6 +41,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261023.1",
     "@electric-sql/pglite": "^0.5.11",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.64.1",
@@ -43,9 +51,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^5.0.5"
-  }
+    "vitest": "^5.0.5",
+    "wrangler": "^4.152.0"
+  },
+  "packageManager": "pnpm@11.25.0"
 }

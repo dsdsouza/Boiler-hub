@@ -48,6 +48,7 @@ test('signed-out private APIs reject reads and writes', async ({ request }) => {
     request.post('/api/tasks', { data: { title: 'Unauthorized QA task' } }),
     request.patch('/api/me/status', { data: { status: 'away', note: 'unauthorized' } }),
     request.get('/api/teams'),
+    request.post('/api/pip/chat', { data: { messages: [{ role: 'user', content: 'What is due?' }], timeZone: 'UTC' } }),
   ];
   for (const response of await Promise.all(operations)) {
     expect(response.status(), response.url()).toBe(401);
@@ -57,6 +58,7 @@ test('signed-out private APIs reject reads and writes', async ({ request }) => {
 test('sign-in return path cannot point at another site', async ({ page }) => {
   await page.goto('/?next=https://example.com');
   const links = page.getByRole('link', { name: 'Sign in with Google', exact: true });
+  await expect(links.first()).toBeVisible();
   const hrefs = await links.evaluateAll((elements) => elements.map((el) => el.getAttribute('href')));
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) expect(href).toBe('/auth/signin?next=%2Fonboarding');
