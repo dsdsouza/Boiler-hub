@@ -116,7 +116,7 @@ describe("syncUser with sources", () => {
       ]),
     );
 
-    const lab = res.tasks.find((t) => t.title === "Lab Report 3 - Due");
+    const lab = res.tasks.find((t) => t.title === "Lab Report 3");
     expect(lab).toMatchObject({ source: "ics", sourceId: GOOD, sourceLabel: "Brightspace", size: "M" });
     expect(res.tasks.some((t) => t.id === "t1")).toBe(true);
     expect(res.events.some((e) => e.title === "BIO 101 Lecture")).toBe(true);
@@ -133,8 +133,8 @@ describe("syncUser with sources", () => {
     const res = await syncUser(admin, USER, NOW, { freshSources: true });
 
     expect(writes.some((w) => w.table === "source_item_state")).toBe(false);
-    expect(res.tasks.find((t) => t.title === "Problem Set 5 - Due")?.doneAt).toBeNull();
-    expect(res.tasks.find((t) => t.title === "Reading Response 1 - Due")?.doneAt).toBeNull();
+    expect(res.tasks.find((t) => t.title === "Problem Set 5")?.doneAt).toBeNull();
+    expect(res.tasks.find((t) => t.title === "Reading Response 1")?.doneAt).toBeNull();
     expect(res.result.counts.overdue).toBe(2);
     expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
   });
@@ -150,6 +150,47 @@ describe("syncUser with sources", () => {
       expect(res.calendar).toBe("unavailable");
       expect(res.result.score).toBeGreaterThan(0);
       expect(writes.some((w) => w.table === "pressure_snapshots")).toBe(false);
+    } finally {
+      calendar.fail = null;
+    }
+  });
+
+  it("labels tasks with a course: the feed's label, a manual task's own, a team task's team name", async () => {
+    const { admin } = fakeAdmin({
+      tasks: [
+        { id: "t1", title: "Essay", due_at: "2026-10-28T17:00:00Z", size: "M", done_at: null, source: "manual", assignment_id: null, course: "ENG 210" },
+        { id: "t2", title: "Retro notes", due_at: "2026-10-28T17:00:00Z", size: "S", done_at: null, source: "team", assignment_id: "a1", course: null, team_assignments: { team_id: "team1" } },
+        { id: "t3", title: "Unlabelled", due_at: null, size: "S", done_at: null, source: "manual", assignment_id: null, course: null },
+      ],
+      memberships: [{ user_id: USER, team_id: "team1", teams: { name: "Product Squad" } }],
+      profiles: [{ status: "open", status_note: null }],
+      sources: [source(GOOD, "https://school.example.com/feed.ics")],
+    });
+
+    const res = await syncUser(admin, USER, NOW);
+    const by = new Map(res.tasks.map((t) => [t.id, t]));
+    expect(by.get("t1")?.course).toBe("ENG 210");
+    expect(by.get("t2")?.course).toBe("Product Squad");
+    expect(by.get("t3")).not.toHaveProperty("course");
+    expect(res.tasks.find((t) => t.title === "Lab Report 3")?.course).toBe("Brightspace");
+    expect(res.events.find((e) => e.title === "BIO 101 Lecture")?.course).toBe("Brightspace");
+    expect(res.timeZone).toBe("America/New_York");
+  });
+
+  it("leaves a team task unlabelled once the user has left the team", async () => {
+    const { admin } = fakeAdmin({
+      tasks: [{ id: "t2", title: "Retro notes", due_at: null, size: "S", done_at: null, source: "team", assignment_id: "a1", course: null, team_assignments: { team_id: "team1" } }],
+      profiles: [{ status: "open", status_note: null }],
+    });
+    const res = await syncUser(admin, USER, NOW);
+    expect(res.tasks[0]).not.toHaveProperty("course");
+  });
+
+  it("returns the UTC forecast zone when the calendar could not be read", async () => {
+    calendar.fail = new Error("Google Calendar fetch failed (503)");
+    try {
+      const { admin } = fakeAdmin({ profiles: [{ status: "open", status_note: null }] });
+      expect((await syncUser(admin, USER, NOW)).timeZone).toBe("UTC");
     } finally {
       calendar.fail = null;
     }

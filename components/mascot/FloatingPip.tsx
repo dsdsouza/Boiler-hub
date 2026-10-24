@@ -58,7 +58,7 @@ export function FloatingPip({ snapshot, now, pathname }: { snapshot: Snapshot | 
     </motion.div>
     {open && position.frame && <section id={panelId} role="dialog" aria-modal="false" aria-labelledby={headingId}
       style={pipPanel(position.point, position.frame)}
-      className="mp-pop pointer-events-auto absolute flex flex-col overflow-y-auto overscroll-contain rounded-[14px] bg-surface px-4 pt-3 pb-4 shadow-xl ring-1 ring-rivet">
+      className="mp-pop pointer-events-auto absolute overflow-y-auto overscroll-contain rounded-[14px] bg-surface px-4 pt-3 pb-4 shadow-xl ring-1 ring-rivet">
       <div className="flex shrink-0 items-center justify-between gap-2">
         <h2 ref={heading} id={headingId} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with Pip</h2>
         <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Pip chat"

@@ -57,6 +57,11 @@ test('keyboard movement, screen boundaries and resizing keep both Pip and chat r
   await page.setViewportSize({ width: 320, height: 600 });
   await pip(page).press('Enter'); const panel = companion(page).getByRole('dialog'); await expect(panel).toBeVisible();
   const bounds = (await panel.boundingBox())!; expect(bounds.x).toBeGreaterThanOrEqual(12); expect(bounds.x + bounds.width).toBeLessThanOrEqual(308); expect(bounds.y + bounds.height).toBeLessThanOrEqual(520);
+  const form = panel.getByRole('textbox', { name: 'Message Pip', exact: true });
+  await form.fill('A local draft');
+  const formBox = (await form.boundingBox())!;
+  const linkBox = (await panel.getByRole('link', { name: 'Get started', exact: true }).boundingBox())!;
+  expect(formBox.y + formBox.height).toBeLessThan(linkBox.y);
   await panel.getByRole('button', { name: 'Close Pip chat' }).click(); await expect(pip(page)).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 });
