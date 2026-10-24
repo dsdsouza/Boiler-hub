@@ -9,6 +9,7 @@ import { readStorage } from "@/components/ui/storage";
 import { ZONE_LABEL } from "@/components/ui/zones";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
+import { PipChat } from "./PipChat";
 import { usePipAccessory } from "./useAccessory";
 import { MASCOT_NAME, PIP_HIDDEN_KEY } from "./voice";
 
@@ -120,15 +121,14 @@ export function PipDock() {
           role="dialog"
           aria-modal="false"
           aria-labelledby={headingId}
-          className="mp-pop w-[min(340px,calc(100vw-32px))] rounded-[14px] border border-rivet bg-surface px-4 pt-3 pb-4 shadow-xl"
+          className={`mp-pop flex w-[min(380px,calc(100vw-32px))] flex-col overflow-hidden rounded-[14px] border border-rivet bg-surface px-4 pt-3 pb-4 shadow-xl ${raised ? "max-h-[calc(100dvh-240px)] sm:max-h-[calc(100dvh-176px)]" : "max-h-[calc(100dvh-176px)] sm:max-h-[calc(100dvh-124px)]"}`}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase">
-              {MASCOT_NAME}
+          <div className="flex shrink-0 items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with {MASCOT_NAME}</h2>
               {snap && (
-                <span className="text-muted">
-                  {" "}
-                  · {ZONE_LABEL[snap.zone]} {snap.score}
+                <span className="font-mono text-[11px] tracking-[0.14em] text-muted uppercase">
+                  {ZONE_LABEL[snap.zone]} {snap.score}
                 </span>
               )}
             </div>
@@ -143,12 +143,9 @@ export function PipDock() {
               </svg>
             </button>
           </div>
-          <h2 id={headingId} ref={headingRef} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">
-            {message.headline}
-          </h2>
-          <p className="m-0 mt-1 text-sm leading-normal text-body">{message.body}</p>
-          <div className="mt-3">
-            <LinkButton href={message.action.href} variant="primary" onClick={() => setOpen(false)}>
+          <PipChat />
+          <div className="mt-3 shrink-0">
+            <LinkButton href={message.action.href} variant="ghost" onClick={() => setOpen(false)}>
               {message.action.label}
             </LinkButton>
           </div>
@@ -160,7 +157,7 @@ export function PipDock() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-label={open ? `Close ${MASCOT_NAME}` : `${MASCOT_NAME}: ${message.headline}`}
+        aria-label={open ? `Close ${MASCOT_NAME}` : `Chat with ${MASCOT_NAME}`}
         className="relative flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border border-rivet bg-surface shadow-lg hover:border-brass"
       >
         <Mascot score={snap?.score ?? 0} size={44} reaction={message.reaction} empty={message.empty} accessory={accessory} />

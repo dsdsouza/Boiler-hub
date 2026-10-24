@@ -115,7 +115,7 @@ export function MyBoilerView({
         </button>
       </div>
 
-      <BoilerCompanion data={data} vent={vent} />
+      <BoilerCompanion data={data} vent={vent} chatEnabled={boiler.source !== "fixture"} />
 
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
