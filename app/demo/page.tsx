@@ -24,7 +24,6 @@ export default function DemoPage() {
       <SiteHeader
         variant="marketing"
         current="demo"
-        maxWidth="max-w-[1320px]"
         account={
           <span className="hidden sm:inline-flex">
             <LinkButton plain href="/auth/signin?next=/boiler" variant="ghost" className="text-fg">

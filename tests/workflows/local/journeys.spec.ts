@@ -28,7 +28,7 @@ test('Onboarding through a completed and restored task', plan([
 ]), async ({ page, context }) => {
   const service = world(); await service.connect(context);
   try {
-    await step('Read the first synced gauge', async () => { await open(page, 'onboarding'); await expect(page.getByText('Connected.', { exact: true })).toBeVisible(); });
+    await step('Read the first synced gauge', async () => { await open(page); await expect(noteField(page)).toBeVisible(); await page.getByRole('navigation', { name: 'Workflow pages' }).getByRole('link', { name: 'onboarding', exact: true }).click(); await expect(page.getByText('Connected.', { exact: true })).toBeVisible(); });
     await step('Save an onboarding status note', async () => { await noteField(page).fill('Ready for the workflow'); await noteField(page).press('Enter'); await expect(page.getByText('Saved', { exact: true })).toBeVisible(); });
     await step('Open the personal workload', async () => { await page.getByRole('navigation', { name: 'Workflow pages' }).getByRole('link', { name: 'boiler', exact: true }).click(); await expect(noteField(page)).toHaveValue('Ready for the workflow'); });
     await step('Create a dated task', async () => { await page.getByRole('textbox', { name: 'New task', exact: true }).fill('Workflow deliverable'); await page.getByRole('button', { name: 'Add task', exact: true }).click(); await expect(taskButton(page, 'Workflow deliverable')).toBeEnabled(); });
