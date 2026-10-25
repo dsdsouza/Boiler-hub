@@ -240,12 +240,15 @@ export function TaskList({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
-            <span
-              className={`rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] uppercase ${BADGE_INK[t.source] ?? "text-muted"}`}
-            >
-              <span className="sr-only">Source: </span>
-              {sourceBadge(t.source, m?.label)}
-            </span>
+            {/* Tasks the owner typed in need no label; only imported and team work says where it came from. */}
+            {t.source !== "manual" && (
+              <span
+                className={`rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] uppercase ${BADGE_INK[t.source] ?? "text-muted"}`}
+              >
+                <span className="sr-only">Source: </span>
+                {sourceBadge(t.source, m?.label)}
+              </span>
+            )}
             <CourseChip course={courses[t.id]} />
             {m?.courseName && m.courseName !== courses[t.id] && <span className="break-words text-body">{m.courseName}</span>}
             {stale ? (
