@@ -214,6 +214,26 @@ describe("owner-scoped onboarding persistence", () => {
     expect(mocks.updateUser).not.toHaveBeenCalled();
     expect((await send(draft, { deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) })).status).toBe(200);
   });
+  it("finishes after an explicit coursework deferral without claiming an import was verified", async () => {
+    const draft = parseDraft({ role: "student", name: "Josh", goal: "balance", starting: "fresh", courseworkDeferred: true, finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft, { extensionVersion: "0.3.2" })).status).toBe(200);
+    expect(mocks.sync).not.toHaveBeenCalled();
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata).toMatchObject({
+      onboarding: { finished: true, courseworkDeferred: true },
+      onboarding_setup: { courseworkDeferred: true, sourceIds: [], deadlinesReviewedAt: null },
+    });
+  });
+  it("lets a teacher finish without installing Pip, importing courses, or adding a personal task", async () => {
+    const draft = parseDraft({ role: "lead", name: "Josh", goal: "team", starting: "fresh", extensionDeferred: true, finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft)).status).toBe(200);
+    expect(mocks.sync).not.toHaveBeenCalled();
+    expect(mocks.task).not.toHaveBeenCalled();
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding_setup).toMatchObject({
+      extensionVersion: null, extensionDeferred: true, courseworkDeferred: false, sourceIds: [], deadlinesReviewedAt: null,
+    });
+  });
   it("saves a manual first task for a focus goal without Pip and retries without duplicates", async () => {
     const draft = parseDraft({ role: "other", name: "Josh", goal: "focus", starting: "fresh", extensionDeferred: true, milestone: "Write my outline", deadline: "2026-11-02", current: "recommendation", finished: true });
     draft.completed = stepsFor(draft);
