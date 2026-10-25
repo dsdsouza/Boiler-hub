@@ -44,6 +44,14 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
     return () => { document.removeEventListener("pointerdown", pointer); document.removeEventListener("keydown", key); };
   }, [open]);
 
+  const chatHeader = <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 pl-3 pr-1">
+    <h2 ref={heading} id={headingId} tabIndex={-1} className="m-0 text-sm leading-snug font-semibold text-fg outline-none">Chat with Pip</h2>
+    <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Pip chat"
+      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>;
+
   return <div ref={root} data-pip-companion data-paused={paused ? "" : undefined} className="pointer-events-none fixed inset-0 z-40 print:hidden">
     <p id={instructionsId} className="sr-only">Drag Pip to move him, or use the arrow keys while focused, Home returns him to his corner, Enter opens chat</p>
     <span className="sr-only" role="status">{position.dragging ? "Pip picked up" : ""}</span>
@@ -65,14 +73,7 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
       data-placement={panel.bottom === undefined ? "beside" : "above"} data-speaking={speaking || undefined}
       style={{ ...panel, "--pip-tail-x": `${Math.max(24, Math.min(panel.width - 24, position.point.x + position.frame.pipWidth / 2 - panel.left))}px` } as CSSProperties & { "--pip-tail-x": string }}
       className="pip-chat-panel mp-pop pointer-events-auto absolute flex flex-col">
-      <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 rounded-t-xl border border-b-0 border-line bg-surface pl-3 pr-1">
-        <h2 ref={heading} id={headingId} tabIndex={-1} className="m-0 text-sm leading-snug font-semibold text-fg outline-none">Chat with Pip</h2>
-        <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Pip chat"
-          className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg">
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-        </button>
-      </div>
-      {userId ? <PipAccountChat userId={userId} /> : <PipChat />}
+      {userId ? <PipAccountChat userId={userId} header={chatHeader} /> : <PipChat header={chatHeader} />}
     </section>}
   </div>;
 }
