@@ -10,6 +10,7 @@ import { usePipConversation } from "./PipConversation";
 import { usePipAccessory } from "./useAccessory";
 import { usePipPosition } from "./usePipPosition";
 import { pipPanel } from "./pip-position";
+import { usePipCue } from "./pipReactions";
 
 export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Snapshot | null; now: number; pathname: string; userId?: string }) {
   const [open, setOpen] = useState(false);
@@ -25,6 +26,9 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
   const { openRequest, messages, streamingReply, busy } = usePipConversation();
   const panel = position.frame ? pipPanel(position.point, position.frame) : null;
   const speaking = busy || Boolean(streamingReply) || messages.at(-1)?.role === "assistant";
+  // Thinking while a reply is on its way; otherwise a cued reaction, or the dock's own.
+  const cue = usePipCue({ idle: !open });
+  const reaction = busy && !streamingReply ? "think" : cue ?? message.reaction;
   useEffect(() => { if (openRequest) setOpen(true); }, [openRequest]);
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
         data-dragging={position.dragging ? "true" : "false"}
         className="pip-grab relative flex h-[128px] w-[112px] touch-none items-center justify-center border-0 bg-transparent p-0 select-none sm:h-[156px] sm:w-[136px]">
         <motion.span className="pointer-events-none block w-full" style={{ rotate: position.rotate, x: position.liftX, y: position.liftY, transformOrigin: "50% 14.1%" }}>
-          <Mascot score={snapshot?.score ?? 0} size={136} className="h-auto w-full" reaction={message.reaction} empty={message.empty} accessory={accessory} carried={position.dragging} />
+          <Mascot score={snapshot?.score ?? 0} size={136} className="h-auto w-full" reaction={reaction} empty={message.empty} accessory={accessory} carried={position.dragging} />
         </motion.span>
         {message.attention && !open && <span aria-hidden="true" className="absolute top-1/3 right-2 h-2.5 w-2.5 rounded-full bg-hot-ink" />}
       </button>
