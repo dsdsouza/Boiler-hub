@@ -11,19 +11,21 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://boilerplate.select"),
   title: "Boilerplate",
   description: "ARE YOU NEAR THE RED LINE?",
-  // Discord's photo layout shows only the image. Emit these tags explicitly:
+  // Keep one clickable domain above the large image. Emit these tags explicitly:
   // Next's Open Graph/Twitter helpers otherwise refill omitted titles and descriptions.
   // https://docs.discord.com/developers/link-previews/overview#preview-layouts
   other: {
     "og:type": "website",
     "og:locale": "en_US",
     "og:url": "https://boilerplate.select/",
+    "og:title": "boilerplate.select",
     "og:image": "https://boilerplate.select/social/boilerplate-v4.png",
     "og:image:width": 1200,
     "og:image:height": 630,
     "og:image:type": "image/png",
     "og:image:alt": "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
-    "twitter:card": "photo",
+    "twitter:card": "summary_large_image",
+    "twitter:title": "boilerplate.select",
     "twitter:image": "https://boilerplate.select/social/boilerplate-v4.png",
     "twitter:image:alt": "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
   },
