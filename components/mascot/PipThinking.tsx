@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FlameLoader } from "@/components/ui/FlameLoader";
+import { ValveLoader } from "@/components/ui/ValveLoader";
 
 const STEAM_THOUGHTS = [
   "Steeping on it…",
@@ -52,7 +52,7 @@ export function PipThinking() {
 
   return <div ref={root} role="status" data-paused={paused || undefined} className="bp-pip-thinking flex max-w-[95%] items-center gap-2.5 self-start rounded-2xl rounded-bl-sm bg-surface-2 px-3 py-2 text-sm leading-relaxed text-body">
     <span className="sr-only">Pip is preparing a reply.</span>
-    <FlameLoader size="sm" decorative />
+    <ValveLoader size="sm" decorative />
     <span key={thought} className="bp-pip-thought" aria-hidden="true">{STEAM_THOUGHTS[thought]}</span>
   </div>;
 }
