@@ -41,11 +41,22 @@ export default function Harness() {
 const workflowRoute = join(directory, 'app', 'qa-workflows');
 await mkdir(workflowRoute, { recursive: true });
 await cp(resolve(root, 'tests/workflows/harness.tsx'), join(workflowRoute, 'page.tsx'));
-const child = spawn(resolve(root, 'node_modules/.bin/next'), ['dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219'], {
+const options = {
   cwd: directory, stdio: 'inherit', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' },
-});
+};
+const production = process.env.PLAYWRIGHT_PRODUCTION === '1';
+let child;
 let stopping = false;
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { if (!stopping) { stopping = true; child.kill(signal); } });
-const code = await new Promise((ok) => { child.on('error', () => ok(1)); child.on('exit', (code) => ok(code ?? (stopping ? 0 : 1))); });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { if (!stopping) { stopping = true; child?.kill(signal); } });
+async function run(args) {
+  child = spawn(resolve(root, 'node_modules/.bin/next'), args, options);
+  return new Promise((ok) => { child.on('error', () => ok(1)); child.on('exit', (code) => ok(code ?? (stopping ? 0 : 1))); });
+}
+// CI exercises emitted assets, without dev-server Fast Refresh reloading pages
+// while a test changes its session or another worker compiles a route.
+let code = production ? await run(['build']) : 0;
+if (code === 0 && !stopping) {
+  code = await run([production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219']);
+}
 await rm(directory, { recursive: true, force: true });
 process.exitCode = code;
