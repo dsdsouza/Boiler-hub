@@ -5,9 +5,9 @@ import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { isTrustedAccountOrigin } from './origins.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const TRUSTED_ACCOUNT_ORIGINS = new Set(['https://boilerhub.work', 'https://boilerplate.zhomander.workers.dev']);
 const HELP = `Local QA army — browser instances run on your computer.
 
 pnpm qa:army                            Full local checks and six browser configurations
@@ -54,7 +54,7 @@ export function parseOptions(argv) {
     }
     options.url = url.origin;
   }
-  if (options.accounts && !TRUSTED_ACCOUNT_ORIGINS.has(options.url)) throw new Error('Account checks require a verified Boilerplate app origin so test sessions reach only the intended app.');
+  if (options.accounts && !isTrustedAccountOrigin(options.url)) throw new Error('Account checks require a verified Boilerplate app origin so test sessions reach only the intended app.');
   if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public page tests.');
   return options;
 }
@@ -224,12 +224,18 @@ export async function main(argv) {
         await stage(options.explore ? 'Signed-in exploratory walks' : 'Live test accounts', browserArgs(options, runDir, true), authEnv, true);
         const entry = run.stages.at(-1); entry.stats = await readJSON(resolve(runDir, 'accounts-summary.json'));
         if (!healthyStats(entry.stats)) entry.status = 'failed';
-        await stage('Complete live personal workflows', ['test:workflows:live', `--workers=${Math.min(options.workers, 8)}`, '--retries=0'],
+        await stage('Complete live personal workflows', ['test:workflows:live', 'journey.spec.ts', `--workers=${Math.min(options.workers, 4)}`, '--retries=0'],
           { ...authEnv, QA_WORKFLOW_REPORT_DIR: resolve(runDir, 'signed-workflows'), QA_WORKFLOW_RUN_ID: `live-${runDir.split('/').at(-1)}`,
             QA_WORKFLOW_COVERAGE: 'Live personal workflows through the browser, API and persisted data. Existing synthetic accounts only; mutations restored afterward.' }, true);
         const workflows = run.stages.at(-1); workflows.stats = await readJSON(resolve(runDir, 'signed-workflows/summary.json'));
         workflows.workflowReport = 'signed-workflows/index.html';
         if (!healthyStats(workflows.stats)) workflows.status = 'failed';
+        await stage('Signed-in UI consistency', ['test:workflows:live', 'ui.spec.ts', `--workers=${Math.min(options.workers, 2)}`, '--retries=0'],
+          { ...authEnv, QA_WORKFLOW_REPORT_DIR: resolve(runDir, 'signed-ui'), QA_WORKFLOW_RUN_ID: `live-ui-${runDir.split('/').at(-1)}`,
+            QA_WORKFLOW_COVERAGE: 'Live signed-in screens at desktop, tablet and phone widths. Synthetic accounts only; detailed UI findings stay private.' }, true);
+        const ui = run.stages.at(-1); ui.stats = await readJSON(resolve(runDir, 'signed-ui/summary.json'));
+        ui.workflowReport = 'signed-ui/index.html';
+        if (!healthyStats(ui.stats)) ui.status = 'failed';
       } else run.stages.push({ name: 'Live test accounts', status: 'blocked' });
     }
     run.status = interrupted ? 'interrupted' : run.stages.every((s) => s.status === 'passed') ? 'passed' : 'failed';

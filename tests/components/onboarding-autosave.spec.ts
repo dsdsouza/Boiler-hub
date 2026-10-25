@@ -100,6 +100,30 @@ test("an unsaved answer survives closing a tab and retries for the same account"
   await fresh.close();
 });
 
+test("throttled autosaves preserve new typing and respect the retry window", async ({ page, context }) => {
+  const service = world(); await service.connect(context); service.users[0].onboarding = nameDraft();
+  await page.clock.install();
+  let attempts = 0;
+  await page.route("**/api/me/onboarding", route => {
+    if (route.request().method() !== "PATCH") return route.fallback();
+    attempts++;
+    return attempts === 1 ? route.fulfill({ status: 429, headers: { "Retry-After": "60" }, json: { error: "Please wait before saving again." } }) : route.fallback();
+  });
+  await page.goto("/qa-workflows?view=onboarding");
+  await nameField(page).fill("First throttled answer");
+  await expect(page.getByRole("button", { name: "Retry saving", exact: true })).toBeVisible();
+  await nameField(page).fill("Newest answer during cooldown");
+  await page.getByRole("button", { name: "Retry saving", exact: true }).click();
+  await page.clock.fastForward(30_000);
+  expect(attempts).toBe(1);
+  expect(service.users[0].onboarding.name).toBe("Original name");
+  await expect(nameField(page)).toHaveValue("Newest answer during cooldown");
+  await page.clock.fastForward(31_000);
+  await page.getByRole("button", { name: "Retry saving", exact: true }).click();
+  await expect.poll(() => service.users[0].onboarding?.name).toBe("Newest answer during cooldown");
+  expect(attempts).toBe(2);
+});
+
 test("another account cannot inherit the previous account’s pending answers", async ({ page, context }) => {
   const service = world(); await service.connect(context, "member");
   service.users[1].onboarding = nameDraft(service.users[1].id, "Member answer");
@@ -130,6 +154,7 @@ test("leaving before the typing delay preserves the latest answer on return", as
   const service = world(); await service.connect(context); service.users[0].onboarding = nameDraft();
   await page.goto("/qa-workflows?view=onboarding");
   await nameField(page).fill("Left before Continue");
+  expect(await page.evaluate(ownerId => JSON.parse(localStorage.getItem(`boiler:onboarding:v1:pending:${ownerId}`) || 'null')?.name, owner)).toBe("Left before Continue");
   await page.goto("/qa-workflows?view=teams");
   // Browsers can discard an unloading document's intercepted network request.
   // A fresh tab must still recover the edit, even when that last flush was lost.

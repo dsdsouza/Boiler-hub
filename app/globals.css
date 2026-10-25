@@ -435,37 +435,8 @@ body:has([data-onboarding]) [data-pip-companion] {
   display: none;
 }
 
-/* Pip's compact composer stays separate from the cloud in which he speaks. */
-.pip-chat-panel[data-placement="above"][data-speaking]::after {
-  content: "";
-  position: absolute;
-  left: calc(var(--pip-tail-x) - 12px);
-  bottom: -8px;
-  width: 12px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--text);
-  box-shadow: 11px 8px 0 -2px var(--text);
-  pointer-events: none;
-}
-.pip-speech-bubble {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 2;
-  min-height: 112px;
-  color: var(--bg);
-  padding: 44px 40px 40px;
-}
-.pip-cloud-shape {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  color: var(--text);
-  pointer-events: none;
-}
-.pip-speech-content { position: relative; min-height: 0; }
+/* Reply and composer share the app's Card surface. */
+.pip-speech-content { min-height: 0; }
 .pip-speech-bubble .bp-pip-thinking {
   max-width: none;
   padding: 0;
@@ -473,15 +444,6 @@ body:has([data-onboarding]) [data-pip-companion] {
   background: transparent;
   color: inherit;
 }
-/* Keep the pale fill readable against Pip's light speech cloud. */
-.pip-speech-bubble [data-fill-loader="valve"] path {
-  stroke: var(--bp-loader-gray);
-  stroke-width: 1px;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
 @media (forced-colors: active) {
   .pip-speech-bubble { color: CanvasText; }
-  .pip-cloud-shape { color: Canvas; }
-  .pip-cloud-shape path { stroke: CanvasText; stroke-width: 1px; vector-effect: non-scaling-stroke; }
 }

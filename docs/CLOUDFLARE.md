@@ -2,7 +2,8 @@
 
 Boilerplate runs as the `boilerplate` Worker in the `zhomander` Cloudflare
 account (`831d31b4049fece76716fe9529e28a4c`). Its default URL is
-<https://boilerplate.zhomander.workers.dev>.
+<https://boilerplate.zhomander.workers.dev>. The public application is
+<https://boilerplate.select>.
 
 The `Deploy Boilerplate to Cloudflare` GitHub Actions workflow builds and deploys
 every push to `main`. It can also be started manually from the Actions tab.
@@ -56,19 +57,38 @@ to rebuild the browser bundle.
 
 ## URLs and scheduled sync
 
-The Cloudflare app uses `https://boilerplate.zhomander.workers.dev`. Supabase's
-Site URL uses this origin, its redirect allowlist includes
-`https://boilerplate.zhomander.workers.dev/auth/callback`, and the Google OAuth
-client includes this origin. Google's authorized redirect URI remains the
+The public app uses `https://boilerplate.select`; the Worker URL remains available
+at `https://boilerplate.zhomander.workers.dev`. Supabase's Site URL and redirect
+allowlist, and Google's authorized origins, must include the public origin and
+its `/auth/callback` as appropriate. Google's authorized redirect URI remains the
 Supabase project's `/auth/v1/callback` URL.
 
-`boilerhub.work` remains on Vercel. Its existing Google origins and Supabase
-callback URLs are retained; this setup does not change its DNS or custom domain.
+Cloudflare runs the existing `/api/cron/resync` handler daily at **10:00 UTC**.
+The custom Worker supplies the existing bearer secret without making a public
+HTTP request. It skips the job until `CRON_SECRET` is configured.
 
-Cloudflare runs the existing `/api/cron/resync` handler daily at **10:00 UTC**,
-matching `vercel.json`. The custom Worker supplies the existing bearer secret
-without making a public HTTP request. It skips the job until `CRON_SECRET` is
-configured. Disable the old Vercel cron when cutting over to avoid duplicate jobs.
+## Retired Vercel deployment
+
+Cloudflare is the sole deployment target. `vercel.json` contains only
+`git.deploymentEnabled: false`, following [Vercel's documented opt-out](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments).
+Keep this small guard while the old projects remain connected: deleting the file
+would restore automatic Vercel deployments. The Vercel cron declaration and
+Vercel-specific framework deployment ID are removed. No Vercel preview is a
+release requirement.
+
+The owner of the old `boilerplate` and `boiler-hub` projects should disconnect
+`dsdsouza/Boiler-hub` in each project's **Settings → Git**, and disable any existing
+Vercel cron jobs in **Settings → Cron Jobs**. The repository opt-out stops new Git
+deployments; it does not delete existing deployments or their stored settings.
+These project settings require access to the owning Vercel account. Do not delete
+unrelated projects, credentials, or domain records.
+
+The remaining release checks are the complete **Boilerplate QA** gate (types,
+lint, unit/database contracts, all browser shards, workflow/UI reports, and the
+Cloudflare build, dry run and local Workers runtime cases), followed by the
+**Deploy Boilerplate to Cloudflare** workflow on `main`. Confirm its upload step
+actually ran and the deployed Worker version carries the released Git SHA;
+a successful stale run that skipped upload is not deployment evidence.
 
 ## Local checks and manual deployment
 

@@ -20,16 +20,26 @@ async function check(page: Page, info: TestInfo, focusFindings: { rule: string; 
   expect(report.findings, 'Rendered UI inconsistencies; inspect the screenshot and element details in the UI report').toEqual([]);
 }
 
-for (const [name, url] of [['Landing', '/'], ['Boiler fixture', '/qa-boiler'], ['Help', '/how'], ['Calendar helper', '/calendar-helper']]) {
+for (const [name, url] of [['Landing', '/'], ['Boiler fixture', '/qa-boiler'], ['Help', '/how'], ['Calendar helper', '/calendar-helper'], ['Calendar', '/qa-components?mode=calendar']]) {
   test(`${name}: layout, control tokens and text contrast`, async ({ page }, info) => {
     await test.step('Load the public screen', async () => {
       // Wider May date labels exposed clipping that October labels did not.
       if (url === '/qa-boiler') await page.clock.setFixedTime(new Date('2028-05-21T16:00:00Z'));
+      if (url.includes('mode=calendar')) {
+        await page.route('**/api/me/boiler', route => route.fulfill({ status: 401, json: { error: 'fixture' } }));
+        await page.route('**/api/calendar/month?**', route => route.fulfill({ json: { deadlines: [], unavailableSources: 0, truncated: false } }));
+      }
       await page.goto(url);
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       if (url === '/qa-boiler') await expect(page.getByRole('region', { name: 'Tasks', exact: true })).toBeVisible();
     });
-    await test.step('Capture and inspect the rendered UI', () => check(page, info));
+    await test.step('Capture and inspect the rendered UI', async () => {
+      if (url.includes('mode=calendar')) {
+        await expect(page.getByRole('button', { name: 'Refresh', exact: true })).toBeVisible();
+        await page.locator('main').first().evaluate(el => el.setAttribute('data-qa-app', ''));
+        await check(page, info, await inspectKeyboardFocus(page));
+      } else await check(page, info);
+    });
   });
 }
 

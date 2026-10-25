@@ -10,7 +10,7 @@ function random(seed: number) {
 async function inventory(page: Page) {
   return page.evaluate(() => {
     const visible = (e: Element) => {
-      if (!e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') return false;
+      if (!e.getClientRects().length || getComputedStyle(e).visibility === 'hidden' || e.closest('[hidden], [aria-hidden="true"], .sr-only')) return false;
       let closed = e.closest('details:not([open])');
       while (closed) {
         if (![...closed.children].find((c) => c.tagName === 'SUMMARY')?.contains(e)) return false;
@@ -24,12 +24,12 @@ async function inventory(page: Page) {
       summaries: [...document.querySelectorAll('summary')].map((e, index) => ({ index, visible: visible(e), name: e.textContent ?? '' })).filter((e) => e.visible),
       selects: [...document.querySelectorAll('select')].map((e, index) => ({ index, name: e.getAttribute('aria-label') ?? e.id,
         visible: visible(e) && !e.disabled, options: [...e.options].filter((o) => !o.selected && !o.disabled).map((o) => o.value) })).filter((e) => e.visible),
-      links: [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(visible).map((e) => e.href),
+      links: [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].map((e, index) => ({ index, href: e.href, visible: visible(e) })).filter(e => e.visible),
       note: [...document.querySelectorAll('input')].some((e) => visible(e) && [...(e.labels ?? [])].some((l) => l.textContent === 'Status note (shown to your teams)')),
       task: Boolean(document.querySelector('#nt')),
       assignment: Boolean(document.querySelector('#a-title')),
       width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
-      overflow: [...document.querySelectorAll('main p, main h1')].filter((e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3).map((e) => e.tagName).slice(0, 3),
+      overflow: [...document.querySelectorAll('main p, main h1')].filter((e) => visible(e) && e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3).map((e) => ({ tag: e.tagName, id: e.id, width: e.clientWidth, content: e.scrollWidth })).slice(0, 3),
     };
   });
 }
@@ -39,15 +39,17 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
   const seed = baseSeed + walk * 7919 + [...info.project.name].reduce((n, c) => n + c.charCodeAt(0), 0);
   const rng = random(seed), used = new Map<string, number>();
   const history: { step: number; action: string; path: string }[] = [];
-  const findings: { step: number; kind: string }[] = [];
+  const findings: { step: number; kind: string; path: string; detail?: string }[] = [];
   const paths = new Set<string>(), pending = new Set<Request>();
   const prefix = `QA explore ${info.project.name} ${baseSeed} ${walk}`;
   const ownTaskIds = new Set<string>();
   const teamId = info.project.metadata.teamId as string | undefined;
-  const record = (kind: string) => { if (!findings.some((f) => f.kind === kind)) findings.push({ step: history.length, kind }); };
+  const record = (kind: string, detail?: string) => { if (!findings.some((f) => f.kind === kind)) findings.push({ step: history.length, kind, path: new URL(page.url()).pathname, detail }); };
   const isAPI = (url: string) => new URL(url).pathname.startsWith('/api/');
-  page.on('pageerror', () => record('runtime-error'));
-  page.on('request', (r) => { if (isAPI(r.url())) pending.add(r); });
+  const tracked = (r: Request) => isAPI(r.url()) || (['fetch', 'xhr'].includes(r.resourceType()) &&
+    (new URL(r.url()).origin === origin || new URL(r.url()).hostname.endsWith('.supabase.co')));
+  page.on('pageerror', error => record('runtime-error', error.message));
+  page.on('request', (r) => { if (tracked(r)) pending.add(r); });
   page.on('requestfinished', (r) => pending.delete(r));
   page.on('requestfailed', (r) => pending.delete(r));
   page.on('framenavigated', (frame) => {
@@ -103,9 +105,19 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
       });
       if (state.task) for (const value of [' ', 'x'.repeat(120), '<b>Δ 中文</b>']) offer(`task-draft:${value.slice(0, 10)}`, () => page.getByRole('textbox', { name: 'New task', exact: true }).fill(value));
       if (state.assignment) for (const value of ['', 'x'.repeat(200), 'Explore draft']) offer(`assignment-draft:${value.slice(0, 10)}`, () => page.locator('#a-title').fill(value));
-      for (const href of new Set(state.links)) {
-        const u = new URL(href);
-        if (u.origin === origin && ['/', '/boiler', '/teams', '/settings/sources', '/onboarding', '/how', ...(teamId ? [`/teams/${teamId}`] : [])].includes(u.pathname)) offer(`navigate:${u.pathname}`, () => page.goto(href));
+      const offeredLinks = new Set<string>();
+      for (const link of state.links) {
+        const u = new URL(link.href);
+        // Onboarding autosaves to the account. Its controlled complete journey
+        // runs separately so random reloads do not exhaust the live Auth quota.
+        if (!offeredLinks.has(u.pathname) && u.origin === origin && ['/', '/boiler', '/calendar', '/teams', '/settings/sources', '/how', ...(teamId ? [`/teams/${teamId}`] : [])].includes(u.pathname)) {
+          offeredLinks.add(u.pathname);
+          offer(`navigate:${u.pathname}`, async () => {
+            await page.locator('a[href]').nth(link.index).click();
+            await expect(page).toHaveURL(u.href);
+            await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+          });
+        }
       }
       if (step % 6 === 5) {
         for (const width of [320, 390, 768, 1280]) offer(`resize:${width}`, () => page.setViewportSize({ width, height: 900 }));
@@ -120,7 +132,7 @@ for (let walk = 0; walk < walks; walk++) test(`signed-in walk ${walk + 1}`, asyn
       used.set(action.key, (used.get(action.key) ?? 0) + 1);
       await action.run(); await settle();
       const after = await inventory(page);
-      if (after.scroll > after.width + 1 || after.overflow.length) record('layout-overflow');
+      if (after.scroll > after.width + 1 || after.overflow.length) record('layout-overflow', JSON.stringify({ viewport: after.width, document: after.scroll, elements: after.overflow }));
       if (new URL(page.url()).pathname === '/boiler') {
         const body = await (await request.get('/api/me/boiler')).json();
         const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');

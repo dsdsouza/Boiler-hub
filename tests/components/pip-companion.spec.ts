@@ -109,7 +109,9 @@ test('keyboard movement, screen boundaries and resizing keep both Pip and chat r
   const expand = window.getByRole('button', { name: 'Expand conversation', exact: true });
   const expandBox = (await expand.boundingBox())!;
   const arrowBox = (await expand.locator('svg').boundingBox())!;
+  const windowBox = (await window.boundingBox())!;
   expect(arrowBox.x + arrowBox.width / 2).toBeCloseTo(expandBox.x + expandBox.width / 2, 0);
+  expect(expandBox.x + expandBox.width / 2).toBeCloseTo(windowBox.x + windowBox.width / 2, 0);
   await expand.click();
   const history = window.getByRole('log', { name: 'Conversation with Pip', exact: true });
   await expect(history).toBeVisible();
@@ -169,7 +171,7 @@ test('touch dragging moves Pip without scrolling the page or opening chat', { ta
 });
 
 
-test('expanded history keeps the full cloud visible when Pip sits higher on a phone screen', async ({ page, context }) => {
+test('expanded history keeps the full reply panel visible when Pip sits higher on a phone screen', async ({ page, context }) => {
   const reply = "Well now, ol' friend, you ain't got any open assignments on the board right now, so there's nothing pressing to clock in for. Enjoy the quiet engine room while it lasts!";
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/api/pip/chat', route => route.fulfill({ json: { reply } }));
@@ -184,13 +186,13 @@ test('expanded history keeps the full cloud visible when Pip sits higher on a ph
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: width === 320 ? 740 : 844 });
     await expect.poll(async () => panel.evaluate(el => {
-      const cloud = el.querySelector('.pip-speech-bubble')!.getBoundingClientRect();
+      const reply = el.querySelector('.pip-speech-bubble')!.getBoundingClientRect();
       const body = el.querySelector('.pip-chat-body')!;
       const card = el.querySelector('.pip-chat-window')!;
       const collapse = card.querySelector('[aria-expanded="true"]')!.getBoundingClientRect();
       const history = card.querySelector('[role="log"]')!;
       const controls = history.parentElement!;
-      return cloud.bottom <= el.getBoundingClientRect().bottom + 1
+      return reply.bottom <= el.getBoundingClientRect().bottom + 1
         && body.scrollHeight <= body.clientHeight + 1
         && collapse.bottom <= card.getBoundingClientRect().bottom - 1
         && history.getBoundingClientRect().bottom <= controls.getBoundingClientRect().bottom + 1
@@ -199,8 +201,9 @@ test('expanded history keeps the full cloud visible when Pip sits higher on a ph
     const history = panel.getByRole('log', { name: 'Conversation with Pip', exact: true });
     await expect(history).toBeVisible();
     const historyBox = (await history.boundingBox())!;
-    expect(historyBox.height).toBeGreaterThanOrEqual(32);
-    expect(historyBox.height).toBeLessThanOrEqual(96);
+    // Firefox can round a transformed box a few fractional pixels past its CSS height.
+    expect(historyBox.height).toBeGreaterThanOrEqual(31.9);
+    expect(historyBox.height).toBeLessThanOrEqual(96.1);
     await expect(panel.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Collapse conversation', exact: true })).toBeVisible();
     if (process.env.PIP_SCREENSHOTS) {

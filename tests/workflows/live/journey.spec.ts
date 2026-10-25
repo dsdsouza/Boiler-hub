@@ -5,7 +5,7 @@ import { dirname } from 'node:path';
 import { createServerClient } from '@supabase/ssr';
 import type { BoilerResponse } from '../../../lib/pressure/api-types';
 
-const steps = ['Verify the synthetic session', 'Read the onboarding gauge', 'Save an onboarding note', 'Continue to the personal workload',
+const steps = ['Verify the synthetic session', 'Resume incomplete student onboarding', 'Complete onboarding with deferred external connections', 'Save an onboarding note', 'Continue to the personal workload',
   'Create a dated task', 'Verify task persistence after reopening', 'Resize the task', 'Complete the task', 'Verify completion after reopening',
   'Visit the permitted team workflow', 'Review source and subscription settings', 'Restore test data'];
 const step = (name: string, body: () => Promise<unknown>) => test.step(name, body, { timeout: 40_000 });
@@ -38,14 +38,19 @@ async function ownerClient(page: Page) {
   const cookies = await page.context().cookies();
   return createServerClient(url, key, { cookies: { getAll: () => cookies, setAll: () => {} } });
 }
-async function continueOnboarding(page: Page) {
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+async function advanceOnboarding(page: Page, label = 'Continue') {
+  const heading = page.getByRole('heading', { level: 1 });
+  const before = await heading.innerText();
+  await page.getByRole('button', { name: label, exact: true }).click();
+  await expect(heading).not.toHaveText(before);
   await expect(page.getByRole('button', { name: 'Saving…', exact: true })).toHaveCount(0);
 }
+const continueOnboarding = (page: Page) => advanceOnboarding(page);
 
 test('Signed-in onboarding through a persisted completed task', { annotation: { type: 'workflow-steps', description: JSON.stringify(steps) } }, async ({ page, request }, info) => {
   const title = `QA workflow ${info.project.name} ${randomUUID().slice(0, 12)}`;
   const draft = `Workflow ${randomUUID().slice(0, 8)}`;
+  const setupTaskTitle = `QA onboarding ${info.project.name} ${randomUUID().slice(0, 12)}`;
   let original: BoilerResponse | undefined;
   let failure: unknown;
   const supabase = await ownerClient(page);
@@ -53,11 +58,11 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
   expect(authError).toBeNull(); expect(user).toBeTruthy();
   const { data: profile, error: profileError } = await supabase.from('profiles').select('name,status,status_note').eq('id', user!.id).single();
   expect(profileError).toBeNull(); expect(profile).toBeTruthy();
-  const originalMetadata = { onboarding: user!.user_metadata.onboarding ?? null, full_name: user!.user_metadata.full_name ?? null };
+  const originalMetadata = { onboarding: user!.user_metadata.onboarding ?? null, onboarding_setup: user!.user_metadata.onboarding_setup ?? null, full_name: user!.user_metadata.full_name ?? null };
   const setupName = profile!.name || 'Workflow tester';
   try {
     await step('Verify the synthetic session', async () => { const response = await request.get('/api/me/boiler'); expect(response.status()).toBe(200); original = await response.json(); });
-    await step('Read the onboarding gauge', async () => {
+    await step('Resume incomplete student onboarding', async () => {
       const reset = await request.patch('/api/me/onboarding', { data: { draft: { version: 1, name: setupName, current: 'identity', completed: [] } } });
       expect(reset.status()).toBe(200);
       await page.goto('/onboarding');
@@ -67,11 +72,41 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
       await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await continueOnboarding(page);
       await continueOnboarding(page); await continueOnboarding(page);
       await expect(page.getByRole('heading', { name: 'Meet Pip in your browser.', exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeDisabled();
+      await page.getByRole('button', { name: 'Skip', exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: 'Complete Pip setup later?', exact: true });
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'Go back', exact: true }).click();
+      await expect(dialog).not.toBeVisible();
       await page.getByRole('button', { name: 'Finish later', exact: true }).click();
       await expect(page).toHaveURL(/\/boiler$/);
       const saved = await (await request.get('/api/me/onboarding')).json();
       expect(saved.draft.finished).toBe(false);
+    });
+    await step('Complete onboarding with deferred external connections', async () => {
+      const reset = await request.patch('/api/me/onboarding', { data: { draft: { version: 2, name: setupName, current: 'identity', completed: [] } } });
+      expect(reset.status()).toBe(200);
+      await page.goto('/onboarding');
+      await page.getByRole('button', { name: 'I’m working', exact: false }).click(); await continueOnboarding(page);
+      await page.getByRole('textbox', { name: 'Your name', exact: true }).fill(setupName); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'Understand my workload', exact: false }).click(); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await continueOnboarding(page);
+      await continueOnboarding(page); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'Skip', exact: true }).click();
+      await page.getByRole('dialog', { name: 'Complete Pip setup later?', exact: true }).getByRole('button', { name: 'Complete later', exact: true }).click();
+      await advanceOnboarding(page, 'Skip for now'); // Calendar: no provider grants.
+      await continueOnboarding(page); // Keep the synthetic user's status.
+      await advanceOnboarding(page, 'Skip for now'); // Team invitations.
+      await expect(page.getByRole('heading', { name: 'A starting point, just for you.', exact: true })).toBeVisible();
+      await page.getByRole('textbox', { name: 'Your first task', exact: true }).fill(setupTaskTitle);
+      await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
+      await expect(page).toHaveURL(/\/boiler$/);
+      const saved = await (await request.get('/api/me/onboarding')).json();
+      expect(saved.draft.finished).toBe(true);
+      expect(saved.draft.extensionDeferred).toBe(true);
+      const setupTasks = (await (await request.get('/api/me/boiler')).json()).tasks;
+      expect(setupTasks.filter((t: { title: string; source: string }) => t.title === setupTaskTitle && t.source === 'manual')).toHaveLength(1);
+      page = await reopen(page);
+      await expect(page.getByRole('region', { name: 'Tasks', exact: true })).toBeVisible();
     });
     await step('Save an onboarding note', async () => { await note(page).fill(draft); await note(page).press('Enter'); await expect.poll(async () => (await (await request.get('/api/me/boiler')).json()).status.note).toBe(draft); });
     await step('Continue to the personal workload', async () => {
@@ -104,14 +139,14 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
       await page.close();
       const response = await request.get('/api/me/boiler'); expect(response.status()).toBe(200);
       const body = await response.json();
-      for (const task of body.tasks.filter((t: { title: string; source: string }) => t.title === title && t.source === 'manual')) expect((await request.delete(`/api/tasks/${task.id}`)).status()).toBe(200);
+      for (const task of body.tasks.filter((t: { title: string; source: string }) => [title, setupTaskTitle].includes(t.title) && t.source === 'manual')) expect((await request.delete(`/api/tasks/${task.id}`)).status()).toBe(200);
       if (original) expect((await request.patch('/api/me/status', { data: original.status })).status()).toBe(200);
       const restoredProfile = await supabase.from('profiles').update(profile!).eq('id', user!.id);
       expect(restoredProfile.error).toBeNull();
       const restoredMetadata = await supabase.auth.updateUser({ data: originalMetadata });
       expect(restoredMetadata.error).toBeNull();
       const verify = await (await request.get('/api/me/boiler')).json();
-      expect(verify.tasks.some((t: { title: string }) => t.title === title)).toBe(false);
+      expect(verify.tasks.some((t: { title: string }) => [title, setupTaskTitle].includes(t.title))).toBe(false);
       if (original) expect(verify.status).toEqual(original.status);
       if (failure) info.annotations.push({ type: 'cleanup', description: 'Restored after a failed workflow' });
     });

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
 import { PipChat } from "./PipChat";
@@ -29,7 +29,6 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
   const message = dockMessage(snapshot, now);
   const { openRequest, messages, streamingReply, busy } = usePipConversation();
   const panel = position.frame ? pipPanel(position.point, position.frame) : null;
-  const speaking = busy || Boolean(streamingReply) || messages.at(-1)?.role === "assistant";
   // Thinking while a reply is on its way, talking while it streams in, chat body language
   // (listen, nod, bounce); otherwise a cued reaction, a hello just after the chat opens, a doze, or the dock's own.
   const cue = usePipCue({ idle: !open });
@@ -87,8 +86,7 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
       </button>
     </motion.div>
     {open && panel && position.frame && <section id={panelId} role="dialog" aria-modal="false" aria-labelledby={headingId}
-      data-placement={panel.bottom === undefined ? "beside" : "above"} data-speaking={speaking || undefined}
-      style={{ ...panel, "--pip-tail-x": `${Math.max(24, Math.min(panel.width - 24, position.point.x + position.frame.pipWidth / 2 - panel.left))}px` } as CSSProperties & { "--pip-tail-x": string }}
+      style={panel}
       className="pip-chat-panel mp-pop pointer-events-auto absolute flex flex-col">
       {userId ? <PipAccountChat userId={userId} header={chatHeader} /> : <PipChat header={chatHeader} />}
     </section>}

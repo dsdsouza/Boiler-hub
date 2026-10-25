@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createQASession } from './session.mjs';
 import { accountBank, QA_MARKER } from './accounts.mjs';
+import { isTrustedAccountOrigin } from './origins.mjs';
 import { interruptWorkflows, workflowSummary, renderWorkflows } from './workflow-reporter.mjs';
 
 const argv = process.argv.slice(2);
@@ -16,7 +17,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (argv[i] === '--url') target = argv[++i];
 }
 if (!Number.isInteger(workers) || workers < 1 || workers > 16) throw new Error('Workers must be 1 to 16');
-if (!['https://boilerhub.work', 'https://boilerplate.zhomander.workers.dev'].includes(target)) throw new Error('Only verified Boilerplate origins are allowed');
+if (!isTrustedAccountOrigin(target)) throw new Error('Only verified Boilerplate origins are allowed');
 if (argv.includes('--url') && !accounts) throw new Error('Use --accounts with --url to run live workflows');
 const id = new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 6);
 const directory = resolve('qa-runs', 'workflows-' + id); await mkdir(directory, { recursive: true, mode: 0o700 });
