@@ -81,4 +81,18 @@ describe("Mascot reactions", () => {
   it("does not dance while carried", () => {
     expect(renderToStaticMarkup(<Mascot score={50} size={120} reaction="dance" carried />)).not.toContain("mp-dance");
   });
+
+  it("greets with a hop and a wave, even at Redline", () => {
+    for (const score of [50, 95]) {
+      const html = render("greet", score);
+      expect(html).toContain('class="mp-hop"');
+      expect(html).toContain('class="mp-wave"');
+    }
+    expect(renderToStaticMarkup(<Mascot score={50} size={120} reaction="greet" carried />)).not.toContain("mp-hop");
+  });
+
+  it("moves its mouth while talking, and only then", () => {
+    expect(render("talk")).toContain('class="mp-talk"');
+    expect(render("idle")).not.toContain("mp-talk");
+  });
 });

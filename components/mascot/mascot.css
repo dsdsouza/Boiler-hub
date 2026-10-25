@@ -117,6 +117,19 @@
   .pip-grab:not([data-dragging="true"]):hover svg { transform-origin: 50% 85%; animation: mp-greet 0.6s ease-in-out 1; }
 }
 
+/* Pressing Pip squishes him like a button. `scale` composes with the hover wiggle's transform. */
+@media (prefers-reduced-motion: no-preference) {
+  .pip-grab svg { transform-origin: 50% 85%; transition: scale 160ms ease-out; }
+  .pip-grab:not([data-dragging="true"]):active svg { scale: 1.05 0.92; transition-duration: 80ms; }
+}
+
+/* Talking while a reply streams in: the mouth opens and closes about three times a second. */
+@keyframes mp-talk {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1.15); }
+}
+.mp-talk { transform-box: fill-box; transform-origin: center; animation: mp-talk 0.34s ease-in-out infinite; }
+
 .mp-thought { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-thought 1.8s ease-in-out infinite; animation-delay: var(--delay, 0s); }
 .mp-ponder { animation: mp-ponder 0.9s ease-in-out infinite alternate; }
 
@@ -127,13 +140,14 @@
 [data-still] .mp-ponder,
 [data-still] .mp-hero-dance,
 [data-still] .mp-hero-arm-l,
-[data-still] .mp-hero-arm-r {
+[data-still] .mp-hero-arm-r,
+[data-still] .mp-talk {
   animation: none;
 }
 [data-still] .mp-thought { animation: none; opacity: 0.85; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder, .mp-hero-dance, .mp-hero-arm-l, .mp-hero-arm-r { animation: none; }
+  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder, .mp-hero-dance, .mp-hero-arm-l, .mp-hero-arm-r, .mp-talk { animation: none; }
   .mp-thought { animation: none; opacity: 0.85; }
 }
 

@@ -10,8 +10,11 @@ export const MASCOT_NAME = "Pip";
 /** Shared by the My Boiler strip and the corner dock, so hiding Pip hides both. */
 export const PIP_HIDDEN_KEY = "bp-pip-hidden";
 
-/** dance: a short victory dance. think: waiting on an answer. boil: the gauge just crossed into Redline. */
-export type Reaction = "idle" | "wave" | "celebrate" | "attentive" | "dance" | "think" | "boil";
+/**
+ * dance: a short victory dance. think: waiting on an answer. boil: the gauge just crossed into Redline.
+ * greet: a hop and wave when the chat opens. talk: the mouth moves while a reply streams in.
+ */
+export type Reaction = "idle" | "wave" | "celebrate" | "attentive" | "dance" | "think" | "boil" | "greet" | "talk";
 
 /** A representative score in the middle of each zone, from the engine's thresholds. */
 export const ZONE_PRESET = Object.fromEntries(
