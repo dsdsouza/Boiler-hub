@@ -5,31 +5,40 @@ export async function inspectKeyboardFocus(page: Page) {
   if (!await controls.count()) throw new Error('The app must expose controls for the focus inspection');
   await page.keyboard.press('Tab');
   const findings = [];
-  for (const control of await controls.all()) {
-    const before = await control.evaluate(el => {
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      const styles = [];
-      for (let node: Element | null = el; node && !node.hasAttribute('data-qa-app'); node = node.parentElement) {
-        const s = getComputedStyle(node); styles.push(s.borderColor);
-      }
-      return styles;
-    });
-    await control.focus();
-    const focused = await control.evaluate((el, previous) => {
-      const s = getComputedStyle(el);
-      let indicator = parseFloat(s.outlineWidth) >= 2 && !['none', 'hidden'].includes(s.outlineStyle) && !['transparent', 'rgba(0, 0, 0, 0)'].includes(s.outlineColor);
-      let i = 0;
-      // A composer can deliberately put its focus indicator on the surrounding
-      // group. Count only an actual painted border change after focus.
-      for (let node: Element | null = el; node && !node.hasAttribute('data-qa-app'); node = node.parentElement, i++) {
-        const style = getComputedStyle(node);
-        if (parseFloat(style.borderWidth) >= 1 && !['none', 'hidden'].includes(style.borderStyle) && style.borderColor !== previous[i] && !['transparent', 'rgba(0, 0, 0, 0)'].includes(style.borderColor)) indicator = true;
-      }
-      return { active: document.activeElement === el, indicator, element: el.tagName.toLowerCase() + '[' + (el.getAttribute('aria-label') || el.id || el.classList[0]) + ']' };
-    }, before);
-    if (!focused.active || !focused.indicator) findings.push({ rule: 'keyboard-focus', element: focused.element, actual: `active=${focused.active}, visible indicator=${focused.indicator}` });
+  // Enabled controls can change while a refresh settles. Keep each actual node
+  // throughout measurement; live nth locators would silently switch targets.
+  const nodes = await controls.elementHandles();
+  try {
+    for (const control of nodes) {
+      const before = await control.evaluate(el => {
+        if (!(el instanceof Element)) throw new Error("Focus inspection requires an element");
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        const styles = [];
+        for (let node: Element | null = el; node && !node.hasAttribute('data-qa-app'); node = node.parentElement) {
+          const s = getComputedStyle(node); styles.push(s.borderColor);
+        }
+        return styles;
+      });
+      await control.focus();
+      const focused = await control.evaluate((el, previous) => {
+        if (!(el instanceof Element)) throw new Error("Focus inspection requires an element");
+        const s = getComputedStyle(el);
+        let indicator = parseFloat(s.outlineWidth) >= 2 && !['none', 'hidden'].includes(s.outlineStyle) && !['transparent', 'rgba(0, 0, 0, 0)'].includes(s.outlineColor);
+        let i = 0;
+        // A composer can deliberately put its focus indicator on the surrounding
+        // group. Count only an actual painted border change after focus.
+        for (let node: Element | null = el; node && !node.hasAttribute('data-qa-app'); node = node.parentElement, i++) {
+          const style = getComputedStyle(node);
+          if (parseFloat(style.borderWidth) >= 1 && !['none', 'hidden'].includes(style.borderStyle) && style.borderColor !== previous[i] && !['transparent', 'rgba(0, 0, 0, 0)'].includes(style.borderColor)) indicator = true;
+        }
+        return { active: document.activeElement === el, indicator, element: el.tagName.toLowerCase() + '[' + (el.getAttribute('aria-label') || el.id || el.classList[0]) + ']' };
+      }, before);
+      if (!focused.active || !focused.indicator) findings.push({ rule: 'keyboard-focus', element: focused.element, actual: `active=${focused.active}, visible indicator=${focused.indicator}` });
+    }
+    return findings;
+  } finally {
+    await Promise.all(nodes.map(node => node.dispose()));
   }
-  return findings;
 }
 
 /** Rendered checks, deliberately narrower than a complete accessibility audit.
