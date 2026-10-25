@@ -90,6 +90,10 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
       <div ref={log} onScroll={(event) => { const view = event.currentTarget; followReply.current = view.scrollHeight - view.scrollTop - view.clientHeight < 40; }} className="pip-speech-content max-h-24 overflow-y-auto overscroll-contain">
         {hasReply ? <p className="m-0 text-[13px] leading-relaxed whitespace-pre-wrap wrap-anywhere"><span className="sr-only">Pip: </span>{reply}{busy && <span aria-hidden="true" className="ml-1 inline-block h-3 w-1 rounded-sm bg-current motion-safe:animate-pulse" />}</p> : <PipThinking />}
       </div>
+      <svg className="pip-speech-tail" viewBox="0 0 28 14" aria-hidden="true" focusable="false" strokeLinejoin="round">
+        <path d="M0-1h28v1L14 14 0 0Z" stroke="none" />
+        <path d="m0 0 14 14L28 0" fill="none" stroke="currentColor" />
+      </svg>
     </Card>}
   </div>;
 }

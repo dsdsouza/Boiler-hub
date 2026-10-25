@@ -436,6 +436,23 @@ body:has([data-onboarding]) [data-pip-companion] {
 }
 
 /* Reply and composer share the app's Card surface. */
+.pip-speech-bubble {
+  position: relative;
+  /* Keep the attached tail inside the chat's scroll boundary. */
+  margin-bottom: 16px;
+}
+.pip-speech-tail {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 28px;
+  height: 14px;
+  overflow: visible;
+  transform: translateX(-50%);
+  pointer-events: none;
+  fill: var(--surface);
+  color: var(--line);
+}
 .pip-speech-content { min-height: 0; }
 .pip-speech-bubble .bp-pip-thinking {
   max-width: none;
@@ -446,4 +463,5 @@ body:has([data-onboarding]) [data-pip-companion] {
 }
 @media (forced-colors: active) {
   .pip-speech-bubble { color: CanvasText; }
+  .pip-speech-tail { fill: Canvas; color: CanvasText; forced-color-adjust: none; }
 }

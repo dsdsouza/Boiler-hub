@@ -187,17 +187,23 @@ test('expanded history keeps the full reply panel visible when Pip sits higher o
     await page.setViewportSize({ width, height: width === 320 ? 740 : 844 });
     await expect.poll(async () => panel.evaluate(el => {
       const reply = el.querySelector('.pip-speech-bubble')!.getBoundingClientRect();
+      const tail = el.querySelector('.pip-speech-tail')!.getBoundingClientRect();
       const body = el.querySelector('.pip-chat-body')!;
       const card = el.querySelector('.pip-chat-window')!;
       const collapse = card.querySelector('[aria-expanded="true"]')!.getBoundingClientRect();
       const history = card.querySelector('[role="log"]')!;
       const controls = history.parentElement!;
-      return reply.bottom <= el.getBoundingClientRect().bottom + 1
-        && body.scrollHeight <= body.clientHeight + 1
-        && collapse.bottom <= card.getBoundingClientRect().bottom - 1
-        && history.getBoundingClientRect().bottom <= controls.getBoundingClientRect().bottom + 1
-        && controls.scrollHeight <= controls.clientHeight + 1;
-    })).toBe(true);
+      return {
+        tailVisible: tail.bottom <= el.getBoundingClientRect().bottom + 1,
+        tailCentered: Math.abs(tail.x + tail.width / 2 - reply.x - reply.width / 2) < 1,
+        // Firefox can round the one-pixel border overlap slightly past one pixel.
+        tailAttached: Math.abs(tail.top - reply.bottom) <= 1.1,
+        bodyFits: body.scrollHeight <= body.clientHeight + 1,
+        toggleFits: collapse.bottom <= card.getBoundingClientRect().bottom - 1,
+        historyFits: history.getBoundingClientRect().bottom <= controls.getBoundingClientRect().bottom + 1,
+        controlsFit: controls.scrollHeight <= controls.clientHeight + 1,
+      };
+    })).toEqual({ tailVisible: true, tailCentered: true, tailAttached: true, bodyFits: true, toggleFits: true, historyFits: true, controlsFit: true });
     const history = panel.getByRole('log', { name: 'Conversation with Pip', exact: true });
     await expect(history).toBeVisible();
     const historyBox = (await history.boundingBox())!;
