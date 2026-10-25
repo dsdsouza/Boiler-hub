@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { createServerClient } from '@supabase/ssr';
 import type { BoilerResponse } from '../../../lib/pressure/api-types';
 
 const steps = ['Verify the synthetic session', 'Read the onboarding gauge', 'Save an onboarding note', 'Continue to the personal workload',
@@ -29,16 +30,57 @@ async function completed(page: Page, title: string) {
   await expect(control).toBeVisible();
 }
 
+async function ownerClient(page: Page) {
+  try { process.loadEnvFile('.env.qa.local'); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  const url = process.env.QA_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.QA_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('The live workflow requires the existing Supabase public configuration');
+  const cookies = await page.context().cookies();
+  return createServerClient(url, key, { cookies: { getAll: () => cookies, setAll: () => {} } });
+}
+async function continueOnboarding(page: Page) {
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Saving…', exact: true })).toHaveCount(0);
+}
+
 test('Signed-in onboarding through a persisted completed task', { annotation: { type: 'workflow-steps', description: JSON.stringify(steps) } }, async ({ page, request }, info) => {
   const title = `QA workflow ${info.project.name} ${randomUUID().slice(0, 12)}`;
   const draft = `Workflow ${randomUUID().slice(0, 8)}`;
   let original: BoilerResponse | undefined;
   let failure: unknown;
+  const supabase = await ownerClient(page);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  expect(authError).toBeNull(); expect(user).toBeTruthy();
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('name,status,status_note').eq('id', user!.id).single();
+  expect(profileError).toBeNull(); expect(profile).toBeTruthy();
+  const originalMetadata = { onboarding: user!.user_metadata.onboarding ?? null, full_name: user!.user_metadata.full_name ?? null };
+  const setupName = profile!.name || 'Workflow tester';
   try {
     await step('Verify the synthetic session', async () => { const response = await request.get('/api/me/boiler'); expect(response.status()).toBe(200); original = await response.json(); });
-    await step('Read the onboarding gauge', async () => { await page.goto('/onboarding'); await expect(note(page)).toBeVisible(); await expect(page.getByRole('heading', { name: 'First sync', exact: true })).toBeVisible(); });
-    await step('Save an onboarding note', async () => { await note(page).fill(draft); const reply = page.waitForResponse(r => new URL(r.url()).pathname === '/api/me/status' && r.request().method() === 'PATCH'); await note(page).press('Enter'); expect((await reply).status()).toBe(200); await expect(page.getByText('Saved', { exact: true })).toBeVisible(); });
-    await step('Continue to the personal workload', async () => { await page.getByRole('link', { name: 'Go to my boiler', exact: true }).click(); await expect(page).toHaveURL(/\/boiler$/); await expect(note(page)).toHaveValue(draft); });
+    await step('Read the onboarding gauge', async () => {
+      const reset = await request.patch('/api/me/onboarding', { data: { draft: { version: 1, name: setupName, current: 'identity', completed: [] } } });
+      expect(reset.status()).toBe(200);
+      await page.goto('/onboarding');
+      await page.getByRole('button', { name: 'I’m a student', exact: false }).click(); await continueOnboarding(page);
+      await page.getByRole('textbox', { name: 'Your name', exact: true }).fill(setupName); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'Understand my workload', exact: false }).click(); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await continueOnboarding(page);
+      await continueOnboarding(page); await continueOnboarding(page);
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Bring your week into view.', exact: true })).toBeVisible();
+      // Synthetic identities have no Google grant, so unavailable is a supported state.
+      await continueOnboarding(page);
+    });
+    await step('Save an onboarding note', async () => { await note(page).fill(draft); await continueOnboarding(page); });
+    await step('Continue to the personal workload', async () => {
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Have a team invite?', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Open my boiler', exact: true }).click();
+      await expect(page).toHaveURL(/\/boiler$/); await expect(note(page)).toHaveValue(draft);
+    });
     await step('Create a dated task', async () => {
       const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
       await tasks.getByRole('textbox', { name: 'New task', exact: true }).fill(title);
@@ -68,6 +110,10 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
       const body = await response.json();
       for (const task of body.tasks.filter((t: { title: string; source: string }) => t.title === title && t.source === 'manual')) expect((await request.delete(`/api/tasks/${task.id}`)).status()).toBe(200);
       if (original) expect((await request.patch('/api/me/status', { data: original.status })).status()).toBe(200);
+      const restoredProfile = await supabase.from('profiles').update(profile!).eq('id', user!.id);
+      expect(restoredProfile.error).toBeNull();
+      const restoredMetadata = await supabase.auth.updateUser({ data: originalMetadata });
+      expect(restoredMetadata.error).toBeNull();
       const verify = await (await request.get('/api/me/boiler')).json();
       expect(verify.tasks.some((t: { title: string }) => t.title === title)).toBe(false);
       if (original) expect(verify.status).toEqual(original.status);

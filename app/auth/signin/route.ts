@@ -1,10 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { NEXT_COOKIE, safeNext } from "@/lib/auth";
+import { authFailurePath, authOrigin, NEXT_COOKIE, safeNext } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  const { origin, searchParams } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  const origin = authOrigin(request);
   const next = safeNext(searchParams.get("next"));
+  // A preview without auth configuration should return to the saved journey.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.redirect(`${origin}${authFailurePath(next, "signin")}`);
+  }
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -19,7 +24,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (error || !data.url) {
-    return NextResponse.redirect(`${origin}/?error=signin`);
+    return NextResponse.redirect(`${origin}${authFailurePath(next, "signin")}`);
   }
   const response = NextResponse.redirect(data.url);
   response.cookies.set(NEXT_COOKIE, next, {

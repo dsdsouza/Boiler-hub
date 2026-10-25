@@ -13,12 +13,14 @@ export function StatusPicker({
   note,
   onChange,
   labelledBy,
+  savedLabel = "Saved",
   children,
 }: {
   status: Status;
   note: string;
   onChange: (status: Status, note: string) => boolean | void | Promise<boolean | void>;
   labelledBy?: string;
+  savedLabel?: string;
   children?: ReactNode;
 }) {
   // Unique per instance: My Boiler renders one picker per breakpoint.
@@ -102,7 +104,7 @@ export function StatusPicker({
         }}
       />
       <p className="m-0 flex justify-end text-xs text-muted">
-        <span aria-live="polite">{saving ? "Saving…" : failed ? "Not saved. Try again." : saved ? "Saved" : <span aria-hidden="true">{draft.length}/80</span>}</span>
+        <span aria-live="polite">{saving ? "Saving…" : failed ? "Not saved. Try again." : saved ? savedLabel : <span aria-hidden="true">{draft.length}/80</span>}</span>
       </p>
       {children}
     </div>

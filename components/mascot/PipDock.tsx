@@ -29,7 +29,7 @@ export function PipDock() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || pathname === "/onboarding") return;
     let active = true;
     const client = createClient();
     void (async () => {
@@ -47,7 +47,7 @@ export function PipDock() {
     return () => { active = false; };
   }, [userId, pathname]);
 
-  if (!userId) return null;
+  if (!userId || pathname === "/onboarding") return null;
   const ownReading = reading?.userId === userId ? reading : null;
   return <FloatingPip key={userId} userId={userId} snapshot={ownReading?.snapshot ?? null} now={ownReading?.now ?? 0} pathname={pathname} />;
 }

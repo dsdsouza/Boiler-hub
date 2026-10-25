@@ -38,7 +38,7 @@ function Workflows() {
     </nav>
     <div data-qa-app>
     {view === 'boiler' && <BoilerScreen />}
-    {view === 'onboarding' && <OnboardingClient />}
+    {view === 'onboarding' && <OnboardingClient signedIn accountName="Workflow lead" />}
     {view === 'teams' && <main><h1>Teams</h1><div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>
       {teams?.map(t => <article key={t.id} className="my-6 rounded-lg border border-line p-6">
         <Link href={`/qa-workflows?view=engine&team=${t.id}`}>{t.name}</Link>
