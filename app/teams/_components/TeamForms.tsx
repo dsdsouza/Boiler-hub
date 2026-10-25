@@ -26,7 +26,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 export function CreateTeamForm() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [type, setType] = useState<"class" | "work">("work");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [, startTransition] = useTransition();
@@ -38,7 +37,7 @@ export function CreateTeamForm() {
     setBusy(true);
     setMsg(null);
     try {
-      const { team } = await api<{ team: { name: string; inviteCode: string } }>("/api/teams", "POST", { name, type });
+      const { team } = await api<{ team: { name: string; inviteCode: string } }>("/api/teams", "POST", { name, type: "work" });
       setName((current) => current === draft ? "" : current);
       setMsg({ ok: true, text: `Created ${team.name}. Share invite code ${team.inviteCode}.` });
       startTransition(() => router.refresh());
@@ -67,34 +66,11 @@ export function CreateTeamForm() {
             placeholder="Product Squad, AP Bio P3…"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <span id="team-type" className="text-[13px] font-medium" style={{ color: C.text2 }}>
-            Type
-          </span>
-          <div role="group" aria-labelledby="team-type" className="grid grid-cols-2 gap-2">
-            {(["work", "class"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={type === t}
-                onClick={() => setType(t)}
-                className="min-h-11 rounded-lg text-sm font-semibold"
-                style={{
-                  border: `1px solid ${type === t ? C.brass : C.line}`,
-                  backgroundColor: type === t ? C.brass : C.surface,
-                  color: type === t ? C.onFill : C.text2,
-                }}
-              >
-                {t === "work" ? "Work team" : "Class"}
-              </button>
-            ))}
-          </div>
-        </div>
         <button type="submit" disabled={busy || !name.trim()} className={primary} style={primaryStyle}>
           {busy ? "Creating…" : "Create team"}
         </button>
         {msg && (
-          <p role={msg.ok ? "status" : "alert"} className="m-0 break-words text-sm" style={{ color: msg.ok ? "#7FB3D5" : "#F25C45" }}>
+          <p role={msg.ok ? "status" : "alert"} className="m-0 break-words text-sm" style={{ color: msg.ok ? "#5b8f63" : "#F25C45" }}>
             {msg.text}
           </p>
         )}

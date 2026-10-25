@@ -150,9 +150,6 @@ export function AssignmentPanel({
         <h2 id="new-assignment" className={`m-0 text-[32px] tracking-[0.03em] ${DISPLAY}`}>
           New assignment
         </h2>
-        <p className="mt-0.5 mb-0 text-[13px]" style={{ color: C.muted }}>
-          {labels.lead} only. Preview the pressure before you post.
-        </p>
       </div>
 
       {posted ? (
@@ -277,9 +274,6 @@ export function AssignmentPanel({
                     ? `No ${labels.members} to post to`
                     : `Post to ${plural(recipients, labels.members.replace(/s$/, ""), labels.members)}`}
           </button>
-          <p className="m-0 text-xs" style={{ color: C.muted }}>
-            The preview adds this task to each stored snapshot. No calendars are re-read.
-          </p>
         </div>
       )}
 
