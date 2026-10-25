@@ -21,6 +21,7 @@ import { VisibilityPicker } from '@/app/teams/_components/VisibilityPicker';
 import { CreateTeamForm, JoinTeamForm } from '@/app/teams/_components/TeamForms';
 import { EngineRoom } from '@/app/teams/_components/EngineRoom';
 import { OnboardingClient } from '@/app/onboarding/OnboardingClient';
+import { FloatingPip } from '@/components/mascot/FloatingPip';
 export default function Harness() {
  const boiler = useMyBoiler('api', '00000000-0000-4000-a000-000000000001');
  const [mode, setMode] = useState('boiler');
@@ -32,6 +33,8 @@ export default function Harness() {
   {mode === 'forms' && <div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>}
   {mode === 'engine' && <EngineRoom room={{team, myRole:'member', myUserId:'qa', myVisibility:'hidden', memberCount:0, hiddenCount:0, boilers:[]}} />}
   {mode === 'onboarding' && <OnboardingClient />}
+  {mode === 'pip-preview' && <><h1>Pip movement preview</h1><FloatingPip snapshot={null} now={0} pathname="/" /></>}
+  {mode === 'pip' && <section><h1>Pip movement check</h1><a href="/qa-components?mode=pip&next=1">Next screen</a><p>Only the signed-in companion should float above this page.</p></section>}
  </main>;
 }
 `);
