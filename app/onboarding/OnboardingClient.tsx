@@ -570,7 +570,7 @@ export function OnboardingClient({
               </div>
             )}
             {boiler?.calendar === "ok" && (
-              <div className={styles.connection}>
+              <div className={`${styles.connection} ${styles.calendarConnected}`}>
                 <Check />
                 <span>Google Calendar connected</span>
               </div>
