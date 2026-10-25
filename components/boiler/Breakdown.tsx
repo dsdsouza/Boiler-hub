@@ -5,6 +5,7 @@ import type { Contribution, LoadItem, Weight } from "@/lib/types";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_WEIGHT } from "@/lib/pressure/config";
 import { WEIGHT_LABEL, formatPoints } from "./format";
+import { ContributionReason } from "./ContributionReason";
 
 const WEIGHTS: Weight[] = ["light", "normal", "heavy"];
 const COLLAPSED = 3;
@@ -100,7 +101,7 @@ function BreakdownRow({
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <div className="break-words text-[15px] font-semibold">{c.title}</div>
-          <div className="text-[13px] text-muted">{c.reason}</div>
+          <ContributionReason reason={c.reason} />
         </div>
         <span className="font-mono text-[15px] font-bold whitespace-nowrap" style={{ color }}>
           <span className="sr-only">{release ? "vents" : "adds"} </span>
