@@ -28,7 +28,7 @@ const EXPLICIT_DEADLINE_RE = /\b(due|deadlines?|submissions?|assignments?|homewo
 const MEDIUM_RE = /\b(quiz(?:zes)?|projects?|labs?|papers?|essays?|reports?|presentations?)\b/i;
 
 export function sizeForTitle(title: string): Size {
-  if (isMajorExam(title) || /\b(midterms?|finals?)\b/i.test(title)) return "L";
+  if (isMajorExam(title) || /\b(exams?|midterms?|finals?)\b/i.test(title)) return "L";
   if (MEDIUM_RE.test(title)) return "M";
   return "S";
 }

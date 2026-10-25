@@ -379,6 +379,28 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
   transition: background-color 100ms var(--ease-ui), border-color 100ms var(--ease-ui), color 100ms var(--ease-ui);
 }
 
+/* A translucent finish stays lighter than each close button's own surface. */
+.bp-close-button {
+  --close-highlight: color-mix(in srgb, var(--steam) 7%, transparent);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--muted);
+}
+.bp-close-button:focus-visible {
+  background-color: var(--close-highlight);
+  color: var(--text);
+}
+@media (hover: hover) {
+  .bp-close-button:hover {
+    background-color: var(--close-highlight);
+    color: var(--text);
+  }
+}
+.bp-close-button:active {
+  background-color: color-mix(in srgb, var(--steam) 11%, transparent);
+  color: var(--text);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .bp-button {
     transition: background-color 100ms var(--ease-ui), border-color 100ms var(--ease-ui), color 100ms var(--ease-ui), opacity 100ms ease-out, scale 150ms ease-out;

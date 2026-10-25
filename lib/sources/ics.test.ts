@@ -253,6 +253,7 @@ describe("sizeForTitle", () => {
   it("sizes school tests as major exams, while keeping sample essays medium", () => {
     expect(sizeForTitle("PHY 131 Test 2")).toBe("L");
     expect(sizeForTitle("Test Essay")).toBe("M");
+    expect(sizeForTitle("Exam study guide")).toBe("L");
   });
   const sizes = (titles: string[]) => titles.map(sizeForTitle);
 

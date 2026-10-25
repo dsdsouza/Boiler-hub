@@ -50,7 +50,7 @@ export const EXAM_DECAY_DAYS = 3;
 export const OVERDUE_GRACE_DAYS = 7;
 export const OVERDUE_DECAY_DAYS = 7;
 /** Stored in the existing counts JSON; never mix raw values from different models. */
-export const PRESSURE_MODEL_VERSION = "balanced-v1";
+export const PRESSURE_MODEL_VERSION = "balanced-v3";
 
 /** A task with no due date is treated as due this many days from now. */
 export const NO_DUE_DAYS = 7;
