@@ -29,7 +29,7 @@ describe("Help session", () => {
     for (const href of ["/boiler", "/teams", "/settings/sources"]) {
       expect(header).toContain(`href="${href}"`);
     }
-    const helpLink = header.match(/<a\b[^>]*href="\/how"[^>]*>Help<\/a>/)?.[0];
+    const helpLink = header.match(/<a\b[^>]*href="\/how"[^>]*>How it works<\/a>/)?.[0];
     expect(helpLink).toContain('aria-current="page"');
     expect(header).not.toContain("Sign in with Google");
     expect(getUser).toHaveBeenCalledTimes(1);

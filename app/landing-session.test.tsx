@@ -22,17 +22,19 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("landing session", () => {
-  it("offers Google sign-in when signed out and preserves the return destination", async () => {
+  it("offers boiler setup and how-it-works actions while preserving the return destination", async () => {
     const html = await render({ next: "/settings/sources" });
-    expect(html.match(/Sign in with Google/g)).toHaveLength(2);
+    expect(html).not.toContain("Sign in with Google");
     expect(html).toContain('/auth/signin?next=%2Fsettings%2Fsources');
     expect(html).not.toContain("Sign out");
-    expect(html).not.toContain("Open My Boiler");
+    expect(html).toContain("Open My Boiler");
+    expect(html).toContain("See how it works");
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
     for (const href of ["/boiler", "/teams", "/settings/sources", "/how"]) {
       expect(header).not.toContain(`href="${href}"`);
     }
     expect(header).not.toContain('href="/demo"');
+    expect(header).not.toContain('/auth/signin');
   });
 
   it("shows the verified account and boiler link instead of Google sign-in", async () => {
@@ -45,6 +47,7 @@ describe("landing session", () => {
     expect(html).toContain('href="/boiler"');
     expect(html).toContain("Open My Boiler");
     expect(html).not.toContain("Sign in with Google");
+    expect(html).not.toContain("See how it works");
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
     for (const href of ["/boiler", "/teams", "/settings/sources", "/how"]) {
       expect(header).toContain(`href="${href}"`);
@@ -67,13 +70,17 @@ describe("landing session", () => {
     expect(await render()).toContain("Signed in as Maya Chen");
     const nextRequest = await render();
     expect(nextRequest).not.toContain("Signed in as Maya Chen");
-    expect(nextRequest).toContain("Sign in with Google");
+    expect(nextRequest).toContain("Open My Boiler");
+    expect(nextRequest).toContain('href="/onboarding"');
+    expect(nextRequest).toContain("See how it works");
   });
 
   it("falls back to signed-out controls if session verification fails", async () => {
     getUser.mockRejectedValue(new Error("Auth unavailable"));
     const html = await render();
-    expect(html).toContain("Sign in with Google");
+    expect(html).toContain("Open My Boiler");
+    expect(html).toContain('href="/onboarding"');
+    expect(html).toContain("See how it works");
     expect(html).not.toContain("Sign out");
   });
 });

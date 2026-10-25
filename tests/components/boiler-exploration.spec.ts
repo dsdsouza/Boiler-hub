@@ -66,7 +66,7 @@ test('exploration: returning to the landing page hydrates without browser errors
   for (const path of ['/', '/how', '/', '/onboarding', '/', '/']) {
     if (path === '/') await page.getByRole('banner').getByRole('link', { name: 'Boilerplate', exact: true }).click();
     else if (path === '/how') await page.goto('/how');
-    else await page.getByRole('main').getByRole('link', { name: 'Set up my boiler', exact: true }).click();
+    else await page.getByRole('main').getByRole('link', { name: 'Open My Boiler', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${path === '/' ? '/' : path}$`));
     await expect(page.getByRole('main')).toBeVisible();
     if (path === '/') {
