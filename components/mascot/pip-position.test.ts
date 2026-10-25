@@ -22,12 +22,15 @@ describe("Pip placement", () => {
     for (const frame of [phone, desktop, { ...phone, height: 480 }]) {
       for (const p of [{ x: 0, y: 0 }, { x: 9999, y: 9999 }, { x: 100, y: 200 }]) {
         const panel = pipPanel(clampPip(p, frame), frame);
+        const top = panel.top ?? frame.height - panel.bottom! - panel.maxHeight;
         expect(panel.left).toBeGreaterThanOrEqual(12);
-        expect(panel.top).toBeGreaterThanOrEqual(12);
+        expect(top).toBeGreaterThanOrEqual(12);
+        expect(panel.width).toBeLessThanOrEqual(288);
         expect(panel.left + panel.width).toBeLessThanOrEqual(frame.width - 12);
-        expect(panel.top + panel.maxHeight).toBeLessThanOrEqual(frame.height - frame.bottom);
+        expect(top + panel.maxHeight).toBeLessThanOrEqual(frame.height - frame.bottom);
         const pip = clampPip(p, frame);
-        expect(panel.left + panel.width <= pip.x || panel.left >= pip.x + frame.pipWidth || panel.top + panel.maxHeight <= pip.y || panel.top >= pip.y + frame.pipHeight).toBe(true);
+        expect(panel.left + panel.width <= pip.x || panel.left >= pip.x + frame.pipWidth || top + panel.maxHeight <= pip.y || top >= pip.y + frame.pipHeight).toBe(true);
+        if (panel.bottom !== undefined) expect(frame.height - panel.bottom).toBe(pip.y - 12);
       }
     }
   });

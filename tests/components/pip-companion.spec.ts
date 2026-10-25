@@ -78,6 +78,16 @@ test('keyboard movement, screen boundaries and resizing keep both Pip and chat r
   await pip(page).press('ArrowLeft');
   await expect.poll(async () => Math.round((await pip(page).boundingBox())!.x)).toBe(Math.round(original.x - 12));
   await pip(page).press('Home'); await expect.poll(async () => Math.round((await pip(page).boundingBox())!.x)).toBe(Math.round(original.x));
+  await pip(page).press('Enter');
+  const compact = companion(page).getByRole('dialog');
+  await expect(compact).toBeVisible();
+  const compactBox = (await compact.boundingBox())!;
+  expect(compactBox.width).toBeLessThanOrEqual(288);
+  expect(compactBox.height).toBeLessThan(190);
+  expect(compactBox.y + compactBox.height).toBeCloseTo(original.y - 12, 0);
+  await expect(compact).not.toContainText('Hi, I’m Pip.');
+  await expect(compact.getByRole('button', { name: 'New conversation', exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
   await drag(page, { x: 0, y: 0 }); await page.mouse.up();
   await expect.poll(async () => Math.round((await pip(page).boundingBox())!.x)).toBe(12);
   await page.setViewportSize({ width: 320, height: 600 });
@@ -86,6 +96,7 @@ test('keyboard movement, screen boundaries and resizing keep both Pip and chat r
   const form = panel.getByRole('textbox', { name: 'Message Pip', exact: true });
   await form.fill('A local draft');
   const formBox = (await form.boundingBox())!;
+  await panel.getByText('Quick questions', { exact: true }).click();
   const shortcutBox = (await panel.getByRole('button', { name: 'What’s due next?', exact: true }).boundingBox())!;
   expect(formBox.y + formBox.height).toBeLessThan(shortcutBox.y);
   await expect(panel.getByRole('link', { name: 'Open My Boiler', exact: true })).toHaveCount(0);

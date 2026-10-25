@@ -360,3 +360,46 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
 body:has([data-onboarding]) [data-pip-companion] {
   display: none;
 }
+
+/* Pip's compact composer stays separate from the cloud in which he speaks. */
+.pip-chat-panel[data-placement="above"][data-speaking]::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--pip-tail-x) - 12px);
+  bottom: -8px;
+  width: 12px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 11px 8px 0 -2px var(--text);
+  pointer-events: none;
+}
+.pip-speech-bubble {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-radius: 28px 32px 26px 30px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 14px 16px;
+}
+.pip-speech-bubble::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 24px;
+  width: 44px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 50px -2px 0 2px var(--text), 104px 0 0 -1px var(--text);
+  pointer-events: none;
+}
+.pip-speech-bubble > div { position: relative; }
+.pip-speech-bubble .bp-pip-thinking {
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}

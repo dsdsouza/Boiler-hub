@@ -24,20 +24,22 @@ export function readPipRatio(value: string | null): Point | null {
     return p && typeof p.x === "number" && typeof p.y === "number" && Number.isFinite(p.x) && Number.isFinite(p.y) && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1 ? { x: p.x, y: p.y } : null;
   } catch { return null; }
 }
-/** Put chat beside Pip where it fits, and keep the entire panel in the viewport. */
+/** Anchor the compact chat directly above Pip, with fallbacks at the screen edges. */
 export function pipPanel(point: Point, frame: PipFrame) {
-  const width = Math.min(380, frame.width - EDGE * 2);
-  const height = Math.min(460, frame.height - frame.bottom - EDGE * 2);
+  const width = Math.min(288, frame.width - EDGE * 2);
+  const height = Math.min(360, frame.height - frame.bottom - EDGE * 2);
   const left = Math.max(EDGE, Math.min(point.x + frame.pipWidth / 2 - width / 2, frame.width - width - EDGE));
   const above = Math.max(0, point.y - EDGE * 2);
   const belowTop = point.y + frame.pipHeight + EDGE;
   const below = Math.max(0, frame.height - frame.bottom - belowTop - EDGE);
-  if (above >= height) return { left, top: point.y - height - EDGE, width, maxHeight: height };
-  if (below >= height) return { left, top: belowTop, width, maxHeight: height };
+  // A bottom anchor follows the rendered height instead of reserving a tall,
+  // mostly empty rectangle between a short conversation and the character.
+  if (above >= Math.min(160, height)) return { left, bottom: frame.height - point.y + EDGE, width, maxHeight: Math.min(height, above) };
+  if (below >= Math.min(160, height)) return { left, top: belowTop, width, maxHeight: Math.min(height, below) };
   const sideTop = Math.max(EDGE, Math.min(point.y + frame.pipHeight / 2 - height / 2, frame.height - frame.bottom - height - EDGE));
   if (point.x >= width + EDGE * 2) return { left: point.x - width - EDGE, top: sideTop, width, maxHeight: height };
   if (frame.width - point.x - frame.pipWidth >= width + EDGE * 2) return { left: point.x + frame.pipWidth + EDGE, top: sideTop, width, maxHeight: height };
-  // On a narrow screen, use the larger free side and let chat scroll instead
-  // of covering the character or putting controls outside the viewport.
-  return above >= below ? { left, top: EDGE, width, maxHeight: above } : { left, top: belowTop, width, maxHeight: below };
+  return above >= below
+    ? { left, bottom: frame.height - point.y + EDGE, width, maxHeight: above }
+    : { left, top: belowTop, width, maxHeight: below };
 }
