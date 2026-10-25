@@ -165,3 +165,33 @@ test('touch dragging moves Pip without scrolling the page or opening chat', { ta
     await expect(companion(page).getByRole('dialog')).toHaveCount(0); expect(await page.evaluate(() => scrollY)).toBe(0);
   } finally { await context.close(); }
 });
+
+
+test('expanded history keeps the full cloud visible when Pip sits higher on a phone screen', async ({ page, context }) => {
+  const reply = "Well now, ol' friend, you ain't got any open assignments on the board right now, so there's nothing pressing to clock in for. Enjoy the quiet engine room while it lasts!";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/api/pip/chat', route => route.fulfill({ json: { reply } }));
+  await open(page, context);
+  await pip(page).focus();
+  for (let step = 0; step < 5; step++) await pip(page).press('Shift+ArrowUp');
+  await pip(page).press('Enter');
+  const panel = companion(page).getByRole('dialog');
+  await panel.getByRole('button', { name: 'What’s due next?', exact: true }).click();
+  await expect(panel.getByRole('status', { name: "Pip's reply", exact: true })).toContainText(reply);
+  await panel.getByRole('button', { name: 'Expand conversation', exact: true }).click();
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: width === 320 ? 740 : 844 });
+    await expect.poll(async () => panel.evaluate(el => {
+      const cloud = el.querySelector('.pip-speech-bubble')!.getBoundingClientRect();
+      const body = el.querySelector('.pip-chat-body')!;
+      return cloud.bottom <= el.getBoundingClientRect().bottom + 1 && body.scrollHeight <= body.clientHeight + 1;
+    })).toBe(true);
+    const history = panel.getByRole('log', { name: 'Conversation with Pip', exact: true });
+    await expect(history).toBeVisible();
+    const historyBox = (await history.boundingBox())!;
+    expect(historyBox.height).toBeGreaterThanOrEqual(32);
+    expect(historyBox.height).toBeLessThanOrEqual(96);
+    await expect(panel.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Collapse conversation', exact: true })).toBeVisible();
+  }
+});
