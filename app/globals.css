@@ -385,7 +385,9 @@ body:has([data-onboarding]) [data-pip-companion] {
 }
 .pip-speech-bubble {
   position: relative;
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 1;
   min-height: 112px;
   color: var(--bg);
   padding: 44px 40px 40px;
@@ -398,7 +400,7 @@ body:has([data-onboarding]) [data-pip-companion] {
   color: var(--text);
   pointer-events: none;
 }
-.pip-speech-content { position: relative; }
+.pip-speech-content { position: relative; min-height: 0; }
 .pip-speech-bubble .bp-pip-thinking {
   max-width: none;
   padding: 0;
