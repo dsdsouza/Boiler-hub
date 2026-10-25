@@ -8,7 +8,6 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Field";
 import {
-  FOCUS_DOMAINS,
   nextStudyOpening,
   parseStudyContext,
 } from "@/lib/pip/study";
@@ -147,10 +146,10 @@ export function StudyAccountability({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <CardTitle id={`${id}-heading`}>Focus with Pip</CardTitle>
         <span
-          className={`text-xs ${blocker.connected ? "text-cool-ink" : "text-muted"}`}
+          className={`text-xs ${blocker.connected ? "text-[#5b8f63]" : "text-muted"}`}
         >
           {blocker.connected
-            ? "Focus extension connected"
+            ? "Extension connected!"
             : "Focus extension not connected"}
         </span>
       </div>
@@ -294,12 +293,7 @@ export function StudyAccountability({
                   />
                 </label>
               </div>
-              <p className="mt-3 mb-4 text-xs leading-relaxed text-muted">
-                Starting or scheduling focus lets the installed extension pause{" "}
-                {FOCUS_DOMAINS.join(", ")} for this commitment. You can end it
-                any time. Other apps and devices remain accessible.
-              </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Button variant="primary" onClick={() => start("now")}>
                   Start focus
                 </Button>
@@ -320,13 +314,11 @@ export function StudyAccountability({
                   Plan with Pip
                 </Button>
               </div>
-              <p className="mt-3 mb-0 text-xs leading-relaxed text-muted">
-                The next opening is calculated from your loaded events;
-                incomplete calendars can miss conflicts. This schedules a focus
-                commitment, not a calendar event.
-                {!blocker.connected &&
-                  " Without the extension, keep this page open for the timer."}
-              </p>
+              {!blocker.connected && (
+                <p className="mt-3 mb-0 text-xs leading-relaxed text-muted">
+                  Without the extension, keep this page open for the timer.
+                </p>
+              )}
             </>
           ) : (
             <p className="m-0 text-sm text-muted">

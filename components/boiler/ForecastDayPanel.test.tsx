@@ -16,7 +16,7 @@ describe("forecast day explanation", () => {
       onToggle={() => {}}
     />);
     expect(html).toContain("Monday project");
-    expect(html).toContain("L task, due in 1.3 days");
+    expect(html.replace(/<[^>]+>/g, "")).toContain("L task, due in 1.3 days");
     expect(html).toContain("Biology");
     expect(html).toContain("+6.4");
     expect(html).toContain("Nothing due.");
