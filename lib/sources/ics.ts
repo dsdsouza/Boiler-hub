@@ -45,6 +45,8 @@ export interface ClassifyOptions {
   feedUrl?: string;
   /** Fallback course label when the feed names none. */
   label?: string;
+  /** Fixed connection instant. A new import defaults to now; later syncs retain that boundary. */
+  importedAt?: Date;
 }
 
 /** Longest course label we pass on (matches tasks.course in 0004). */
@@ -103,6 +105,12 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
 
   const t = opts.now.getTime();
   const feedZone = validZone(cal.vcalendar?.["WR-TIMEZONE"]) ?? opts.timeZone;
+  const importedAt = opts.importedAt ?? opts.now;
+  if (!Number.isFinite(importedAt.getTime())) throw new SourceError("This source's import date could not be read");
+  const importDay = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: feedZone, year: "numeric", month: "numeric", day: "numeric",
+  }).formatToParts(importedAt).filter((p) => p.type !== "literal").map((p) => [p.type, Number(p.value)]));
+  const importFrom = zonedTime(importDay.year, importDay.month, importDay.day, 0, 0, feedZone);
   const from = opts.dateWindow?.from ?? new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
   // Include the preparation horizon at every day of the forecast.
   const to = opts.dateWindow?.to ?? new Date(t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS + 1) * DAY_MS);
@@ -145,6 +153,9 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         const due = inst.isFullDay
           ? zonedTime(inst.start.getFullYear(), inst.start.getMonth() + 1, inst.start.getDate(), 23, 59, feedZone)
           : end;
+        // Do not bring historical submissions into a new connection as unfinished work.
+        // The boundary stays on the connection day so later missed deadlines remain tracked.
+        if (due < importFrom) continue;
         if (opts.dateWindow ? due < from.getTime() || due >= to.getTime() : due < t - LOOKBACK_DAYS * DAY_MS || due > t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS) * DAY_MS) continue;
         items.push({
           id,
@@ -197,6 +208,7 @@ export const icsAdapter: SourceAdapter = {
       feedUrl: source.secret,
       label: source.label,
       dateWindow: ctx.dateWindow,
+      importedAt: source.importedAt ? new Date(source.importedAt) : ctx.now,
     });
   },
 };
