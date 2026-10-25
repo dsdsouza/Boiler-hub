@@ -34,8 +34,8 @@
 @media (prefers-reduced-motion: no-preference) {
   .bp-fill-loader-fill { animation: bp-fill-loader-fill 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
   .bp-fill-loader-flame { animation: bp-fill-loader-flicker 1.25s ease-in-out infinite; }
-  /* HOT's valve cycles in 300ms; Pip's takes twice as long (half the speed). */
-  .bp-fill-loader-valve { animation: bp-fill-loader-valve-lift 600ms ease-in-out infinite; }
+  /* ValveLoader supplies twice HOT's valve period, keeping the motion at half speed. */
+  .bp-fill-loader-valve { animation: bp-fill-loader-valve-lift var(--bp-loader-motion-duration, 700ms) ease-in-out infinite; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bp-fill-loader-fill { animation: bp-fill-loader-breathe 1.8s ease-in-out infinite alternate; }
