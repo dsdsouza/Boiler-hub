@@ -44,11 +44,23 @@ export default function Harness() {
 const workflowRoute = join(directory, 'app', 'qa-workflows');
 await mkdir(workflowRoute, { recursive: true });
 await cp(resolve(root, 'tests/workflows/harness.tsx'), join(workflowRoute, 'page.tsx'));
-const child = spawn(resolve(root, 'node_modules/.bin/next'), ['dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219'], {
-  cwd: directory, stdio: 'inherit', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' },
-});
+const next = resolve(root, 'node_modules/.bin/next');
+const env = { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' };
+let child;
 let stopping = false;
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { if (!stopping) { stopping = true; child.kill(signal); } });
-const code = await new Promise((ok) => { child.on('error', () => ok(1)); child.on('exit', (code) => ok(code ?? (stopping ? 0 : 1))); });
-await rm(directory, { recursive: true, force: true });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { if (!stopping) { stopping = true; child?.kill(signal); } });
+async function run(args) {
+  child = spawn(next, args, { cwd: directory, stdio: 'inherit', env });
+  return new Promise((ok) => { child.on('error', () => ok(1)); child.on('exit', (code) => ok(code ?? (stopping ? 0 : 1))); });
+}
+let code = 0;
+try {
+  // CI already requests production mode. Honor it for this disposable app too:
+  // dev-mode Fast Refresh can replace a document during an auth/navigation check.
+  const production = process.env.PLAYWRIGHT_PRODUCTION === '1';
+  if (production) code = await run(['build']);
+  if (code === 0 && !stopping) code = await run([production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219']);
+} finally {
+  await rm(directory, { recursive: true, force: true });
+}
 process.exitCode = code;
