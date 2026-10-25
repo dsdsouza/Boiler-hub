@@ -196,7 +196,7 @@ export function ForecastDayPanel({
           onClick={onClose}
           aria-label="Close"
           title="Close"
-          className="absolute top-2 right-2 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-0 text-muted hover:bg-surface hover:text-fg"
+          className="bp-control bp-close-button absolute top-2 right-2 inline-flex h-11 w-11 cursor-pointer items-center justify-center border-0 p-0"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />

@@ -22,7 +22,7 @@ export function SignInToast() {
             <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" />
           </svg>
           <span className="min-w-0 flex-1 text-sm leading-relaxed font-medium">Sign in to open that page.</span>
-          <button type="button" className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted hover:bg-surface hover:text-fg" aria-label="Dismiss notification" onClick={() => setVisible(false)}>
+          <button type="button" className="bp-control bp-close-button grid size-11 shrink-0 cursor-pointer place-items-center border-0 p-0" aria-label="Dismiss notification" onClick={() => setVisible(false)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
               <path d="m6 6 12 12M6 18 18 6" />
             </svg>

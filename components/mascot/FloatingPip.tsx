@@ -62,7 +62,7 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
   const chatHeader = <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 pl-3 pr-1">
     <h2 ref={heading} id={headingId} tabIndex={-1} className="m-0 text-sm leading-snug font-semibold text-fg outline-none">Chat with Pip</h2>
     <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Pip chat"
-      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg">
+      className="bp-control bp-close-button inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center border-0">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
     </button>
   </div>;
