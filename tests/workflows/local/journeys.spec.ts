@@ -96,7 +96,7 @@ test('Onboarding through a completed and restored task', plan([
 });
 
 for (const type of ['class', 'work'] as const) test(`Two-account ${type} team to completed assignment`, plan([
-  'Create a team as its lead', 'Read and share the invite code', 'Recover from an invalid invite', 'Join the team as a second person',
+  'Open or create a team as its lead', 'Read and share the invite code', 'Recover from an invalid invite', 'Join the team as a second person',
   'Confirm the new member starts hidden', 'Share the member boiler', 'See the member in the lead engine room',
   'Preview a dated assignment', 'Post the assignment once', 'Find the assignment in the member workload',
   'Complete the assigned task', 'Verify completion survives reopening', 'Hide the member boiler again', 'Confirm the lead cannot see the hidden member',
@@ -106,8 +106,30 @@ for (const type of ['class', 'work'] as const) test(`Two-account ${type} team to
   await service.connect(memberContext, 'member'); let member = await memberContext.newPage();
   const title = `Workflow ${type} delivery`, teamName = `Workflow ${type} team`;
   try {
-    await step('Create a team as its lead', async () => { await open(page, 'teams'); await page.getByRole('textbox', { name: 'Name', exact: true }).fill(teamName); if (type === 'class') await page.getByRole('button', { name: 'Class', exact: true }).click(); await page.getByRole('button', { name: 'Create team', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: `Created ${teamName}` })).toBeVisible(); });
-    await step('Read and share the invite code', async () => { await expect(page.getByRole('status').filter({ hasText: 'WF1234' })).toBeVisible(); expect(service.teams).toHaveLength(1); });
+    await step('Open or create a team as its lead', async () => {
+      if (type === 'class') {
+        // Existing classes still support invites and assignments. New teams use
+        // the work default, so seed the legacy class in this local service only.
+        service.teams.push({ id: '00000000-0000-4000-a000-000000000020', name: teamName, type,
+          inviteCode: 'WF1234', members: [{ user: service.users[0], role: 'lead', visibility: 'hidden' }] });
+      }
+      await open(page, 'teams');
+      await expect(page.getByRole('group', { name: 'Type', exact: true })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /^(Work team|Class)$/ })).toHaveCount(0);
+      if (type === 'work') {
+        await page.getByRole('textbox', { name: 'Name', exact: true }).fill(teamName);
+        await page.getByRole('button', { name: 'Create team', exact: true }).click();
+        await expect(page.getByRole('status').filter({ hasText: `Created ${teamName}` })).toBeVisible();
+        expect(service.teams[0].type).toBe('work');
+      }
+    });
+    await step('Read and share the invite code', async () => {
+      expect(service.teams).toHaveLength(1);
+      page = await reopen(page);
+      await page.getByRole('link', { name: teamName, exact: true }).click();
+      await expect(page.getByText('WF1234', { exact: true })).toBeVisible();
+      await open(page, 'teams');
+    });
     await step('Recover from an invalid invite', async () => { await open(member, 'teams'); await member.getByRole('textbox', { name: 'Invite code', exact: true }).fill('BAD000'); await member.getByRole('button', { name: 'Join team', exact: true }).click(); await expect(member.getByRole('alert').filter({ hasText: 'No team found' })).toBeVisible(); await expect(member.getByRole('textbox', { name: 'Invite code', exact: true })).toHaveValue('BAD000'); });
     await step('Join the team as a second person', async () => { await member.getByRole('textbox', { name: 'Invite code', exact: true }).fill('wf1234'); await member.getByRole('button', { name: 'Join team', exact: true }).click(); await expect(member.getByRole('status').filter({ hasText: 'Joined.' })).toBeVisible(); member = await reopen(member); await member.getByRole('link', { name: teamName, exact: true }).click(); await expect(member.getByRole('heading', { level: 1, name: teamName })).toBeVisible(); });
     await step('Confirm the new member starts hidden', async () => { await member.getByText('Your visibility on this team', { exact: true }).click(); await expect(member.getByRole('radio', { name: /^Hidden/ })).toBeChecked(); await expect(member.getByRole('heading', { name: 'New assignment', exact: true })).toHaveCount(0); });
