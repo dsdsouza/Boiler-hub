@@ -5,28 +5,14 @@ import { useEffect, useState } from "react";
 import type { Counts, ForecastDay, Zone } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { FloatingPip } from "./FloatingPip";
+import { usePipUser } from "./PipConversation";
 import type { Snapshot } from "./dockMessage";
 
 /** One companion on every signed-in screen, even before a first reading exists. */
 export function PipDock() {
   const pathname = usePathname() ?? "/";
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = usePipUser();
   const [reading, setReading] = useState<{ userId: string; snapshot: Snapshot | null; now: number } | null>(null);
-
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    const client = createClient();
-    let active = true;
-    let observedAuth = false;
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
-      observedAuth = true;
-      if (active) setUserId(session?.user.id ?? null);
-    });
-    void client.auth.getSession().then(({ data }) => {
-      if (active && !observedAuth) setUserId(data.session?.user.id ?? null);
-    }).catch(() => { if (active && !observedAuth) setUserId(null); });
-    return () => { active = false; data.subscription.unsubscribe(); };
-  }, []);
 
   useEffect(() => {
     if (!userId || pathname === "/onboarding") return;

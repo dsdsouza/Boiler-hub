@@ -1,5 +1,7 @@
 "use client";
 
+import { usePipUser } from "@/components/mascot/PipConversation";
+
 import { useEffect, useState } from "react";
 import type { Status, Zone } from "@/lib/types";
 import { ZONE_MIN } from "@/lib/pressure";
@@ -49,7 +51,7 @@ const CAPTION: Record<Zone, string> = {
 const MOVABLE = DEMO_TASKS.find((t) => t.id === "t-spec")!;
 const MOVE_TO = { dueIn: 7, label: "next Tuesday" };
 
-export function MascotPreview() {
+function MascotPreviewContent() {
   const [scenario, setScenario] = useState<Scenario>("onboarding");
   const [score, setScore] = useState(62);
   const [frame, setFrame] = useState<Frame>("desktop");
@@ -462,4 +464,9 @@ function CharacterSheet({ still }: { still: boolean }) {
       </div>
     </section>
   );
+}
+
+export function MascotPreview() {
+  const userId = usePipUser();
+  return userId ? <MascotPreviewContent /> : <p className="text-body"><a href="/auth/signin?next=%2Fmascot-preview" className="text-brass-ink underline">Sign in</a> to meet Pip.</p>;
 }

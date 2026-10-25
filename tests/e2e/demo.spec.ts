@@ -151,28 +151,13 @@ test('assignment requires a title, previews size and posts with feedback', async
   await expect(assignment.getByRole('button', { name: /^Post to / })).toBeDisabled();
 });
 
-test('Pip wardrobe sits below the status note and preserves its selection', async ({ page }) => {
-  await expect(page.getByRole('complementary', { name: 'Pip, your pressure companion', exact: true })).toHaveCount(0);
-  const dressUp = page.getByRole('button', { name: 'Dress up', exact: true });
-  const note = page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true });
-  const noteBox = (await note.boundingBox())!;
-  const buttonBox = (await dressUp.boundingBox())!;
-  expect(buttonBox.y).toBeGreaterThanOrEqual(noteBox.y + noteBox.height);
-  await dressUp.click();
-  const wardrobe = page.getByRole('region', { name: 'Pip wardrobe', exact: true });
-  await expect(wardrobe.getByRole('radio', { name: 'None', exact: true })).toBeFocused();
-  await wardrobe.getByRole('radio', { name: 'None', exact: true }).press('ArrowRight');
-  await expect(wardrobe.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
-  await expect(wardrobe.getByRole('radio', { checked: true })).toHaveCount(1);
+test('guest demo keeps the boiler gauge but hides Pip and his wardrobe', async ({ page }) => {
+  await page.waitForLoadState('networkidle');
+  await expect(gauge(page)).toHaveAttribute('aria-label', /^Boiler at pressure /);
+  await expect(page.locator('[data-pip-companion]')).toHaveCount(0);
+  await expect(page.getByRole('img', { name: /^Pip/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Dress up', exact: true })).toHaveCount(0);
   await noOverflow(page);
-  await wardrobe.getByRole('button', { name: 'Done', exact: true }).click();
-  await expect(dressUp).toBeFocused();
-  await page.reload();
-  await dressUp.click();
-  await expect(wardrobe.getByRole('radio', { name: 'Top hat', exact: true })).toBeChecked();
-  await wardrobe.getByRole('radio', { name: 'Top hat', exact: true }).press('Escape');
-  await expect(wardrobe).toHaveCount(0);
-  await expect(dressUp).toBeFocused();
 });
 
 
