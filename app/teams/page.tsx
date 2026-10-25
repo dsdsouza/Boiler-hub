@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/user";
-import { listMyTeams, type MyTeam } from "@/lib/data/teams";
-import { C, DISPLAY, MONO, plural, teamLabels } from "./_theme";
+import { listMyTeams } from "@/lib/data/teams";
+import { C, DISPLAY } from "./_theme";
 import { CreateTeamForm, JoinTeamForm } from "./_components/TeamForms";
-import { VisibilityPicker } from "./_components/VisibilityPicker";
+import { TeamCard } from "./_components/TeamCard";
 
 export const dynamic = "force-dynamic";
 
@@ -36,43 +35,5 @@ export default async function TeamsPage() {
         <JoinTeamForm />
       </div>
     </main>
-  );
-}
-
-function TeamCard({ team }: { team: MyTeam }) {
-  const l = teamLabels(team.type);
-  return (
-    <article className="flex flex-col gap-4 rounded-xl p-5" style={{ backgroundColor: C.surface, border: `1px solid ${C.line}` }}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className={`text-xs tracking-[0.16em] ${MONO}`} style={{ color: C.brassLight }}>
-            {team.type === "class" ? "CLASS" : "WORK TEAM"}
-          </div>
-          <h2 className={`m-0 truncate text-[34px] leading-none tracking-[0.02em] ${DISPLAY}`}>{team.name}</h2>
-          <p className="m-0 text-sm" style={{ color: C.muted }}>
-            You are {team.role === "lead" ? `the ${l.lead}` : `a ${l.member}`} ·{" "}
-            {plural(team.visibleCount + team.hiddenCount, l.member.toLowerCase(), l.members)}
-            {team.hiddenCount > 0 && ` · ${team.hiddenCount} hidden from you`}
-          </p>
-        </div>
-        <Link
-          href={`/teams/${team.id}`}
-          prefetch={true}
-          className={`inline-flex min-h-11 items-center rounded-lg px-4 text-xl tracking-[0.05em] no-underline ${DISPLAY}`}
-          style={{ backgroundColor: C.brass, color: C.onFill, boxShadow: "inset 0 -3px 0 #8C6A35" }}
-        >
-          Engine Room →
-        </Link>
-      </div>
-      {team.inviteCode && (
-        <p className="m-0 text-sm" style={{ color: C.muted }}>
-          Invite code{" "}
-          <span className={`font-bold tracking-[0.12em] ${MONO}`} style={{ color: C.text }}>
-            {team.inviteCode}
-          </span>
-        </p>
-      )}
-      <VisibilityPicker teamId={team.id} value={team.visibility} leadLabel={l.lead} />
-    </article>
   );
 }
