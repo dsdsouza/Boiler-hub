@@ -406,3 +406,10 @@ body:has([data-onboarding]) [data-pip-companion] {
   background: transparent;
   color: inherit;
 }
+/* Keep the pale fill readable against Pip's light speech cloud. */
+.pip-speech-bubble [data-fill-loader="valve"] path {
+  stroke: var(--bp-loader-gray);
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
