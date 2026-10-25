@@ -16,7 +16,7 @@ test('signed-out public screens keep app navigation out of the header', async ({
 
 test('public home offers a working demo and Help stays readable to guests', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('pressure');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('red line');
   await noOverflow(page);
   await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
   await expect(page).toHaveURL(/\/demo$/);
