@@ -7,7 +7,7 @@ test('signed-out public screens keep app navigation out of the header', async ({
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: 'Boilerplate', exact: true })).toBeVisible();
     await expect(header.getByRole('navigation', { name: 'Main', exact: true })).toHaveCount(0);
-    for (const name of ['My Boiler', 'Calendar', 'Teams', 'Connect', 'Help']) {
+    for (const name of ['My Boiler', 'Calendar', 'Teams', 'Connect', 'How it works']) {
       await expect(header.getByRole('link', { name, exact: true, includeHidden: true })).toHaveCount(0);
     }
     await expect(page.getByRole('navigation', { name: 'App', exact: true })).toHaveCount(0);
@@ -19,13 +19,15 @@ test('public home leads to setup and Help stays readable to guests', async ({ pa
   await expect(page.getByRole('heading', { level: 1 })).toContainText('red line');
   await noOverflow(page);
   await expect(page.getByRole('link', { name: 'Try the demo', exact: true })).toHaveCount(0);
-  await page.getByRole('main').getByRole('link', { name: 'Set up my boiler', exact: true }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Open My Boiler', exact: true }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByRole('heading', { name: 'Who are we setting up for?', level: 1, exact: true })).toBeVisible();
-  await page.goto('/how');
+  await page.goto('/');
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Sign in with Google', exact: true })).toHaveCount(0);
+  await page.getByRole('main').getByRole('link', { name: 'See how it works', exact: true }).click();
   await expect(page).toHaveURL(/\/how$/);
   const helpHeader = page.getByRole('banner');
-  await expect(page).toHaveTitle('Help · Boilerplate');
+  await expect(page).toHaveTitle('How it works · Boilerplate');
   await expect(helpHeader.getByRole('navigation', { name: 'Main', exact: true })).toHaveCount(0);
   await expect(helpHeader.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true })).toHaveAttribute('href', '/auth/signin?next=%2Fhow');
   await expect(helpHeader.getByRole('link', { name: 'Teams', exact: true, includeHidden: true })).toHaveCount(0);
@@ -79,11 +81,8 @@ test('signed-out private APIs reject reads and writes', async ({ request }) => {
 
 test('sign-in return path cannot point at another site', async ({ page }) => {
   await page.goto('/?next=https://example.com');
-  const links = page.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true });
-  await expect(page.getByRole('link', { name: 'Set up my boiler', exact: true })).toHaveAttribute('href', '/onboarding');
-  const hrefs = await links.evaluateAll((elements) => elements.map((el) => el.getAttribute('href')));
-  expect(hrefs.length).toBeGreaterThan(0);
-  for (const href of hrefs) expect(href).toBe('/auth/signin?next=%2Fonboarding');
+  await expect(page.getByRole('main').getByRole('link', { name: 'Open My Boiler', exact: true })).toHaveAttribute('href', '/onboarding');
+  await expect(page.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true })).toHaveCount(0);
 });
 
 test('public routes load their assets without missing chunks or runtime errors', async ({ context }) => {

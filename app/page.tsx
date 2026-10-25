@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { Boiler } from "@/components/boiler/Boiler";
-import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkButton } from "@/components/ui/Button";
 import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 import { AccountControls, getViewer } from "@/components/ui/Account";
@@ -34,13 +33,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className={viewer ? "min-h-screen pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0" : "min-h-screen"}>
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
-        account={viewer ? (
-          <AccountControls viewer={viewer} />
-        ) : (
-          <span className="hidden sm:inline-flex">
-            <GoogleSignInButton href={signin} size="md" />
-          </span>
-        )}
+        account={viewer ? <AccountControls viewer={viewer} /> : undefined}
       />
 
       <main>
@@ -63,12 +56,19 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               to start. With the focus extension, distracting websites stay blocked while you work.
             </p>
             <div className="bp-arrive bp-arrive-last flex flex-wrap gap-3.5 pt-2">
-              {viewer ? (
-                <LinkButton href="/boiler" variant="primary" size="lg" className="bp-button-striped max-sm:w-full">
-                  Open My Boiler
+              <LinkButton
+                href={viewer ? "/boiler" : typeof params.next === "string" && next !== "/onboarding" ? signin : "/onboarding"}
+                plain={!viewer && typeof params.next === "string" && next !== "/onboarding"}
+                variant="primary"
+                size="lg"
+                className="bp-button-striped max-sm:w-full"
+              >
+                Open My Boiler
+              </LinkButton>
+              {!viewer && (
+                <LinkButton href="/how" variant="secondary" size="lg" className="max-sm:w-full">
+                  See how it works
                 </LinkButton>
-              ) : (
-                typeof params.next === "string" && next !== "/onboarding" ? <GoogleSignInButton href={signin} className="max-sm:w-full" /> : <LinkButton href="/onboarding" variant="primary" size="lg" className="bp-button-striped max-sm:w-full">Set up my boiler</LinkButton>
               )}
             </div>
           </div>
