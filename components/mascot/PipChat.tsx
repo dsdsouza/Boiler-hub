@@ -52,9 +52,9 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
   }, [messages, busy, streamingReply, expanded]);
 
   return <div className="pip-chat-body flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain">
-    <div className="pip-chat-window shrink-0 overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="pip-chat-window flex min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-surface">
       {header}
-      <div className="flex flex-col gap-2 px-2 pb-1">
+      <div className="flex min-h-0 flex-col gap-2 px-2 pb-1">
         <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="flex shrink-0 flex-col gap-2">
           <label htmlFor={field} className="sr-only">Message Pip</label>
           <div className="flex items-end gap-1 rounded-lg border border-control bg-field p-1 focus-within:border-brass">
@@ -71,7 +71,7 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
         {enabled && <div role="group" aria-label="Pip shortcuts" className="flex shrink-0 items-center gap-1.5">{SUGGESTIONS.map((suggestion) => <button key={suggestion.label} type="button" onClick={() => void send(suggestion.question)} disabled={busy} className="bp-control inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-line bg-transparent px-2 py-1 text-[11px] font-medium leading-none text-body hover:border-rivet hover:text-fg disabled:cursor-wait disabled:opacity-50">{suggestion.label}</button>)}</div>}
         <div ref={transcript} id={conversationId} hidden={!expanded} role="log" aria-label="Conversation with Pip" aria-live="off" aria-busy={busy} tabIndex={0}
           onScroll={(event) => { const view = event.currentTarget; followHistory.current = view.scrollHeight - view.scrollTop - view.clientHeight < 24; }}
-          className="h-24 shrink-0 overflow-y-auto overscroll-contain rounded-lg border border-line bg-field p-2">
+          className="h-24 min-h-8 overflow-y-auto overscroll-contain rounded-lg border border-line bg-field p-2">
           {messages.length === 0 ? <p className="m-0 text-xs text-muted">No messages yet.</p> : messages.map((message, index) => <p key={index} className={`mt-0 mb-2 last:mb-0 text-xs leading-relaxed whitespace-pre-wrap wrap-anywhere ${message.role === "user" ? "text-fg" : "text-body"}`}>
             <span className="font-semibold">{message.role === "user" ? "You: " : "Pip: "}</span>{message.content}
           </p>)}
@@ -79,7 +79,7 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
         </div>
         <button type="button" aria-label={expanded ? "Collapse conversation" : "Expand conversation"} aria-controls={conversationId} aria-expanded={expanded}
           onClick={() => { followHistory.current = true; setExpanded((value) => !value); }}
-          className="bp-control flex min-h-11 w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent text-[11px] leading-none text-muted hover:bg-surface-2 hover:text-fg">
+          className="bp-control flex min-h-11 w-full shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent text-[11px] leading-none text-muted hover:bg-surface-2 hover:text-fg">
           <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-180" : undefined}><path d="m3 7 5-5 5 5" /></svg>
           <span>{expanded ? "Collapse" : "Expand"}</span>
         </button>
