@@ -160,10 +160,12 @@ test("the last page saves a manual task, retries safely, and opens My Boiler dir
   expect(await page.evaluate(owner => localStorage.getItem(`boiler:onboarding:v1:pending:${owner}`), service.users[0].id)).toBeNull();
   await page.goto("/qa-workflows?view=onboarding");
   await expect(title(page)).toHaveText("A starting point, just for you.");
-  const writes = service.writes.length;
+  // The mount's background coursework check can finish after the page appears.
+  const setupWrites = () => service.writes.filter(write => !write.endsWith(" POST /api/me/onboarding/check"));
+  const writes = setupWrites();
   await page.getByRole("button", { name: "Open my boiler", exact: true }).click();
   await expect(page).toHaveURL(/\/boiler$/);
-  expect(service.writes).toHaveLength(writes);
+  expect(setupWrites()).toEqual(writes);
   expect(service.users[0].tasks).toHaveLength(1);
 });
 
