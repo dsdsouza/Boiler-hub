@@ -1,30 +1,43 @@
 "use client";
 
 import { Disclosure } from "@/components/ui/Disclosure";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { AssignmentPreview, Status, Zone } from "@/lib/types";
 import type { EngineRoomView } from "@/lib/data/teams";
 import { movedUp } from "@/app/api/teams/_lib/assignment";
-import { C, DISPLAY, MONO, STATUS_META, ZONE_LABEL, plural, teamLabels } from "../_theme";
+import { C, DISPLAY, STATUS_META, ZONE_LABEL, plural, teamLabels } from "../_theme";
 import { AssignmentPanel } from "./AssignmentPanel";
 import { BoilerTile, type TileOverlay } from "./BoilerTile";
 import { VisibilityPicker } from "./VisibilityPicker";
+import { TeamMetadata } from "./TeamMetadata";
 
 const ZONES: Zone[] = ["redline", "hot", "working", "cool"];
 const STATUSES: Status[] = ["open", "heads_down", "running_hot", "away"];
 
-const chip = (on: boolean) => ({
-  border: `1px solid ${on ? C.brass : C.line}`,
-  backgroundColor: on ? C.brass : C.surface,
-  color: on ? C.onFill : C.text2,
-});
+function FilterCheckbox({ checked, indeterminate = false, onChange, children }: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: (checked: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (input.current) input.current.indeterminate = indeterminate; }, [indeterminate]);
+  return (
+    <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium" style={{ color: C.text2 }}>
+      <input ref={input} type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)}
+        className="h-4 w-4 shrink-0 cursor-pointer outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ accentColor: C.brass, outlineColor: C.brassLight }} />
+      {children}
+    </label>
+  );
+}
 
 export function EngineRoom({ room }: { room: EngineRoomView }) {
   const l = teamLabels(room.team.type);
   const isLead = room.myRole === "lead";
-  const [zoneFilter, setZoneFilter] = useState<Zone | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [zoneFilter, setZoneFilter] = useState<Zone[]>(ZONES);
+  const [statusFilter, setStatusFilter] = useState<Status[]>(STATUSES);
   const [preview, setPreview] = useState<AssignmentPreview | null>(null);
   const onPreview = useCallback((p: AssignmentPreview | null) => setPreview(p), []);
 
@@ -49,8 +62,8 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
   const zoneCount = (z: Zone) => tiles.filter((t) => t.ranked && t.zone === z).length;
   const shown = tiles.filter(
     (t) =>
-      (zoneFilter === "all" || (t.ranked && t.zone === zoneFilter)) &&
-      (statusFilter === "all" || t.boiler.status === statusFilter),
+      (zoneFilter.length === ZONES.length || (t.ranked && zoneFilter.includes(t.zone))) &&
+      statusFilter.includes(t.boiler.status),
   );
 
   return (
@@ -61,21 +74,8 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <div className={`text-[13px] tracking-[0.16em] ${MONO}`} style={{ color: C.brassLight }}>
-            ENGINE ROOM · {room.team.type === "class" ? "CLASS" : "WORK"}
-          </div>
           <h1 className={`m-0 break-words text-[48px] leading-none tracking-[0.02em] sm:text-[60px] ${DISPLAY}`}>{room.team.name}</h1>
-          <p className="m-0 text-[15px]" style={{ color: C.muted }}>
-            You are {isLead ? `the ${l.lead}` : `a ${l.member}`} · {plural(room.memberCount, l.member.toLowerCase(), l.members)}
-            {room.inviteCode && (
-              <>
-                {" "}· invite code{" "}
-                <span className={`font-bold ${MONO}`} style={{ color: C.text }}>
-                  {room.inviteCode}
-                </span>
-              </>
-            )}
-          </p>
+          <TeamMetadata type={room.team.type} role={room.myRole} memberCount={room.memberCount} inviteCode={room.inviteCode} />
         </div>
         {room.hiddenCount > 0 && (
           <span
@@ -96,25 +96,25 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
       </Disclosure>
 
       <div className="flex flex-col gap-2">
-        <div role="group" aria-label="Filter by zone" className="flex flex-wrap gap-2">
-          <button type="button" aria-pressed={zoneFilter === "all"} onClick={() => setZoneFilter("all")} className="min-h-11 rounded-lg px-3.5 text-sm font-semibold" style={chip(zoneFilter === "all")}>
+        <div role="group" aria-label="Filter by zone" className="flex flex-wrap gap-x-5 gap-y-1">
+          <FilterCheckbox checked={zoneFilter.length === ZONES.length} indeterminate={zoneFilter.length > 0 && zoneFilter.length < ZONES.length} onChange={checked => setZoneFilter(checked ? ZONES : [])}>
             All · {tiles.length}
-          </button>
+          </FilterCheckbox>
           {ZONES.map((z) => (
-            <button key={z} type="button" aria-pressed={zoneFilter === z} onClick={() => setZoneFilter(z)} className="min-h-11 rounded-lg px-3.5 text-sm font-semibold" style={chip(zoneFilter === z)}>
+            <FilterCheckbox key={z} checked={zoneFilter.includes(z)} onChange={checked => setZoneFilter(current => checked ? [...current, z] : current.filter(value => value !== z))}>
               {ZONE_LABEL[z]} · {zoneCount(z)}
-            </button>
+            </FilterCheckbox>
           ))}
         </div>
-        <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
-          <button type="button" aria-pressed={statusFilter === "all"} onClick={() => setStatusFilter("all")} className="min-h-11 rounded-lg px-3.5 text-sm font-semibold" style={chip(statusFilter === "all")}>
+        <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-x-5 gap-y-1">
+          <FilterCheckbox checked={statusFilter.length === STATUSES.length} indeterminate={statusFilter.length > 0 && statusFilter.length < STATUSES.length} onChange={checked => setStatusFilter(checked ? STATUSES : [])}>
             Any status
-          </button>
+          </FilterCheckbox>
           {STATUSES.map((s) => (
-            <button key={s} type="button" aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3.5 text-sm font-semibold" style={chip(statusFilter === s)}>
+            <FilterCheckbox key={s} checked={statusFilter.includes(s)} onChange={checked => setStatusFilter(current => checked ? [...current, s] : current.filter(value => value !== s))}>
               <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_META[s].color }} />
               {STATUS_META[s].label}
-            </button>
+            </FilterCheckbox>
           ))}
         </div>
       </div>
