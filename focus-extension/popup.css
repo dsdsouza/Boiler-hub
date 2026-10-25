@@ -7,7 +7,10 @@ header { display: flex; align-items: center; gap: 12px; }
 .focus-summary p:empty, #status:empty { display: none; }
 a { color: #e3be74; text-underline-offset: 3px; }
 a:hover { color: #f1e7d3; }
-.focus-summary a { flex-shrink: 0; font-size: 13px; padding: 10px 0; margin-left: auto; }
+#open-pip { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-left: auto; padding: 10px 14px; border: 1px solid #d1a85a; border-radius: 10px; background: #d1a85a; color: #15120e; font-size: 13px; font-weight: 650; line-height: 1.2; text-decoration: none; }
+#open-pip:hover { background: #e3be74; border-color: #e3be74; }
+#open-pip:active { background: #bd934b; border-color: #bd934b; }
+#open-pip svg { flex-shrink: 0; }
 h1 { font-size: 32px; text-align: left; margin: 0 0 8px; }
 .intro { margin: 0 0 20px; font-size: 13px; line-height: 1.6; }
 label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 8px; }
