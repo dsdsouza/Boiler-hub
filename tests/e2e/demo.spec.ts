@@ -234,6 +234,8 @@ test('forecast details show the selected day and restore focus when closed', asy
     await expect(panel).toHaveAttribute('role', 'dialog');
     await expect(panel).toHaveAttribute('aria-modal', 'true');
     await panel.getByRole('button', { name: 'Close', exact: true }).focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(panel.getByRole('button').last()).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(panel.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
   } else await expect(panel).toHaveAttribute('role', 'region');
@@ -241,4 +243,25 @@ test('forecast details show the selected day and restore focus when closed', asy
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
   await expect(tomorrow).toBeFocused();
+});
+
+test('completing a forecast contributor updates its day and the main gauge, and undo restores both', async ({ page }) => {
+  const forecast = page.getByRole('region', { name: '7-day forecast', exact: true });
+  const tomorrow = forecast.getByRole('button').nth(1);
+  const forecastScore = async () => Number((await tomorrow.getAttribute('aria-label'))!.match(/score (\d+)/)![1]);
+  const beforeDay = await forecastScore();
+  const beforeGauge = await score(page);
+  await tomorrow.click();
+  const panel = page.locator('#forecast-day-panel');
+  const causes = panel.getByRole('list', { name: 'Pressure contributors', exact: true });
+  await causes.getByRole('button', { name: 'Complete: Finish onboarding v2 spec', exact: true }).click();
+  await expect(panel).toBeVisible();
+  await expect.poll(forecastScore).toBeLessThan(beforeDay);
+  await expect.poll(() => score(page)).toBeLessThan(beforeGauge);
+  await expect(causes.getByText('Finish onboarding v2 spec', { exact: true })).toHaveCount(0);
+  await expect(panel.getByRole('heading', { level: 3 })).toBeFocused();
+  await panel.getByRole('button', { name: 'Undo completion: Finish onboarding v2 spec', exact: true }).click();
+  await expect.poll(forecastScore).toBe(beforeDay);
+  await expect.poll(() => score(page)).toBe(beforeGauge);
+  await expect(causes.getByRole('button', { name: 'Complete: Finish onboarding v2 spec', exact: true })).toBeVisible();
 });
