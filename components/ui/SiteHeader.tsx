@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { LinkPending } from "./LinkPending";
+import { FlameLoader } from "./FlameLoader";
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
@@ -73,7 +74,7 @@ export function SiteHeader({
             ))}
           </nav>
         </div>
-        {account && <div className="flex h-11 shrink-0 items-center gap-2"><Suspense fallback={null}>{account}</Suspense></div>}
+        {account && <div className="flex h-11 shrink-0 items-center gap-2"><Suspense fallback={<FlameLoader size="sm" label="Loading account…" />}>{account}</Suspense></div>}
         {(variant === "marketing" || headerNavigation) && (
           <nav aria-label="Main" className={`w-full gap-1 border-t border-line pt-1 ${headerNavigation ? "grid grid-cols-2 sm:flex sm:flex-wrap lg:hidden" : "flex flex-wrap md:hidden"}`}>
             {nav.map((n) => (

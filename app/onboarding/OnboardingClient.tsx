@@ -10,6 +10,7 @@ import { CountBadges } from "@/components/boiler/CountBadges";
 import { statusBody } from "@/components/boiler/fromApi";
 import { OptimisticQueue } from "@/components/boiler/optimisticQueue";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { FlameLoader } from "@/components/ui/FlameLoader";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
@@ -102,7 +103,7 @@ export function OnboardingClient() {
       </Step>
 
       <Step n={2} title="Google Calendar">
-        {!boiler && !syncError && <p className="m-0 text-body" role="status">Checking your calendar connection…</p>}
+        {!boiler && !syncError && <FlameLoader label="Checking your calendar connection…" />}
         {syncError && (
           <div role="alert" className="flex flex-wrap items-center gap-3 text-redline-ink">
             <span>{syncError}</span>
@@ -120,7 +121,7 @@ export function OnboardingClient() {
 
       <Step n={3} title="First sync">
         {!boiler ? (
-          <p className="m-0 text-muted">Waiting for the calendar…</p>
+          !syncError && <FlameLoader label="Waiting for the calendar…" />
         ) : (
           <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
             <div className="w-full sm:row-span-2">
@@ -156,7 +157,7 @@ export function OnboardingClient() {
             )}
           </>
         ) : (
-          <p className="m-0 text-muted">Loading…</p>
+          !syncError && <FlameLoader label="Loading your status…" />
         )}
       </Step>
 

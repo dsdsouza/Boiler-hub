@@ -3,6 +3,7 @@ import { PipDock } from "@/components/mascot/PipDock";
 import { AppMotion } from "@/components/ui/AppMotion";
 import "./fonts.css";
 import "./globals.css";
+import "@/components/ui/flame-loader.css";
 import { deploymentRecovery } from "@/lib/deployment-recovery";
 import { PipConversationProvider } from "@/components/mascot/PipConversation";
 

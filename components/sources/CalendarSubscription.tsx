@@ -1,5 +1,7 @@
 "use client";
 
+import { FlameLoader } from "@/components/ui/FlameLoader";
+
 import { useEffect, useId, useRef, useState } from "react";
 import { subscriptionLinks, type SubscriptionLinks } from "@/lib/calendar/links";
 import { Button, LinkButton } from "@/components/ui/Button";
@@ -105,6 +107,7 @@ export function CalendarSubscription() {
           </>
         ) : (
           <Button ref={subscribeButton} variant="primary" onClick={() => ask("subscribe")} disabled={loading || busy} aria-busy={loading || busy} aria-expanded={confirmation === "subscribe"} aria-controls={confirmation === "subscribe" ? `${id}-confirmation` : undefined}>
+            {(loading || busy) && <FlameLoader size="sm" decorative />}
             {loading ? "Checking subscription…" : busy ? "Preparing subscription…" : "Subscribe in Apple Calendar"}
           </Button>
         )}

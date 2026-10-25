@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/ui/PageLoading";
 import { AccountControls, getViewer } from "@/components/ui/Account";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -85,7 +86,7 @@ export default async function HelpPage() {
         )}
       />
       {/* Match the landing page's streamed-content hydration boundary. */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoading title="Help" shell={false} />}>
       <main className="mx-auto flex max-w-[1000px] flex-col gap-14 px-4 pt-10 pb-20 sm:px-8">
         <header className="flex flex-col gap-4">
           <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure tracks the work still ahead.</h1>

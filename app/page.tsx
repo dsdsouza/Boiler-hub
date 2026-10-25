@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoading } from "@/components/ui/PageLoading";
 import { Boiler } from "@/components/boiler/Boiler";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkButton } from "@/components/ui/Button";
@@ -23,7 +24,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
   // Keep the page wrapper and header in the same hydration boundary as its
   // streamed Flight children, so a replay cannot claim the wrapper twice.
-  return <Suspense fallback={null}>
+  return <Suspense fallback={<PageLoading />}>
     <div className="min-h-screen">
       <SiteHeader
         variant={viewer ? "app" : "marketing"}
