@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FlameLoader } from "@/components/ui/FlameLoader";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
@@ -59,6 +60,7 @@ function focusDay(date: string) {
 }
 
 export function RefreshIcon({ spinning }: { spinning?: boolean }) {
+  if (spinning) return <FlameLoader size="sm" decorative />;
   return (
     <svg
       width="16"
@@ -70,7 +72,6 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
       strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={spinning ? "animate-spin motion-reduce:animate-none" : ""}
     >
       <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
       <path d="M21 3v5h-5" />
@@ -134,7 +135,7 @@ export function MyBoilerView({
               {syncing ? "Retrying…" : "Try again"}
             </Button>
           </>
-        ) : <span role="status">Lighting the boiler…</span>}
+        ) : <FlameLoader size="lg" label="Lighting the boiler…" />}
       </div>
     );
   }
