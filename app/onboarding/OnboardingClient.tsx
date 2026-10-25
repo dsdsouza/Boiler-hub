@@ -564,7 +564,7 @@ export function OnboardingClient({
                 <div>
                   <strong>Signed in as {accountName}</strong>
                   <p className="mt-1 mb-0 text-sm text-muted">
-                    Your setup is saved to this account as you continue.
+                    Your answers save automatically to this account.
                   </p>
                 </div>
               </div>
