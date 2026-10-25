@@ -3,6 +3,7 @@
 import type { ReactEventHandler } from "react";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { FlameLoader } from "@/components/ui/FlameLoader";
 import { useExtension } from "./useExtension";
 
 export function ExtensionStep({
@@ -13,6 +14,7 @@ export function ExtensionStep({
   onToggle?: ReactEventHandler<HTMLDetailsElement>;
 }) {
   const name = "Pip";
+  const showLoader = extension.state === "checking" || extension.state === "missing";
   return (
     <div className="flex flex-col gap-5">
       <p className="m-0 text-body leading-relaxed">
@@ -24,19 +26,22 @@ export function ExtensionStep({
         aria-live="polite"
       >
         <span
-          className={
+          className={`flex items-center gap-2.5 ${
             extension.state === "installed"
               ? "font-semibold text-cool-ink"
               : "text-muted"
-          }
+          }`}
         >
-          {extension.state === "installed"
-            ? `${name} is installed · v${extension.version}`
-            : extension.state === "outdated"
-              ? `Pip v${extension.version} needs an update. Download and reload the current version.`
-            : extension.state === "checking"
-              ? "Checking this browser…"
-              : "Extension not detected in this browser"}
+          {showLoader && <FlameLoader size="sm" decorative />}
+          <span key={extension.state} className={showLoader ? "bp-pip-thought" : undefined}>
+            {extension.state === "installed"
+              ? `${name} is installed · v${extension.version}`
+              : extension.state === "outdated"
+                ? `Pip v${extension.version} needs an update. Download and reload the current version.`
+                : extension.state === "checking"
+                  ? "Checking this browser…"
+                  : "Extension not detected in this browser"}
+          </span>
         </span>
         <Button
           onClick={() => extension.check()}
