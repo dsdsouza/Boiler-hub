@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
 import { addTask, gauge, noOverflow, openDemo, score } from './helpers';
 
 test.beforeEach(async ({ page }) => { await openDemo(page); });
@@ -216,7 +217,7 @@ test('task tabs filter by completion and class with keyboard navigation', async 
   await expect(tasks.getByRole('button', { name: 'Mark not done: Fix signup bug', exact: true })).toBeVisible();
 });
 
-test('forecast details show the selected day and restore focus when closed', async ({ page }) => {
+test('forecast details show the selected day and restore focus when closed', async ({ page }, info) => {
   const forecast = page.getByRole('region', { name: '7-day forecast', exact: true });
   const tomorrow = forecast.getByRole('button').nth(1);
   await tomorrow.click();
@@ -224,6 +225,11 @@ test('forecast details show the selected day and restore focus when closed', asy
   await expect(panel).toBeVisible();
   await expect(panel).toContainText('Design review');
   await expect(tomorrow).toHaveAttribute('aria-expanded', 'true');
+  if (process.env.SOURCES_SCREENSHOTS) {
+    await mkdir(process.env.SOURCES_SCREENSHOTS, { recursive: true });
+    await page.screenshot({ path: `${process.env.SOURCES_SCREENSHOTS}/forecast-${info.project.name}.png`, fullPage: true, animations: 'disabled' });
+    await panel.screenshot({ path: `${process.env.SOURCES_SCREENSHOTS}/forecast-panel-${info.project.name}.png`, animations: 'disabled' });
+  }
   if (page.viewportSize()!.width < 640) {
     await expect(panel).toHaveAttribute('role', 'dialog');
     await expect(panel).toHaveAttribute('aria-modal', 'true');

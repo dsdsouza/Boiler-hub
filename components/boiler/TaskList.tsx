@@ -305,7 +305,7 @@ export function TaskList({
         <div className="flex items-center gap-3"><CardTitle id="tasks">Tasks</CardTitle><span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-muted tabular-nums">{openTasks.length} open</span></div>
         {sourcesHref && (
           <Link href={sourcesHref} className="text-[13px] font-medium">
-            {Object.keys(meta).length > 0 ? "Manage sources" : "Connect coursework or GitHub"}
+            {Object.keys(meta).length > 0 ? "Manage sources" : "Connect coursework"}
           </Link>
         )}
       </div>

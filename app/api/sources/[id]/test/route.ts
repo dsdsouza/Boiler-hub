@@ -13,9 +13,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   if (!UUID_RE.test(id)) return notFound();
 
   // Ownership check with the user client (RLS) before the admin client reads the secret (rule 6).
-  const { data: owned, error } = await auth.supabase.from("sources").select("id").eq("id", id).maybeSingle();
+  const { data: owned, error } = await auth.supabase.from("sources").select("id,kind").eq("id", id).maybeSingle();
   if (error) return serverError("POST /api/sources/test read", error);
   if (!owned) return notFound();
+  if (owned.kind !== "ics") return NextResponse.json({ error: "This integration is no longer available." }, { status: 410 });
 
   try {
     const tested = await testSource(createAdminClient(), auth.user.id, id, new Date());

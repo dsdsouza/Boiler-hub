@@ -116,11 +116,11 @@ export function ForecastDayPanel({
       className={
         sheet
           ? "fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-[14px] border-t border-rivet bg-surface px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] shadow-(--shadow)"
-          : "mt-4 rounded-lg border border-line bg-surface-2 px-5 py-4"
+          : "relative mt-4 rounded-lg border border-line bg-surface-2 px-5 py-4"
       }
     >
       {sheet && <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-full bg-rivet" />}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3 pr-10">
         <div className="min-w-0">
           <h3 id="fdp-title" ref={heading} tabIndex={-1} className="m-0 font-display text-[26px] leading-none font-normal tracking-[0.03em] outline-none">
             {title}
@@ -138,12 +138,13 @@ export function ForecastDayPanel({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex min-h-11 min-w-11 flex-none cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-rivet bg-surface px-3 text-sm font-semibold text-fg hover:border-brass"
+          aria-label="Close"
+          title="Close"
+          className="absolute top-2 right-2 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-0 text-muted hover:bg-surface hover:text-fg"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
-          Close
         </button>
       </div>
 
@@ -214,7 +215,6 @@ export function ForecastDayPanel({
           ))}
         </ul>
       )}
-      <p className="mt-3 mb-0 text-xs text-muted">Points above use the selected forecast day. A dash means the item adds no pressure on that day.</p>
     </motion.div>
   );
 
