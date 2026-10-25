@@ -19,8 +19,7 @@ export type StepId =
   | "deadline"
   | "status"
   | "team"
-  | "recommendation"
-  | "ready";
+  | "recommendation";
 export interface OnboardingDraft {
   version: 2;
   ownerId: string | null;
@@ -123,7 +122,7 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "calendar",
     ...(!draft.extensionDeferred ? ["reading" as const] : []),
     ...(draft.role === "student" ? ["review" as const] : []),
-    ...(goal === "deadlines"
+    ...(goal === "deadlines" && !draft.extensionDeferred
       ? [
           "milestone" as const,
           ...(draft.milestone.trim() ? ["deadline" as const] : []),
@@ -132,7 +131,6 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "status",
     "team",
     "recommendation",
-    "ready",
   ];
 }
 export function isStepValid(
@@ -155,6 +153,9 @@ export function isStepValid(
       return !draft.deadline || isDate(draft.deadline);
     case "team":
       return !draft.inviteCode || /^[A-Z0-9]{6}$/.test(draft.inviteCode);
+    case "recommendation":
+      return !draft.extensionDeferred || (draft.milestone.trim().length > 0 &&
+        (!draft.deadline || isDate(draft.deadline)));
     default:
       return true;
   }
@@ -213,6 +214,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
     "deadline",
   ];
   draft.current = v.current === "sources" ? "calendar"
+    : v.current === "ready" ? "recommendation"
     : all.includes(v.current as StepId) ? (v.current as StepId) : "identity";
   draft.completed = Array.isArray(v.completed)
     ? [
@@ -236,23 +238,26 @@ export function parseDraft(value: unknown): OnboardingDraft {
 }
 export function recommendation(draft: OnboardingDraft) {
   const goal = resolvedGoal(draft);
+  if (draft.extensionDeferred)
+    return {
+      body: draft.finished ? "Your tasks are ready in My Boiler." : "Add your first task to start your boiler.",
+      href: "/boiler",
+      action: "Open my boiler",
+    };
   if (goal === "team")
     return {
-      title: "Build a team with room to breathe",
       body: "Start in Teams. Invite people to share their capacity, then preview how assignments affect their pressure. Everyone joins hidden and chooses what to share.",
       href: "/teams",
       action: "Open my teams",
     };
   if (goal === "focus")
     return {
-      title: "A little space for focused work",
       body: "Add a task in My Boiler, then open Focus with Pip in Connect to protect a study session. If you installed the extension, distracting sites pause while you work.",
       href: "/settings/sources#study-accountability",
       action: "Open my focus setup",
     };
   if (goal === "deadlines")
     return {
-      title: "See the week before it gets heavy",
       body: draft.milestone
         ? `Keep “${draft.milestone}” in view alongside your classes and other deadlines. Your forecast helps you see where the work is building up.`
         : "Bring your calendar and deadlines together in My Boiler. Your forecast shows where work is building up, and completing tasks releases their pressure.",
@@ -260,7 +265,6 @@ export function recommendation(draft: OnboardingDraft) {
       action: "Open my boiler",
     };
   return {
-    title: "Your week, with a clearer forecast",
     body:
       draft.starting === "overwhelmed"
         ? "Start with what is already on your plate. My Boiler brings your calendar and tasks together so you can choose one manageable next step."

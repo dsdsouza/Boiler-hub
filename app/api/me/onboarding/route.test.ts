@@ -184,6 +184,8 @@ describe("owner-scoped onboarding persistence", () => {
     draft.completed = stepsFor(draft);
     expect((await send(draft)).status).toBe(400);
     draft.extensionDeferred = true;
+    expect((await send(draft)).status).toBe(400);
+    draft.milestone = "Plan my first task";
     expect((await send(draft)).status).toBe(200);
     expect(mocks.updateUser.mock.calls[0][0].data).toMatchObject({
       onboarding: { finished: true, extensionDeferred: true },
@@ -191,10 +193,24 @@ describe("owner-scoped onboarding persistence", () => {
     });
   });
   it("still requires students to review coursework when extension installation is deferred", async () => {
-    const draft = parseDraft({ role: "student", name: "Josh", goal: "balance", starting: "fresh", extensionDeferred: true, finished: true });
+    const draft = parseDraft({ role: "student", name: "Josh", goal: "balance", starting: "fresh", milestone: "Read my course outline", extensionDeferred: true, finished: true });
     draft.completed = stepsFor(draft);
     expect((await send(draft)).status).toBe(400);
     expect(mocks.updateUser).not.toHaveBeenCalled();
     expect((await send(draft, { deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) })).status).toBe(200);
+  });
+  it("saves a manual first task for a focus goal without Pip and retries without duplicates", async () => {
+    const draft = parseDraft({ role: "other", name: "Josh", goal: "focus", starting: "fresh", extensionDeferred: true, milestone: "Write my outline", deadline: "2026-11-02", current: "recommendation", finished: true });
+    draft.completed = stepsFor(draft);
+    const extra = { deadlineAt: "2026-11-03T04:59:00Z" };
+    mocks.eq.mockResolvedValueOnce({ error: new Error("temporary profile failure") });
+    expect((await send(draft, extra)).status).toBe(500);
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect((await send(draft, extra)).status).toBe(200);
+    const [row, options] = mocks.task.mock.calls[0];
+    expect(row).toMatchObject({ owner_id: "owner-id", title: "Write my outline", due_at: extra.deadlineAt, size: "M", source: "manual" });
+    expect(options).toEqual({ onConflict: "id", ignoreDuplicates: false });
+    expect(mocks.task.mock.calls[1][0].id).toBe(row.id);
+    expect(mocks.updateUser.mock.calls[0][0].data.onboarding).toMatchObject({ current: "recommendation", milestone: "Write my outline", finished: true });
   });
 });
