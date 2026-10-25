@@ -132,6 +132,7 @@ export function MyBoilerView({
     ? forecastBreakdown(data.items, new Date(data.pressureComputedAt ?? data.syncedAt), shownDay.date, { timeZone })?.contributions ?? []
     : result.contributions;
   const strip = { items: data.items, timeZone, openDate: shownDay?.date ?? null, onOpen: toggleDay };
+  const pendingTaskIds = boiler.source === "api" ? new Set(data.items.filter((i) => i.id.startsWith("local-")).map((i) => i.id)) : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -226,12 +227,15 @@ export function MyBoilerView({
                 timeZone={timeZone}
                 sheet={!wide}
                 onClose={closeDay}
+                onToggle={boiler.setTaskDone}
+                taskMeta={data.taskMeta}
+                pendingTaskIds={pendingTaskIds}
               />
             )}
           </Card>
 
           <TaskList
-            pendingTaskIds={boiler.source === "api" ? new Set(data.items.filter((i) => i.id.startsWith("local-")).map((i) => i.id)) : undefined}
+            pendingTaskIds={pendingTaskIds}
             items={data.items}
             contributions={result.contributions}
             onToggle={(id, done) => void boiler.setTaskDone(id, done)}

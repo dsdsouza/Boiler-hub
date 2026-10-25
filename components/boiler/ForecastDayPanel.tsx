@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Contribution, ForecastDay, LoadItem } from "@/lib/types";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
@@ -11,6 +11,7 @@ import { FORECAST_PANEL_ID } from "./ForecastStrip";
 import { CourseChip } from "./TaskList";
 import { WEIGHT_LABEL, formatPoints } from "./format";
 import { bucketDay } from "./taskView";
+import type { TaskMeta } from "./boilerState";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -34,6 +35,9 @@ export function ForecastDayPanel({
   timeZone,
   sheet,
   onClose,
+  onToggle,
+  taskMeta = {},
+  pendingTaskIds,
 }: {
   day: ForecastDay;
   isToday: boolean;
@@ -43,17 +47,76 @@ export function ForecastDayPanel({
   timeZone: string;
   sheet: boolean;
   onClose: () => void;
+  onToggle: (id: string, done: boolean) => void | boolean | Promise<void | boolean>;
+  taskMeta?: Record<string, TaskMeta>;
+  pendingTaskIds?: ReadonlySet<string>;
 }) {
   const reduce = useReducedMotion();
   const panel = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const noticeElement = useRef<HTMLParagraphElement>(null);
+  const pending = useRef(new Set<string>());
+  const [savingIds, setSavingIds] = useState<ReadonlySet<string>>(new Set());
+  const [notice, setNotice] = useState<{ taskId: string; error: boolean; text: string } | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const undoTask = undoId ? byId.get(undoId) : undefined;
   const { tasks, events } = bucketDay(items, day.date, timeZone);
   const points = new Map(contributions.map((c) => [c.itemId, c.points]));
   const time = new Intl.DateTimeFormat(undefined, { timeZone, hour: "numeric", minute: "2-digit" });
   const title = isToday ? `Today, ${longDate(day.date)}` : longDate(day.date);
 
+  const toggleTask = async (task: LoadItem, done: boolean) => {
+    if (pending.current.has(task.id) || pendingTaskIds?.has(task.id) || taskMeta[task.id]?.completedInSource) return;
+    pending.current.add(task.id);
+    setSavingIds(new Set(pending.current));
+    setNotice({ taskId: task.id, error: false, text: `Saving “${task.title}”…` });
+    try {
+      const saved = await onToggle(task.id, done);
+      if (saved === false) throw new Error("Task was not saved");
+      setNotice({ taskId: task.id, error: false, text: `“${task.title}” marked ${done ? "done" : "not done"}.` });
+      if (done) setUndoId(task.id);
+      else setUndoId((id) => id === task.id ? null : id);
+    } catch {
+      setNotice({ taskId: task.id, error: true, text: `Couldn’t save “${task.title}”. Try again.` });
+    } finally {
+      pending.current.delete(task.id);
+      setSavingIds(new Set(pending.current));
+    }
+  };
+
+  const taskToggle = (task: LoadItem, contributor = false) => {
+    const done = !!task.doneAt;
+    const saving = savingIds.has(task.id);
+    const sourceDone = !!taskMeta[task.id]?.completedInSource;
+    return (
+      <button
+        type="button"
+        disabled={pendingTaskIds?.has(task.id) || sourceDone}
+        aria-disabled={saving || undefined}
+        aria-busy={saving}
+        aria-label={`${sourceDone ? "Completed in source" : done ? "Mark not done" : "Complete"}: ${task.title}`}
+        onClick={(event) => {
+          if (pending.current.has(task.id)) return;
+          // Completing a contributor removes its row. Keep keyboard focus in the panel.
+          if (contributor && !done && document.activeElement === event.currentTarget) {
+            requestAnimationFrame(() => heading.current?.focus());
+          }
+          void toggleTask(task, !done);
+        }}
+        className={`bp-control flex size-11 flex-none cursor-pointer items-center justify-center rounded-lg border-2 disabled:cursor-default disabled:opacity-60 aria-disabled:cursor-wait aria-disabled:opacity-70 ${done ? "border-zone-cool bg-zone-cool text-soot" : "border-control bg-transparent hover:border-brass"}`}
+      >
+        {done && <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>}
+      </button>
+    );
+  };
+
   // Move focus into the panel when it opens or switches day, so a screen reader starts at its heading.
   useEffect(() => heading.current?.focus(), [day.date]);
+
+  useEffect(() => {
+    if (notice?.error) noticeElement.current?.scrollIntoView({ block: "nearest" });
+  }, [notice]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -125,7 +188,7 @@ export function ForecastDayPanel({
           <h3 id="fdp-title" ref={heading} tabIndex={-1} className="m-0 font-display text-[26px] leading-none font-normal tracking-[0.03em] outline-none">
             {title}
           </h3>
-          <p className="mt-1.5 mb-0 flex flex-wrap items-center gap-2 text-sm text-body">
+          <p aria-live="polite" aria-atomic="true" className="mt-1.5 mb-0 flex flex-wrap items-center gap-2 text-sm text-body">
             <span>
               {isToday ? "Now" : "At the start of the day"}: score{" "}
               <span className={`font-mono font-bold ${ZONE_INK[day.zone]}`}>{day.score}</span> · {ZONE_LABEL[day.zone]}
@@ -148,6 +211,20 @@ export function ForecastDayPanel({
         </button>
       </div>
 
+      {notice && <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p ref={noticeElement} role={notice.error ? "alert" : "status"} className={`m-0 min-w-0 max-w-full break-words text-sm ${notice.error ? "text-redline-ink" : "text-body"}`}>{notice.text}</p>
+        {undoTask?.doneAt && notice.taskId === undoTask.id && !taskMeta[undoTask.id]?.completedInSource && <button
+          type="button"
+          aria-label={`Undo completion: ${undoTask.title}`}
+          aria-disabled={savingIds.has(undoTask.id) || undefined}
+          onClick={(event) => {
+            if (pending.current.has(undoTask.id)) return;
+            if (document.activeElement === event.currentTarget) requestAnimationFrame(() => heading.current?.focus());
+            void toggleTask(undoTask, false);
+          }}
+          className="min-h-11 cursor-pointer border-0 bg-transparent px-0 text-sm font-semibold text-brass-ink underline underline-offset-4 aria-disabled:cursor-wait aria-disabled:opacity-70"
+        >Undo completion</button>}
+      </div>}
       <h4 className="mt-5 mb-1 text-base font-semibold">Why this day is {ZONE_LABEL[day.zone]}</h4>
       <p className="mt-0 mb-3 text-sm text-muted">
         {isToday ? "Work adding pressure right now, largest first." : "Work adding pressure at the start of this day, largest first. This includes overdue work and approaching deadlines, even when they fall on another day."}
@@ -158,6 +235,7 @@ export function ForecastDayPanel({
         <ul aria-label="Pressure contributors" className="m-0 list-none p-0">
           {contributions.map((c) => (
             <li key={c.itemId} className="flex items-start gap-3 border-t border-line py-2.5">
+              {byId.get(c.itemId)?.kind === "task" && taskToggle(byId.get(c.itemId)!, true)}
               <div className="min-w-0 flex-1">
                 <div className="break-words text-[15px] font-semibold text-fg">{c.title}</div>
                 <div className="text-[13px] text-muted">{c.reason}</div>
@@ -174,14 +252,15 @@ export function ForecastDayPanel({
       {tasks.length === 0 ? (
         <p className="m-0 border-t border-line py-2.5 text-sm text-muted">Nothing due.</p>
       ) : (
-        <ul className="m-0 list-none p-0">
+        <ul aria-label="Tasks due this day" className="m-0 list-none p-0">
           {tasks.map((t) => (
             <li key={t.id} className="flex items-center gap-3 border-t border-line py-2.5">
+              {taskToggle(t)}
               <div className="min-w-0 flex-1">
                 <div className={`break-words text-[15px] font-semibold ${t.doneAt ? "text-muted line-through" : "text-fg"}`}>{t.title}</div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
                   <span>
-                    {t.doneAt ? "Done" : "Open"} · due {time.format(new Date(t.due!))}
+                    {taskMeta[t.id]?.completedInSource ? "Completed in source — reopen there" : savingIds.has(t.id) || pendingTaskIds?.has(t.id) ? "Saving…" : t.doneAt ? "Done" : "Open"} · due {time.format(new Date(t.due!))}
                   </span>
                   <CourseChip course={courses[t.id]} />
                 </div>
