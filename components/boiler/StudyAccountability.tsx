@@ -147,10 +147,10 @@ export function StudyAccountability({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <CardTitle id={`${id}-heading`}>Focus with Pip</CardTitle>
         <span
-          className={`text-xs ${blocker.connected ? "text-cool-ink" : "text-muted"}`}
+          className={`text-xs ${blocker.connected ? "text-[#5b8f63]" : "text-muted"}`}
         >
           {blocker.connected
-            ? "Focus extension connected"
+            ? "Extension connected!"
             : "Focus extension not connected"}
         </span>
       </div>
