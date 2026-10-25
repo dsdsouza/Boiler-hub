@@ -12,6 +12,8 @@ import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { PipDressUp } from "@/components/mascot/PipDressUp";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
+import { usePipUser } from "@/components/mascot/PipConversation";
+import { Boiler } from "./Boiler";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
 import { ClassSchedule } from "./ClassSchedule";
@@ -90,6 +92,7 @@ export function MyBoilerView({
 }) {
   useTick(30_000);
   const accessory = usePipAccessory();
+  const pipUserId = usePipUser();
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
   // The forecast day whose drill-down is open. Lives here so both strip copies and the panel share it.
@@ -121,7 +124,7 @@ export function MyBoilerView({
   const fire = fireFromForecast(result.forecast.map((d) => d.score));
   const statusPicker = (
     <StatusPicker status={data.status} note={data.statusNote} onChange={boiler.setStatus}>
-      <PipDressUp score={result.score} />
+      {pipUserId && <PipDressUp score={result.score} />}
     </StatusPicker>
   );
   const timeZone = data.timeZone ?? browserZone();
@@ -174,7 +177,7 @@ export function MyBoilerView({
         >
           <div className="flex items-center gap-4 sm:flex-col sm:gap-[22px]">
             <div className="relative w-[150px] flex-none min-[400px]:w-[170px] sm:w-[250px]">
-              <PipHero score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} accessory={accessory} />
+              {pipUserId ? <PipHero score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} accessory={accessory} /> : <Boiler score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} />}
               <VentLabel vent={vent} />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">

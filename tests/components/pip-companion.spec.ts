@@ -14,7 +14,9 @@ async function signIn(context: BrowserContext) {
   const session = { access_token: token, refresh_token: 'fixture-only', token_type: 'bearer', expires_in: 3600, expires_at: expiry, user: { id: userId, aud: 'authenticated', role: 'authenticated', email: 'pip@example.test', app_metadata: {}, user_metadata: {} } };
   await context.addCookies([{ name: 'sb-qa-project-auth-token', value: 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64url'), url: 'http://localhost:' + (process.env.QA_COMPONENT_PORT || '3219'), sameSite: 'Lax' }]);
   // Test-only session and service responses never reach an external backend.
-  await context.route('https://qa-project.supabase.co/**', (route) => route.fulfill({ status: 503, json: { error: 'Reading unavailable' } }));
+  await context.route('https://qa-project.supabase.co/**', (route) => new URL(route.request().url()).pathname === '/auth/v1/user'
+    ? route.fulfill({ json: session.user })
+    : route.fulfill({ status: 503, json: { error: 'Reading unavailable' } }));
 }
 async function open(page: Page, context: BrowserContext) {
   await signIn(context);
@@ -206,4 +208,14 @@ test('expanded history keeps the full cloud visible when Pip sits higher on a ph
       await page.screenshot({ path: `${process.env.PIP_SCREENSHOTS}/pip-expanded-${width}-${test.info().project.name}.png` });
     }
   }
+});
+
+
+test('a saved session rejected by auth cannot reveal Pip', async ({ page, context }) => {
+  await signIn(context);
+  await context.route('https://qa-project.supabase.co/auth/v1/user', route => route.fulfill({ status: 401, json: { message: 'Invalid fixture session' } }));
+  await page.goto('/qa-components?mode=pip');
+  await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await expect(companion(page)).toHaveCount(0);
 });
