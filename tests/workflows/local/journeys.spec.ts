@@ -167,18 +167,18 @@ test('Private calendar subscription from consent through revocation', plan([
   } finally { await step('Restore test data', async () => { service.reset(); }); }
 });
 
-test('Pip help through a failed request and a fresh conversation', plan([
+test('Pip help through a failed request and reopening the conversation', plan([
   'Open Pip from Connect', 'Keep a question after a failed reply', 'Retry and receive a reply',
-  'Ask a follow-up question', 'Start a new conversation', 'Verify the previous conversation is cleared',
+  'Ask a follow-up question', 'Close and reopen Pip', 'Verify the conversation is retained',
 ]), async ({ page, context }) => {
   const service = world(); await service.connect(context); service.failOnce('POST /api/pip/chat');
   try {
     await step('Open Pip from Connect', async () => { await open(page, 'sources'); await openPip(page); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeFocused(); });
     await step('Keep a question after a failed reply', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('What should I work on?'); await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('alert').filter({ hasText: 'temporarily unavailable' })).toBeVisible(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue('What should I work on?'); });
-    await step('Retry and receive a reply', async () => { await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true })).toContainText('Workflow: start with the dated deliverable.'); });
-    await step('Ask a follow-up question', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('And after that?'); await page.getByRole('textbox', { name: 'Message Pip', exact: true }).press('Enter'); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true }).getByText('Workflow: start with the dated deliverable.', { exact: false })).toHaveCount(2); });
-    await step('Start a new conversation', async () => { await page.getByRole('dialog', { name: 'Chat with Pip', exact: true }).getByRole('button', { name: 'New conversation', exact: true }).click(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue(''); });
-    await step('Verify the previous conversation is cleared', async () => { const log = page.getByRole('log', { name: 'Conversation with Pip', exact: true }); await expect(log).not.toContainText('And after that?'); await expect(log).not.toContainText('Workflow: start with the dated deliverable.'); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeEnabled(); });
+    await step('Retry and receive a reply', async () => { await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('status', { name: "Pip's reply", exact: true })).toContainText('Workflow: start with the dated deliverable.'); });
+    await step('Ask a follow-up question', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('And after that?'); await page.getByRole('textbox', { name: 'Message Pip', exact: true }).press('Enter'); await page.getByRole('button', { name: 'Expand conversation', exact: true }).click(); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true }).getByText('Workflow: start with the dated deliverable.', { exact: false })).toHaveCount(2); });
+    await step('Close and reopen Pip', async () => { await page.getByRole('button', { name: 'Close Pip chat', exact: true }).click(); await page.getByRole('button', { name: 'Chat with Pip', exact: true }).click(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue(''); });
+    await step('Verify the conversation is retained', async () => { await page.getByRole('button', { name: 'Expand conversation', exact: true }).click(); const log = page.getByRole('log', { name: 'Conversation with Pip', exact: true }); await expect(log).toContainText('And after that?'); await expect(log).toContainText('Workflow: start with the dated deliverable.'); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeEnabled(); });
   } finally { await step('Restore test data', async () => { service.reset(); }); }
 });
 

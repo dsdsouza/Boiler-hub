@@ -1,6 +1,6 @@
 # Pip assignment chat
 
-Signed-in users have a larger, transparent Pip companion on every screen, including Home, My Boiler, onboarding and the demo. Drag him with a mouse or touch to reposition him; his raised hands follow the pointer, with a gentle lean and dangling feet. Release to settle. His position is remembered in this browser and kept within the viewport when it changes size. Focus Pip and use arrow keys to move him, Shift-arrow for larger moves, Home to return to the corner, or Enter to open chat. Escape cancels an active drag or closes chat. Reduced motion keeps the carried pose without the lean or foot animation. My Boiler also keeps its inline chat panel. Type a question and press Enter or Send; Shift-Enter inserts a new line. Responses appear in speech bubbles. Closing the chat or navigating keeps the same conversation and course excerpts in memory. Reloading, signing out, or changing accounts clears them; **New conversation** resets the conversation. The public demo does not send personal assignment questions.
+Signed-in users have a larger, transparent Pip companion on every screen, including Home, My Boiler, onboarding and the demo. Drag him with a mouse or touch to reposition him; his raised hands follow the pointer, with a gentle lean and dangling feet. Release to settle. His position is remembered in this browser and kept within the viewport when it changes size. Focus Pip and use arrow keys to move him, Shift-arrow for larger moves, Home to return to the corner, or Enter to open chat. Escape cancels an active drag or closes chat. Reduced motion keeps the carried pose without the lean or foot animation. Chat opens in a compact panel above Pip, with his latest reply in a cloud-shaped speech bubble and two shortcut pills and an Expand control that reveals a small scrollable conversation inside the chat card. Type a question and press Enter or Send; Shift-Enter inserts a new line. Responses appear in speech bubbles. Closing the chat or navigating keeps the same conversation and course excerpts in memory. Reloading, signing out, or changing accounts clears them. The public demo does not send personal assignment questions.
 
 Provider text and study proposals are buffered until their complete scope review succeeds. The steam loader stays during generation and review; only approved content or the fixed planning redirect reaches the chat. Scrolling up pauses automatic following. Closing the dock lets its request continue in the shared conversation; interrupted or failed replies are discarded and the question is restored for retry, so partial text never enters the next conversation turn. Screen readers receive the finished reply without an announcement for every token.
 
@@ -21,39 +21,29 @@ The two classifiers each have a ten-second limit. An overall fifty-second cancel
 
 ## Pip's voice
 
-Pip sounds like a calm, thoughtful little boiler engineer. `PIP_VOICE` in `lib/pip/policy.ts` is appended to `PIP_ANSWER_RULES`, so the ordinary and course-material answer paths share it. It is style only: it does not change scope, facts, refusals, or study-proposal validation.
+`PIP_VOICE` in `lib/pip/policy.ts` makes Pip an unhurried old Southern boiler engineer: warm, wry, and on the person's side. It reaches both the ordinary and course-material answer paths through `PIP_ANSWER_RULES`.
 
-- Ordinary planning language dominates. A short reply has at most one light steam-and-steel phrase (pressure, breathing room, steady steam, running smoothly, cooling down, easing the load, keeping the engine moving), and none is required.
-- No roleplay, sound effects, stage directions, or invented machinery.
-- These stay literal, with no metaphor:
-  - deadlines, dates, and times
-  - overdue work
-  - partial, unavailable, or truncated sources
-  - calendar coverage and anything needing confirmation
-  - study-card titles and goals
-  - citations and quotes
-  - refusals
-  - error messages, which are fixed strings in code
-- The chat context has no pressure readings. Pip never states, estimates, or implies a score, zone, or gauge level, and describes workload only through the supplied assignments, dates, and sizes. He never claims analysis, completion, or calendar coverage that the facts don't show.
+The prompt specifies natural contractions ("we'll", "you've", "let's", "can't", an occasional "ain't"), short spoken sentences, and one or two turns such as "reckon", "well now", "ol' friend", or "a spell". "Y'all" addresses a group. Concrete cadence examples guide the rhythm; Pip varies the phrasing and never announces an accent or uses phonetic misspellings. Wit stays kind, without shaming or making stress the joke. Replies usually take two to four short sentences, or a short list for a schedule.
 
-The request check does not receive the voice; it classifies with the unchanged `PIP_SCOPE`. The independent reply check receives one sentence, `PIP_VOICE_REVIEW_NOTE`: a single light steam phrase inside an otherwise in-scope reply is house style, not roleplay, so the checker judges substance. Without it, the fail-closed reply check could replace valid planning answers with the fixed redirect. The fixed refusal (`PIP_REFUSAL`) is unchanged and has no metaphor.
+Dates, overdue status, source gaps, calendar coverage, confirmations, study-card titles/goals, and citations remain literal. The voice cannot invent assignments, pressure readings, completed work, or calendar coverage. At most one light steam-and-steel phrase fits in a short answer. No stage directions, sound effects, stories, or roleplay.
+
+Out-of-scope requests receive the fixed `PIP_REFUSAL`, also included verbatim in the answer prompt:
+
+> You know I can't do that, ol' friend! Reckon we can wrangle a plan, though. What's due next?
+
+Pip never follows it with a capability list, forbidden categories, or a policy lecture. This changes the wording, not the planning scope. The request classifier still receives the unchanged `PIP_SCOPE`; the independent reply check receives `PIP_VOICE_REVIEW_NOTE` so contractions, mild Southern turns, and a playful planning redirect do not get mistaken for unrelated roleplay.
 
 ### Reviewed examples
 
-These are hand-written review targets, not recorded model output. Check them against the live provider when changing the voice or model.
+These are hand-written voice targets, not recorded provider output. Assignment facts must still come from the supplied context.
 
-| Situation | Good reply | Why |
-|---|---|---|
-| Normal planning ("What's due next?") | "Your Lab 4 report is due Thursday at 11:59 PM, and it's marked L. Starting a 30-minute block tomorrow afternoon would keep things running smoothly. I can prepare that block in one of your free windows if you'd like." | One phrase. The date and size come from the supplied facts. |
-| Overdue work | "Problem Set 6 was due Tuesday at 11:59 PM and is overdue. Check the course's late policy, then decide whether to finish it today or contact your instructor. After that, the history reading due Friday is next." | No metaphor: overdue work and dates stay literal. |
-| Incomplete sources | "One connected source didn't load, so this list may be missing assignments. From what did load, the next deadline is the essay outline on Wednesday at 5:00 PM. Check that source on My Boiler before relying on this plan." | No metaphor for partial data. Pip does not assume the missing work is finished. |
-| High workload | "You have six open assignments due by Friday, including two L-size projects. Start with the lab report due tomorrow, then split the project into two 45-minute blocks on Wednesday and Thursday. Taking them one at a time eases the load." | Workload is described with supplied counts and sizes, with one phrase at the end. No reading or zone. |
-
-Avoid replies like these:
-- "Your boiler is at 87, that's redline!" (invents a pressure reading)
-- "*hisses* Let's fire up the furnace!" (roleplay)
-- "Full steam ahead: Problem Set 6 is overdue" (a metaphor on overdue work)
-- More than one metaphor in a short reply.
+| Situation | Voice target |
+|---|---|
+| Choosing a next step | "Well now, ol' friend. Let's see what's due." |
+| Breaking down a workload | "Ain't no need to tackle the whole pile at once. Let's pick a small first step." |
+| Reporting an overdue task | "Your lab report was due Tuesday at 11:59 PM and is overdue. Reckon that's the first thing to check, ol' friend. Let's look at the course's late policy before planning the next step." |
+| Missing source data | "One connected source didn't load, so this list may be missing assignments. Let's check it in My Boiler before we count on this plan." |
+| An out-of-scope request | The exact short redirect above, without an explanation of what Pip cannot answer. |
 
 ## Add the Gemini key
 

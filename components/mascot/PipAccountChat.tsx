@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMyBoiler } from "@/components/boiler/useMyBoiler";
 import { useStudyAccountability } from "@/components/boiler/useStudyAccountability";
 import type { StudyProposal } from "@/lib/pip/planning";
@@ -8,7 +8,7 @@ import { PipChat } from "./PipChat";
 import { usePipConversation } from "./PipConversation";
 
 /** Load owner state only while the floating chat is open; use the shared page cache. */
-export function PipAccountChat({ userId }: { userId: string }) {
+export function PipAccountChat({ userId, header }: { userId: string; header?: ReactNode }) {
   const boiler = useMyBoiler("api", userId);
   const study = useStudyAccountability(boiler);
   const { dismissProposal } = usePipConversation();
@@ -23,7 +23,7 @@ export function PipAccountChat({ userId }: { userId: string }) {
     setError(""); dismissProposal();
   };
   return <>
-    <PipChat studyContext={study.context} remindersReady={Boolean(study.blocker.connected && study.blocker.remindersSupported && study.blocker.remindersEnabled)} replacing={Boolean(study.session && !study.session.outcome)} onAcceptProposal={accept} />
+    <PipChat header={header} studyContext={study.context} remindersReady={Boolean(study.blocker.connected && study.blocker.remindersSupported && study.blocker.remindersEnabled)} replacing={Boolean(study.session && !study.session.outcome)} onAcceptProposal={accept} />
     {error && <p role="alert" className="m-0 mt-2 text-sm text-hot-ink">{error}</p>}
   </>;
 }
