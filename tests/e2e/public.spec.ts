@@ -21,7 +21,7 @@ test('public home leads to setup and Help stays readable to guests', async ({ pa
   await expect(page.getByRole('link', { name: 'Try the demo', exact: true })).toHaveCount(0);
   await page.getByRole('main').getByRole('link', { name: 'Set up my boiler', exact: true }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
-  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Who are we setting up for?', level: 1, exact: true })).toBeVisible();
   await page.goto('/how');
   await expect(page).toHaveURL(/\/how$/);
   const helpHeader = page.getByRole('banner');
