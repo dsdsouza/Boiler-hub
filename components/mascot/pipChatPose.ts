@@ -77,9 +77,15 @@ export function usePipChatPose({
     const el = root.current;
     if (!open || !el) return;
     let t: ReturnType<typeof setTimeout> | undefined;
+    let soon: ReturnType<typeof setTimeout> | undefined;
     const onInput = () => {
-      setListening(true);
-      setActivity((n) => n + 1);
+      // Deferred: this native listener runs before React's onChange for the textarea. Re-rendering
+      // now would reset the controlled field to the previous draft and drop what was just typed.
+      clearTimeout(soon);
+      soon = setTimeout(() => {
+        setListening(true);
+        setActivity((n) => n + 1);
+      }, 0);
       clearTimeout(t);
       t = setTimeout(() => setListening(false), LISTEN_MS);
     };
@@ -90,6 +96,7 @@ export function usePipChatPose({
       el.removeEventListener("input", onInput);
       el.removeEventListener("pointerdown", onPointer);
       clearTimeout(t);
+      clearTimeout(soon);
       setListening(false);
     };
   }, [open, root]);
