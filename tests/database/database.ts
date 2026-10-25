@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readdir, readFile } from 'node:fs/promises';
 
 /** Ephemeral PostgreSQL with the shipped migrations and Supabase roles. */
-export async function createDatabase() {
+export async function createDatabase({ before }: { before?: string } = {}) {
   const db = new PGlite();
   await db.exec(`
     create role anon; create role authenticated; create role service_role bypassrls;
@@ -19,7 +19,7 @@ export async function createDatabase() {
     alter default privileges in schema public grant all on sequences to authenticated, service_role;
   `);
   const directory = new URL('../../supabase/migrations/', import.meta.url);
-  for (const file of (await readdir(directory)).filter((file) => file.endsWith('.sql')).sort()) {
+  for (const file of (await readdir(directory)).filter((file) => file.endsWith('.sql') && (!before || file < before)).sort()) {
     await db.exec(await readFile(new URL(file, directory), 'utf8'));
   }
   return db;
