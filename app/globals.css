@@ -365,13 +365,6 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
     color-mix(in srgb, var(--color-brass-dark) 45%, transparent) 12px 24px
   );
 }
-.bp-button-striped-horizontal {
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent 0 12px,
-    color-mix(in srgb, var(--color-brass-dark) 45%, transparent) 12px 24px
-  );
-}
 .bp-control {
   -webkit-tap-highlight-color: transparent;
   transition: background-color 100ms var(--ease-ui), border-color 100ms var(--ease-ui), color 100ms var(--ease-ui);
