@@ -60,14 +60,14 @@ test('exploration: a long assignment title wraps in the posted confirmation', as
 
 test('exploration: returning to the landing page hydrates without browser errors', async ({ page }) => {
   const errors: string[] = [];
-  // Let prefetches settle before each hard navigation. WebKit can report an
-  // interrupted prefetch as a pageerror when the old document unloads.
-  // Keep collecting every pageerror so runtime/hydration failures still fail.
+  // Exercise the product's navigation while collecting every runtime error.
+  // Cold-document bootstrap and assets are checked separately in public.spec.
   page.on('pageerror', (e) => errors.push(e.message));
   for (const path of ['/', '/how', '/', '/demo', '/', '/']) {
-    // WebKit can render a streamed document without delivering `load`.
-    // Verify readiness and actual hydration on every visit instead.
-    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    if (path === '/') await page.getByRole('banner').getByRole('link', { name: 'Boilerplate', exact: true }).click();
+    else if (path === '/how') await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
+    else await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${path === '/' ? '/' : path}$`));
     await expect(page.getByRole('main')).toBeVisible();
     if (path === '/') {
       const slider = page.getByRole('slider');
