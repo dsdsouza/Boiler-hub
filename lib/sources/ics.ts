@@ -6,6 +6,7 @@ import { sha256 } from "@/lib/google/normalize";
 import { safeFetchText } from "./fetch";
 import { calendarText, courseworkMetadata } from "./ics-metadata";
 import { lmsProvider } from "./lms";
+import { isAppleCalendarUrl } from "./hints";
 import { SourceError, sourceItemId, type AdapterSource, type SourceAdapter, type SourceItem } from "./types";
 
 // ICS feeds (Brightspace, Canvas, Outlook, any calendar). Parsed live each sync, never stored.
@@ -92,7 +93,8 @@ export function courseFor(entry: VEvent, label: string | undefined): string | un
 /**
  * Parse a feed and classify each entry in the window:
  * deadline-like entries (zero-length, all-day in a coursework feed, or a deadline keyword in the title)
- * become tasks due at their time; other timed entries become events. Pure apart from hashing.
+ * become tasks due at their time; other timed entries become events. iCloud calendars
+ * contribute scheduled events, just like Google Calendar. Pure apart from hashing.
  */
 export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
   if (!/BEGIN:VCALENDAR/i.test(text)) throw new SourceError("That link did not return a calendar feed (.ics)");
@@ -116,6 +118,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
   const to = opts.dateWindow?.to ?? new Date(t + (SOURCE_LOOKAHEAD_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
   const provider = opts.feedUrl ? lmsProvider(opts.feedUrl) : undefined;
+  const scheduleOnly = !!opts.feedUrl && isAppleCalendarUrl(opts.feedUrl);
 
   for (const component of Object.values(cal)) {
     if (!component || component.type !== "VEVENT") continue;
@@ -145,7 +148,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
       // A timed "CS 180 Lab" is a class, while "Lab report due" remains a deadline.
       const classMeeting = opts.coursework && end > start && CLASS_MEETING_RE.test(title) && !EXPLICIT_DEADLINE_RE.test(title);
       const keyword = metadata.assignment || DEADLINE_RE.test(title) && !classMeeting;
-      const deadline = inst.isFullDay ? opts.coursework || keyword : end === start || keyword;
+      const deadline = !scheduleOnly && (inst.isFullDay ? opts.coursework || keyword : end === start || keyword);
 
       if (deadline) {
         // All-day: due at 23:59 that calendar day (DATE values are built at local midnight, so read

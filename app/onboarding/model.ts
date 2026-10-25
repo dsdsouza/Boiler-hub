@@ -18,7 +18,6 @@ export type StepId =
   | "milestone"
   | "deadline"
   | "status"
-  | "sources"
   | "team"
   | "recommendation"
   | "ready";
@@ -131,7 +130,6 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
         ]
       : []),
     "status",
-    "sources",
     "team",
     "recommendation",
     "ready",
@@ -214,9 +212,8 @@ export function parseDraft(value: unknown): OnboardingDraft {
     "milestone",
     "deadline",
   ];
-  draft.current = all.includes(v.current as StepId)
-    ? (v.current as StepId)
-    : "identity";
+  draft.current = v.current === "sources" ? "calendar"
+    : all.includes(v.current as StepId) ? (v.current as StepId) : "identity";
   draft.completed = Array.isArray(v.completed)
     ? [
         ...new Set(

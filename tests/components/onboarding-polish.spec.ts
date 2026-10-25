@@ -17,7 +17,7 @@ test("onboarding keeps the requested copy and puts the small bold count below th
   await expect(page.getByText("A few small questions. A clearer picture of your week.")).toHaveCount(0);
   await expect(page.getByText("Your progress stays with you")).toHaveCount(0);
   await expect(page.getByText("About you", { exact: true })).toHaveCount(0);
-  const count = page.getByText("1 of 14", { exact: true });
+  const count = page.getByText("1 of 13", { exact: true });
   await expect(count).toBeVisible();
   const countStyle = await count.evaluate(el => ({ weight: getComputedStyle(el).fontWeight, size: parseFloat(getComputedStyle(el).fontSize), top: el.getBoundingClientRect().top }));
   expect(Number(countStyle.weight)).toBeGreaterThanOrEqual(700);
@@ -111,7 +111,6 @@ test("a failed Pip check can be deferred explicitly and setup still completes af
   await expect(title(page)).toHaveText("How are you showing up today?");
   await next(page).click();
   await page.getByRole("button", { name: "Skip for now", exact: true }).click();
-  await page.getByRole("button", { name: "Skip for now", exact: true }).click();
   await expect(title(page)).toHaveText("A starting point, just for you.");
   await page.getByRole("button", { name: "Finish setup", exact: true }).click();
   await expect(title(page)).toHaveText("Your boiler is ready.");
@@ -128,7 +127,8 @@ test("the first reading follows calendar connection and resumes on its own page"
   await expect(page.getByText("Your first reading", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("list", { name: "Workload summary" })).toHaveCount(0);
   // Long connection forms still scroll within the same step.
-  await page.getByText("Add Apple Calendar or another feed", { exact: true }).click();
+  await page.getByText("Add a calendar feed", { exact: true }).click();
+  await expect(page.getByRole("button", { name: /Step \d+: Anything else on your plate/ })).toHaveCount(0);
   const viewport = title(page).locator("xpath=ancestor::section/..");
   await viewport.evaluate(el => { el.scrollTop = el.scrollHeight; });
   await viewport.hover();
@@ -149,6 +149,23 @@ test("the first reading follows calendar connection and resumes on its own page"
   await expect(title(page)).toHaveText("Your first reading");
   await next(page).click();
   await expect(title(page)).toHaveText("How are you showing up today?");
+});
+
+test("Apple Calendar is schedule-only in the merged onboarding connection step and Connect", async ({ page, context }) => {
+  const service = world(); await service.connect(context);
+  service.users[0].onboarding = draftAt("calendar");
+  for (const view of ["onboarding", "sources"]) {
+    await page.goto(`/qa-workflows?view=${view}`);
+    if (view === "onboarding") await page.getByText("Add a calendar feed", { exact: true }).click();
+    else await page.getByRole("tab", { name: "Calendar feed", exact: true }).click();
+    await page.getByRole("combobox", { name: "Calendar provider", exact: true }).selectOption("apple");
+    await expect(page.getByText(/Events stay off your task list/)).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Coursework feed: all-day entries are deadlines", exact: true })).toHaveCount(0);
+    await expect(page.getByText("New feeds start with deadlines due today or later.", { exact: true })).toBeHidden();
+    await expect(page.getByRole("textbox", { name: "iCloud public calendar link", exact: true })).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath(`apple-${view}.png`), fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  }
 });
 
 test("sign-in confirmation uses the onboarding name and detected Pip keeps Continue", async ({ page, context }) => {

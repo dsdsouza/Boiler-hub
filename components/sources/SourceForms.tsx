@@ -131,7 +131,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             Coursework feed: all-day entries are deadlines
           </label>}
         </div>
-        <p className="m-0 text-sm text-muted">New feeds start with deadlines due today or later.</p>
+        <p className="m-0 text-sm text-muted">{isApple ? "Timed events count toward your schedule. All-day and free events are excluded, just like Google Calendar." : "New feeds start with deadlines due today or later."}</p>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={!url.trim()} aria-disabled={busy || !url.trim()} aria-busy={busy}>
             {busy ? "Checking the feed…" : isApple ? "Connect Apple Calendar" : isBrightspace ? "Import schedule" : "Add feed"}
@@ -146,7 +146,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
 function AppleCalendarHelp() {
   return (
     <div className="flex flex-col gap-2 text-sm text-body">
-      <p className="m-0">Connect one iCloud calendar at a time. Boilerplate reads it when you sync; it cannot edit your events.</p>
+      <p className="m-0">Connect one iCloud calendar at a time. Boilerplate reads your schedule when you sync, just like Google Calendar. Events stay off your task list.</p>
       <p className="m-0 text-sm text-muted">Public Calendar lets anyone with the link read that calendar. Removing it from Boilerplate stops our reads; turn off Public Calendar in Apple Calendar to revoke the link for everyone. Your Apple Account password is never needed.</p>
     </div>
   );

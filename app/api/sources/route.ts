@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { encrypt } from "@/lib/crypto";
 import { parseFeedUrl } from "@/lib/sources/fetch";
-import { defaultFeedLabel, isCourseworkUrl } from "@/lib/sources/hints";
+import { defaultFeedLabel, isAppleCalendarUrl, isCourseworkUrl } from "@/lib/sources/hints";
 import { errorMessage, fetchNewSource, toSummary } from "@/lib/sources/load";
 import { SOURCE_COLUMNS, SourceError, type SourceRow } from "@/lib/sources/types";
 import { badRequest, readJson, requireUser, serverError, syncSelf } from "@/app/api/me/_lib/http";
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     if (typeof body.url !== "string" || body.url.length > 2048) return badRequest("url is required");
     secret = parseFeedUrl(body.url).href;
     label = (body.label as string | undefined)?.trim() || defaultFeedLabel(secret);
-    coursework = (body.coursework as boolean | undefined) ?? isCourseworkUrl(secret);
+    coursework = isAppleCalendarUrl(secret) ? false : (body.coursework as boolean | undefined) ?? isCourseworkUrl(secret);
   } catch (e) {
     if (e instanceof SourceError) return badRequest(e.message);
     throw e;
