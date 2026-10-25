@@ -92,6 +92,27 @@ describe("owner-scoped onboarding persistence", () => {
     );
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
+  it("autosaves unfinished and partial answers without changing the profile or creating a task", async () => {
+    const draft = { ownerId: "owner-id", name: "A", role: "student", milestone: "Still typing", current: "name" };
+    expect((await send(draft, { autosave: true, expectedUserId: "owner-id" })).status).toBe(200);
+    expect(mocks.updateUser.mock.calls[0][0].data.onboarding).toMatchObject({ name: "A", milestone: "Still typing", ownerId: "owner-id", finished: false });
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.sync).not.toHaveBeenCalled();
+  });
+  it("rejects an autosave if the account changed after the draft was loaded", async () => {
+    for (const expectedUserId of ["previous-account", undefined]) {
+      expect((await send({ name: "Private answer" }, { autosave: true, expectedUserId })).status).toBe(409);
+    }
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("does not allow a background save to finish onboarding or bypass setup checks", async () => {
+    const draft = parseDraft({ name: "Alex", role: "professional", goal: "balance", starting: "fresh", finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft, { autosave: true, expectedUserId: "owner-id" })).status).toBe(400);
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
   it("saves the status and creates the first task once with an owner-scoped, repeatable id", async () => {
     const d = parseDraft({
       role: "student",
