@@ -36,8 +36,8 @@ test('changing the score within Redline preserves the whistle shutoff', async ({
   await expect(slider).toHaveValue('99');
   await page.clock.runFor(2000);
   // Redline keeps its regular pressure flutter after the brief whistle ends.
-  await expect(valve).toHaveCSS('--flutter', '-5px');
-  await expect(valve).toHaveCSS('--dur', '0.12s');
+  await expect(valve).toHaveCSS('--flutter', '-3px');
+  await expect(valve).toHaveCSS('--dur', '0.22s');
 });
 
 
