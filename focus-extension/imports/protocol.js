@@ -24,7 +24,7 @@ export function normalizeFeedUrl(raw) {
 export function makeHandoffUrl(raw) {
   const feed = normalizeFeedUrl(raw);
   if (!feed) throw new Error("Choose a calendar subscription link.");
-  return `https://boilerhub.work/calendar-helper#feed=${encodeURIComponent(feed)}`;
+  return `https://boilerplate.select/calendar-helper#feed=${encodeURIComponent(feed)}`;
 }
 
 export function readHandoff(hash) {

@@ -20,7 +20,7 @@ function storage() {
 describe("browser helper handoff", () => {
   it.each(feeds)("round-trips a real LMS URL shape without placing its secret in a request: %s", (feed) => {
     const url = new URL(makeHandoffUrl(feed));
-    expect(url.origin).toBe("https://boilerhub.work");
+    expect(url.origin).toBe("https://boilerplate.select");
     expect(url.pathname).toBe("/calendar-helper");
     expect(url.search).toBe("");
     expect(url.pathname + url.search).not.toContain("fictional");
@@ -68,7 +68,7 @@ describe("distributable extension", () => {
     expect(manifest.content_scripts).toHaveLength(1);
     expect(manifest.content_scripts[0].js).toEqual(["bridge.js"]);
     expect(manifest.content_scripts[0].matches).not.toContain("<all_urls>");
-    expect(manifest.content_scripts[0].matches).toContain("https://boilerhub.work/*");
+    expect(manifest.content_scripts[0].matches).toContain("https://boilerplate.select/*");
     expect(manifest.background).toBeUndefined();
     expect(manifest.content_security_policy.extension_pages).toContain("connect-src 'none'");
   });

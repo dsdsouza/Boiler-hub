@@ -16,7 +16,8 @@ test('month navigation, day selection, midnight zones and keyboard use retain th
   });
   await page.goto('/qa-components?mode=calendar');
   await expect(page.getByRole('heading', { name: 'October 2026' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: '2 open deadlines' })).toBeVisible();
+  await expect(page.getByText('Your open deadlines, month by month.', { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Times in America/)).toHaveCount(0);
   const day = page.getByRole('button', { name: 'Sunday, October 25, 2026, 2 deadlines', exact: true });
   await day.click();
   await expect(page.getByText('Team project review', { exact: true }).last()).toBeVisible();
@@ -47,5 +48,5 @@ test('a failed month load can recover and distinguish an empty calendar', async 
   fail = false;
   await page.getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Deadline calendar', exact: true }).getByRole('alert')).toHaveCount(0);
-  await expect(page.getByText('No deadlines on this day. This month has no open deadlines.', { exact: true })).toBeVisible();
+  await expect(page.getByText('No deadlines on this day!', { exact: true })).toBeVisible();
 });

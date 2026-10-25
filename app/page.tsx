@@ -25,9 +25,9 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   // Keep the page wrapper and header in the same hydration boundary as its
   // streamed Flight children, so a replay cannot claim the wrapper twice.
   return <Suspense fallback={<PageLoading />}>
-    <div className="min-h-screen pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0">
+    <div className={viewer ? "min-h-screen pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0" : "min-h-screen"}>
       <SiteHeader
-        variant="app"
+        variant={viewer ? "app" : "marketing"}
         account={viewer ? (
           <AccountControls viewer={viewer} />
         ) : (
@@ -120,7 +120,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
-      <MobileTabBar />
+      {viewer && <MobileTabBar />}
     </div>
   </Suspense>;
 }

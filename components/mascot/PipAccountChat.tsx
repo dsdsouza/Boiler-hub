@@ -17,7 +17,7 @@ export function PipAccountChat({ userId }: { userId: string }) {
     const task = boiler.data?.items.find((item) => item.id === proposal.taskId && item.kind === "task" && !item.doneAt);
     const now = Date.now();
     if (!task) { setError("That task is no longer open. Ask Pip for an updated plan."); return; }
-    if (!study.blocker.connected || !study.blocker.remindersSupported || !study.blocker.remindersEnabled) { setError("Pair the Pip extension and enable laptop reminders in Focus with Pip first."); return; }
+    if (!study.blocker.connected || !study.blocker.remindersSupported || !study.blocker.remindersEnabled) { setError("Pair the Pip extension and enable laptop reminders in Connect → Focus with Pip first."); return; }
     if (proposal.startAt < now - 60000 || proposal.endAt <= now + 60000) { setError("That study time has passed. Ask Pip for a new window."); return; }
     study.send({ id: crypto.randomUUID(), taskId: task.id, title: task.title.slice(0, 200), goal: proposal.goal, startAt: Math.max(now, proposal.startAt), endAt: proposal.endAt, demo: false, scope: "account" });
     setError(""); dismissProposal();

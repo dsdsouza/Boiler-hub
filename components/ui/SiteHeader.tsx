@@ -22,7 +22,7 @@ const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },
   { key: "calendar", href: "/calendar", label: "Calendar" },
   { key: "teams", href: "/teams", label: "Teams" },
-  { key: "sources", href: "/settings/sources", label: "Sources" },
+  { key: "sources", href: "/settings/sources", label: "Connect" },
   { key: "how", href: "/how", label: "Help" },
 ];
 
@@ -44,8 +44,8 @@ function NavLink({ href, label, current, prefetch }: { href: string; label: stri
 }
 
 /**
- * All sessions share the same navigation, dimensions and palette.
- * `app` uses <MobileTabBar> on phones; `marketing` keeps links in the header.
+ * Verified app sessions show navigation; marketing shows only branding and account controls.
+ * `app` uses <MobileTabBar> on phones.
  * On phones the app nav moves to <MobileTabBar>, unless mobileNavigation is "header".
  */
 export function SiteHeader({
@@ -61,7 +61,7 @@ export function SiteHeader({
   /** Keep app links in the header on public pages, including phones and tablets. */
   mobileNavigation?: "header" | "bottom";
 }) {
-  const nav = APP_NAV;
+  const nav = variant === "app" ? APP_NAV : [];
   const headerNavigation = mobileNavigation === "header";
   const desktopVisibility = headerNavigation ? "hidden lg:flex" : variant === "app" ? "hidden sm:flex" : "hidden md:flex";
   return (
@@ -69,14 +69,14 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-1 gap-y-3 px-4 py-2.5 sm:gap-3 sm:px-8">
         <div className="flex min-w-0 flex-wrap items-center gap-5">
           <Logo />
-          <nav aria-label="Main" className={`${desktopVisibility} flex-wrap gap-1`}>
+          {nav.length > 0 && <nav aria-label="Main" className={`${desktopVisibility} flex-wrap gap-1`}>
             {nav.map((n) => (
               <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} prefetch={variant === "app" ? true : undefined} />
             ))}
-          </nav>
+          </nav>}
         </div>
         {account && <div className="flex h-11 shrink-0 items-center gap-2"><Suspense fallback={<FlameLoader size="sm" label="Loading account…" />}>{account}</Suspense></div>}
-        {(variant === "marketing" || headerNavigation) && (
+        {nav.length > 0 && headerNavigation && (
           <nav aria-label="Main" className={`w-full gap-1 border-t border-line pt-1 ${headerNavigation ? "grid grid-cols-2 sm:flex sm:flex-wrap lg:hidden" : "flex flex-wrap md:hidden"}`}>
             {nav.map((n) => (
               <NavLink key={n.key} href={n.href} label={n.label} current={current === n.key} prefetch={variant === "app" ? true : undefined} />
@@ -157,7 +157,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
     {
       key: "sources",
       href: "/settings/sources",
-      label: "Sources",
+      label: "Connect",
       icon: (
         <>
           <path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7" />

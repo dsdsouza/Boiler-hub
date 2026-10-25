@@ -4,7 +4,7 @@ import { normalizeFeedUrl } from "./imports/protocol.js";
 export function appDestination(savedAppUrl, path = "/boiler") {
   const origin = isApp(savedAppUrl)
     ? new URL(savedAppUrl).origin
-    : "https://boilerplate.zhomander.workers.dev";
+    : "https://boilerplate.select";
   return new URL(path, origin).href;
 }
 

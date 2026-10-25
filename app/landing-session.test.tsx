@@ -30,7 +30,7 @@ describe("landing session", () => {
     expect(html).not.toContain("Open My Boiler");
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
     for (const href of ["/boiler", "/teams", "/settings/sources", "/how"]) {
-      expect(header).toContain(`href="${href}"`);
+      expect(header).not.toContain(`href="${href}"`);
     }
     expect(header).not.toContain('href="/demo"');
   });

@@ -235,7 +235,7 @@ export function OnboardingClient({
       setReviewed(false);
     } catch {
       setSyncError(
-        "Your calendar could not be refreshed. Try again, or connect it later from Sources.",
+        "Your calendar could not be refreshed. Try again, or connect it later from Connect.",
       );
     } finally {
       setSyncing(false);
@@ -574,7 +574,7 @@ export function OnboardingClient({
             )}
             <p className="mt-6 mb-0 border-t border-line pt-5 text-sm leading-relaxed text-muted">
               Calendar titles and dates are fetched live. Teams never see your
-              calendar details. You can disconnect in Sources.
+              calendar details. You can disconnect in Connect.
             </p>
           </>
         );
@@ -754,7 +754,7 @@ export function OnboardingClient({
           <>
             <p className={styles.intro}>
               Connect coursework or Apple Calendar to bring more of your
-              work together. You can always add these later in Sources.
+              work together. You can always add these later in Connect.
             </p>
             {boiler?.sources?.length ? (
               <p className="text-cool-ink">

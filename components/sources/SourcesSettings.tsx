@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { SourceInfo } from "@/lib/pressure/api-types";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -13,7 +13,7 @@ import { Feedback } from "@/components/ui/Feedback";
 const KIND_LABEL: Record<SourceInfo["kind"], string> = { ics: "Calendar feed", github: "GitHub" };
 
 /** /settings/sources: connected sources with health, Test and Remove, plus the add forms. */
-export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
+export function SourcesSettings({ initial, children }: { initial: SourceInfo[]; children?: ReactNode }) {
   const [sources, setSources] = useState(initial);
 
   const upsert = (s: SourceInfo) => setSources((list) => (list.some((x) => x.id === s.id) ? list.map((x) => (x.id === s.id ? s : x)) : [...list, s]));
@@ -22,7 +22,7 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
     <div className="bp-arrive bp-arrive-next flex flex-col gap-6">
       <Card as="section" aria-labelledby="yours" className="px-5 py-6 sm:px-7">
         <div className="mb-4 flex items-center gap-3">
-          <CardTitle id="yours" tabIndex={-1}>Your sources</CardTitle>
+          <CardTitle id="yours" tabIndex={-1}>Your connections</CardTitle>
           <span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-muted tabular-nums">{sources.length}</span>
         </div>
         {sources.length === 0 ? (
@@ -39,6 +39,7 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
       </Card>
 
       <SourceConnections onAdded={(r) => upsert(r.source)} />
+      {children}
       <CalendarSubscription />
     </div>
   );

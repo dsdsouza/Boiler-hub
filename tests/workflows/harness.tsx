@@ -10,6 +10,7 @@ import { OnboardingClient } from '@/app/onboarding/OnboardingClient';
 import { CreateTeamForm, JoinTeamForm } from '@/app/teams/_components/TeamForms';
 import { VisibilityPicker } from '@/app/teams/_components/VisibilityPicker';
 import { EngineRoom } from '@/app/teams/_components/EngineRoom';
+import { FocusConnection } from "@/components/sources/FocusConnection";
 import { SourcesSettings } from '@/components/sources/SourcesSettings';
 import type { MyTeam, EngineRoomView } from '@/lib/data/teams';
 import type { SourceInfo } from '@/lib/pressure/api-types';
@@ -34,7 +35,7 @@ function Workflows() {
   if (!ready) return <p role="status">Starting the local workflow…</p>;
   return <div className="mx-auto max-w-[1240px] px-4 py-8">
     <nav aria-label="Workflow pages" className="mb-6 flex flex-wrap gap-5">
-      {['boiler', 'teams', 'sources', 'onboarding'].map(v => <Link key={v} href={`/qa-workflows?view=${v}`}>{v}</Link>)}
+      {['boiler', 'teams', 'sources', 'onboarding'].map(v => <Link key={v} href={`/qa-workflows?view=${v}`}>{v === "sources" ? "Connect" : v}</Link>)}
     </nav>
     <div data-qa-app>
     {view === 'boiler' && <BoilerScreen />}
@@ -46,7 +47,7 @@ function Workflows() {
       </article>)}
     </main>}
     {view === 'engine' && room && <EngineRoom room={room} />}
-    {view === 'sources' && sources && <main><h1>Sources</h1><SourcesSettings initial={sources} /></main>}
+    {view === 'sources' && sources && <main><h1>Connect</h1><SourcesSettings initial={sources}><FocusConnection userId="00000000-0000-4000-a000-000000000001" /></SourcesSettings></main>}
     </div>
   </div>;
 }

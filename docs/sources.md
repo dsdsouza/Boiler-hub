@@ -1,6 +1,6 @@
 # Source connections
 
-Sources has two connection tabs: **Class schedule** and **Calendar feed**. Both preserve form drafts when switching tabs. Each shows **How to find your school calendar link** in place of the former description and inline instructions.
+Connect has two connection tabs: **Class schedule** and **Calendar feed**. Both preserve form drafts when switching tabs. Each shows **How to find your school calendar link** in place of the former description and inline instructions.
 
 Class schedule links to `/calendar-helper?guide=schedule`, a dedicated Brightspace schedule guide that returns to `/settings/sources#class-schedule`. Calendar feed links to `/calendar-helper`, where provider instructions are centralized. Existing feed review, sign-in handoff and private-link handling remain in place. The forms keep provider selection, coursework detection and the iCloud public-calendar privacy explanation.
 
@@ -13,3 +13,5 @@ Database check constraints reject GitHub source/task inserts and updates even fr
 Forecast details use a 44-pixel icon-only close button at the upper-right corner, with the accessible name **Close**, keyboard focus and Escape behavior retained. The points footer is removed; the selected-day pressure breakdown remains.
 
 Verification covers the migration against a seeded pre-retirement PostgreSQL schema, deletion/cascade across owners, preservation of other data, reruns and rejected authenticated/service-role writes. Existing API and browser checks cover rejected retired-source creation/tests, absence of retired-source fetches/decryption, retained drafts, keyboard tab navigation, connection failure and retry, historical source removal and the dedicated schedule guide. Public helper and forecast browser checks run across desktop, tablet and narrow layouts. These browser checks use fictional data and do not delete or reconnect real account sources.
+
+The page is labelled **Connect** in navigation and keeps its existing `/settings/sources` URL. Focus with Pip, course materials and extension setup are available here; task creation and the pressure gauge stay in My Boiler.
