@@ -378,7 +378,7 @@ body:has([data-onboarding]) [data-pip-companion] {
   position: relative;
   display: flex;
   flex-direction: column;
-  flex-shrink: 1;
+  flex-shrink: 2;
   min-height: 112px;
   color: var(--bg);
   padding: 44px 40px 40px;
