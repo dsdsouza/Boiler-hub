@@ -147,7 +147,7 @@ function rawAt(items: LoadItem[], now: Date): number {
   return raw;
 }
 
-export function computePressure(items: LoadItem[], now: Date, opts: ComputeOptions = {}): PressureResult {
+function pressureAt(items: LoadItem[], now: Date): Omit<PressureResult, "forecast"> {
   const contributions: Contribution[] = [];
   const counts: Counts = { meetings: 0, meetingHours: 0, tasksDue: 0, overdue: 0 };
   let raw = 0;
@@ -177,8 +177,17 @@ export function computePressure(items: LoadItem[], now: Date, opts: ComputeOptio
     zone: zoneFor(score),
     contributions,
     counts,
-    forecast: forecast(items, now, opts.timeZone ?? "UTC"),
   };
+}
+
+export function computePressure(items: LoadItem[], now: Date, opts: ComputeOptions = {}): PressureResult {
+  return { ...pressureAt(items, now), forecast: forecast(items, now, opts.timeZone ?? "UTC") };
+}
+
+/** Owner-only explanation using exactly the same time and completion assumptions as the forecast. */
+export function forecastBreakdown(items: LoadItem[], now: Date, date: string, opts: ComputeOptions = {}) {
+  const day = [...forecastInputs(items, now, opts.timeZone ?? "UTC")].find((d) => d.date === date);
+  return day ? pressureAt(day.items, day.at) : null;
 }
 
 /**
@@ -187,6 +196,13 @@ export function computePressure(items: LoadItem[], now: Date, opts: ComputeOptio
  * instead of turning overdue; tasks already overdue today stay overdue.
  */
 function forecast(items: LoadItem[], now: Date, timeZone: string): ForecastDay[] {
+  return [...forecastInputs(items, now, timeZone)].map(({ date, at, items: ahead }) => {
+    const score = scoreFromRaw(rawAt(ahead, at));
+    return { date, score, zone: zoneFor(score) };
+  });
+}
+
+function* forecastInputs(items: LoadItem[], now: Date, timeZone: string) {
   // Formatter construction is expensive on Workers. Reuse one within this
   // computation, and use native UTC fields when no calendar zone is available.
   const formatter = timeZone === "UTC" ? null : new Intl.DateTimeFormat("en-US", {
@@ -201,7 +217,6 @@ function forecast(items: LoadItem[], now: Date, timeZone: string): ForecastDay[]
   });
   const { year: y, month: m, day: d } = partsIn(now, formatter);
   const t = now.getTime();
-  const days: ForecastDay[] = [];
   for (let i = 0; i < WINDOW_DAYS; i++) {
     const at = i === 0 ? now : startOfDay(y, m, d + i, formatter);
     const date = new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10);
@@ -210,10 +225,8 @@ function forecast(items: LoadItem[], now: Date, timeZone: string): ForecastDay[]
       const due = Date.parse(item.due);
       return due < t || due >= at.getTime();
     });
-    const score = scoreFromRaw(rawAt(ahead, at));
-    days.push({ date, score, zone: zoneFor(score) });
+    yield { date, at, items: ahead };
   }
-  return days;
 }
 
 // --- time zone helpers (Intl only, no deps) ---
