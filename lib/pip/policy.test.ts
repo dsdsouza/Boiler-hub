@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PIP_ANSWER_RULES, PIP_REFUSAL, PIP_SCOPE, PIP_VOICE, PIP_VOICE_REVIEW_NOTE } from "./policy";
 
 describe("Pip's voice", () => {
-  it("reaches both answer paths through the shared rules, after the unchanged scope", () => {
+  it("reaches both answer paths through the shared rules and study scope", () => {
     expect(PIP_ANSWER_RULES.startsWith(PIP_SCOPE)).toBe(true);
     expect(PIP_ANSWER_RULES).toContain(PIP_VOICE);
   });

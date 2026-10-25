@@ -10,15 +10,15 @@ it("uses the real Google provider protocol with a server key and parses its repl
   vi.stubEnv("GEMINI_API_KEY", "synthetic-key-not-real");
   vi.stubEnv("GEMINI_MODEL", "gemini-3.8-flash");
   const fetcher = vi.fn(async () => Response.json({
-    status: "completed", steps: [{ type: "model_output", content: [{ type: "text", text: "Start with the draft due tomorrow." }] }],
+    status: "completed", steps: [{ type: "model_output", content: [{ type: "text", text: "Subtract 3 from both sides: 2x = 8. Divide by 2: x = 4." }] }],
     usage: { total_input_tokens: 40, total_output_tokens: 12, total_tokens: 52 }, model: "gemini-3.8-flash",
   }));
   vi.stubGlobal("fetch", fetcher);
-  const reply = await askGemini([{ role: "user", content: "What should I do?" }], {
+  const reply = await askGemini([{ role: "user", content: "Solve my homework question: 2x + 3 = 11." }], {
     asOf: "2026-10-24T16:00:00Z", timeZone: "America/New_York", totalOpen: 1, unavailableSources: 0, truncated: false,
     assignments: [{ title: "Draft", dueAt: "2026-10-25T16:00:00Z", size: "M", source: "manual", course: null }],
   });
-  expect(reply).toBe("Start with the draft due tomorrow.");
+  expect(reply).toBe("Subtract 3 from both sides: 2x = 8. Divide by 2: x = 4.");
   expect(fetcher).toHaveBeenCalledOnce();
   const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
   expect(String(url)).toBe("https://generativelanguage.googleapis.com/v1beta/interactions");
@@ -29,10 +29,13 @@ it("uses the real Google provider protocol with a server key and parses its repl
   expect(body.previous_interaction_id).toBeUndefined();
   expect(JSON.stringify(body.system_instruction)).toContain("Draft");
   expect(JSON.stringify(body.system_instruction)).toContain("untrusted data");
-  expect(body.system_instruction).toContain("even ungraded practice");
-  expect(body.system_instruction).toContain("For mixed requests");
+  expect(body.system_instruction).toContain("answer homework, assignment, quiz, exam, and practice questions");
+  expect(body.system_instruction).toContain("Requests may combine planning and subject help; answer both parts");
+  expect(body.system_instruction).toContain("no linked assignment or course source is required");
+  expect(body.system_instruction).toContain("You can draft and revise text and code in chat");
+  expect(body.system_instruction).not.toMatch(/REFUSE: solve|process-only|Never include a forbidden answer|under 180 words/);
   expect(body.system_instruction).toContain(PIP_VOICE);
-  expect(JSON.stringify(body.input)).toContain("What should I do?");
+  expect(JSON.stringify(body.input)).toContain("Solve my homework question: 2x + 3 = 11.");
 });
 
 it("recovers from one service-unavailable response without storing either interaction", async () => {

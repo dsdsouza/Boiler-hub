@@ -18,8 +18,8 @@ const context: PipContext = {
     sources: [
       {
         id: "source",
-        title: "Course brief",
-        text: "The late policy permits a 24-hour grace period with a ten percent deduction.",
+        title: "Tree traversal notes",
+        text: "An inorder traversal visits the left subtree, then the root, then the right subtree.",
       },
     ],
   },
@@ -44,7 +44,7 @@ it("routes source questions through non-stored Gemini Interactions with verified
   vi.stubEnv("GEMINI_API_KEY", "synthetic-key-not-real");
   const fetcher = vi.fn(async () =>
     completed({
-      answer: "There is a 24-hour grace period.",
+      answer: "Visit the left child, then the root, then the right child: 1, 2, 3.",
       citations: [
         { sourceId: "source", quote: context.study!.sources[0].text },
       ],
@@ -52,10 +52,11 @@ it("routes source questions through non-stored Gemini Interactions with verified
   );
   vi.stubGlobal("fetch", fetcher);
   const reply = await askGemini(
-    [{ role: "user", content: "What is the late policy?" }],
+    [{ role: "user", content: "Answer my assignment: what is the inorder traversal of a tree with root 2, left child 1, and right child 3?" }],
     context,
   );
-  expect(reply).toContain("[1] Course brief");
+  expect(reply).toContain("Visit the left child, then the root, then the right child: 1, 2, 3.");
+  expect(reply).toContain("[1] Tree traversal notes");
   const [url, request] = fetcher.mock.calls[0] as unknown as [
     string,
     RequestInit,
@@ -80,8 +81,9 @@ it("routes source questions through non-stored Gemini Interactions with verified
   expect(body.store).toBe(false);
   expect(body.generation_config.thinking_level).toBe("low");
   expect(body.system_instruction).toContain("untrusted data");
-  expect(body.system_instruction).toContain("even ungraded practice");
-  expect(body.system_instruction).toContain("never quote solutions");
+  expect(body.system_instruction).toContain("Provide complete solutions and draft content when requested");
+  expect(body.system_instruction).toContain("including subject explanations and solutions");
+  expect(body.system_instruction).not.toMatch(/ONLY administrative|Never teach|never quote solutions|REFUSE: solve/);
   expect(body.system_instruction).toContain(PIP_VOICE);
 });
 

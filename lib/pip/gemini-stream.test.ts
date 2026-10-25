@@ -58,15 +58,17 @@ it("retries one temporary provider outage before streaming without storing eithe
 
 it("streams course answers after checking preceding citations, then appends verified quotes", async () => {
   const provider = upstream();
-  const study = { sources: [{ id: "brief", title: "Course brief", text: "Start with trees." }] };
-  const reply = streamGemini([{ role: "user", content: "Where do I start?" }], { ...context, study });
+  const study = { sources: [{ id: "brief", title: "Course brief", text: "Inorder visits left, root, right." }] };
+  const reply = streamGemini([{ role: "user", content: "Explain inorder traversal for my assignment." }], { ...context, study });
   provider.send(start);
-  provider.send(delta('{"citations":[{"sourceId":"brief","quote":"Start with trees."}],"answer":"Start'));
-  expect((await reply.next()).value).toBe("Start");
-  provider.send(delta(' with trees."}')); provider.send(stop); provider.send(complete); provider.close();
+  provider.send(delta('{"citations":[{"sourceId":"brief","quote":"Inorder visits left, root, right."}],"answer":"Visit'));
+  expect((await reply.next()).value).toBe("Visit");
+  const [, init] = provider.fetcher.mock.calls[0] as unknown as [string, RequestInit];
+  expect(JSON.parse(init.body as string).system_instruction).toContain("Provide complete solutions and draft content when requested");
+  provider.send(delta(' the left subtree, then root, then right subtree."}')); provider.send(stop); provider.send(complete); provider.close();
   let rest = "";
   for await (const text of reply) rest += text;
-  expect("Start" + rest).toBe('Start with trees.\n\nCourse sources\n[1] Course brief\n“Start with trees.”');
+  expect("Visit" + rest).toBe('Visit the left subtree, then root, then right subtree.\n\nCourse sources\n[1] Course brief\n“Inorder visits left, root, right.”');
 });
 
 it("rejects invented course quotes before exposing the associated answer", async () => {
