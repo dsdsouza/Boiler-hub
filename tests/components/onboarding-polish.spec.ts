@@ -169,6 +169,84 @@ test("the last page saves a manual task, retries safely, and opens My Boiler dir
   expect(service.users[0].tasks).toHaveLength(1);
 });
 
+test("a student can confirm a missing coursework import for later and finish after reload", async ({ page, context }) => {
+  const service = world(); await service.connect(context);
+  const draft = { ...draftAt("calendar"), role: "student" as const };
+  draft.completed = stepsFor(draft).slice(0, stepsFor(draft).indexOf("calendar"));
+  service.users[0].onboarding = draft;
+  let releaseCheck!: () => void;
+  const checking = new Promise<void>(resolve => { releaseCheck = resolve; });
+  await page.route("**/api/me/onboarding/check", async route => { await checking; await route.fulfill({ json: {
+    boiler: { calendar: "ok", sources: [], tasks: [], events: [], result: { score: 0, raw: 0, zone: "cool", counts: { meetings: 0, meetingHours: 0, tasksDue: 0, overdue: 0 }, contributions: [], forecast: [] } },
+    reviewReceipt: null,
+  } }); });
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("Bring your week into view");
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Connect coursework later?" });
+  await expect(dialog).toBeVisible();
+  releaseCheck();
+  await dialog.getByRole("button", { name: "Go back", exact: true }).click();
+  expect(service.users[0].onboarding?.courseworkDeferred).toBe(false);
+  await expect(page.getByRole("button", { name: "Check coursework again", exact: true })).toBeEnabled();
+  await page.getByText("Connect a readable school calendar with Coursework enabled to import your courses. Google Calendar alone does not confirm a course import.", { exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath("optional-coursework.png"), fullPage: true });
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.screenshot({ path: test.info().outputPath("defer-coursework.png"), fullPage: true });
+  await dialog.getByRole("button", { name: "Complete later", exact: true }).click();
+  await expect(title(page)).toHaveText("Your first reading");
+  await expect.poll(() => service.users[0].onboarding?.courseworkDeferred).toBe(true);
+  await page.reload();
+  await expect(title(page)).toHaveText("Your first reading");
+  await next(page).click();
+  await expect(title(page)).toHaveText("How are you showing up today?");
+  await next(page).click();
+  await page.getByRole("button", { name: "Skip for now", exact: true }).click();
+  await expect(page.getByText("Coursework setup saved for later", { exact: true })).toBeVisible();
+  await expect(page.getByText("Coursework import verified", { exact: true })).toHaveCount(0);
+  await page.route("**/boiler", route => route.fulfill({ contentType: "text/html", body: "<h1>My Boiler destination</h1>" }));
+  await page.getByRole("button", { name: "Finish setup", exact: true }).click();
+  await expect(page).toHaveURL(/\/boiler$/);
+  expect(service.users[0].onboarding).toMatchObject({ finished: true, courseworkDeferred: true });
+});
+
+test("deferring deadline review moves forward without unlocking the start again", async ({ page, context }) => {
+  const service = world(); await service.connect(context);
+  const draft = { ...draftAt("calendar"), role: "student" as const, current: "review" as const };
+  draft.completed = stepsFor(draft).slice(0, stepsFor(draft).indexOf("review"));
+  service.users[0].onboarding = draft;
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("Review your imported deadlines.");
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.getByRole("dialog", { name: "Review deadlines later?" }).getByRole("button", { name: "Complete later", exact: true }).click();
+  await expect(title(page)).toHaveText("How are you showing up today?");
+  await expect.poll(() => service.users[0].onboarding?.courseworkDeferred).toBe(true);
+});
+
+test("a teacher keeps setup options but can skip them and finish without a personal task", async ({ page, context }) => {
+  const service = world(); await service.connect(context, "lead", false);
+  const draft = { ...draftAt("extension"), role: "lead" as const, goal: "team" as const };
+  draft.completed = stepsFor(draft).slice(0, stepsFor(draft).indexOf("extension"));
+  service.users[0].onboarding = draft;
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("Meet Pip in your browser.");
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.getByRole("dialog", { name: "Complete Pip setup later?" }).getByRole("button", { name: "Complete later", exact: true }).click();
+  await expect(title(page)).toHaveText("Bring your week into view");
+  await page.getByRole("button", { name: "Skip for now", exact: true }).click();
+  await expect(title(page)).toHaveText("How are you showing up today?");
+  await next(page).click();
+  await page.getByRole("button", { name: "Skip for now", exact: true }).click();
+  await expect(title(page)).toHaveText("A starting point, just for you.");
+  await expect(page.getByRole("textbox", { name: "Your first task", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("teacher-ready.png"), fullPage: true });
+  await page.route("**/teams", route => route.fulfill({ contentType: "text/html", body: "<h1>Teams destination</h1>" }));
+  await page.getByRole("button", { name: "Finish setup", exact: true }).click();
+  await expect(page).toHaveURL(/\/teams$/);
+  expect(service.users[0].onboarding).toMatchObject({ finished: true, role: "lead", extensionDeferred: true });
+  expect(service.users[0].tasks).toHaveLength(0);
+});
+
 test("the first reading follows calendar connection and resumes on its own page", async ({ page, context }) => {
   const service = world(); await service.connect(context);
   service.users[0].onboarding = draftAt("calendar");
