@@ -36,6 +36,8 @@ import {
 } from "@/lib/sources/helper-handoff";
 import { ExtensionStep } from "./ExtensionStep";
 import { useExtension } from "./useExtension";
+import { useDraftAutosave } from "./useDraftAutosave";
+import { readDraftBackup, rememberDraftBackup } from "./draft-backup";
 import { DeadlineReview } from "./DeadlineReview";
 import { courseworkReady, courseworkSources, type SetupCheck } from "./setup";
 import {
@@ -97,6 +99,7 @@ const OPTIONAL: StepId[] = [
 ];
 const field =
   "bp-field min-h-14 w-full rounded-[10px] border border-control bg-field px-4 text-lg text-fg placeholder:text-muted";
+const SAVE_LABELS = { idle: "Autosave on", saving: "Saving answers…", saved: "All changes saved", error: "Answers not saved yet" };
 async function call<T>(
   path: string,
   method = "GET",
@@ -134,6 +137,7 @@ export function OnboardingClient({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [sourceBusy, setSourceBusy] = useState(false);
+  const { state: saveState, save, acknowledge, track, retry: retrySave } = useDraftAutosave(draft, signedIn && loaded && !loadFailed && !busy);
   const [boiler, setBoiler] = useState<BoilerResponse | null>(null);
   const [syncError, setSyncError] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -149,13 +153,15 @@ export function OnboardingClient({
   const userScrollAt = useRef(0);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const persist = useCallback((next: OnboardingDraft) => {
+    track(next);
     setDraft(next);
+    rememberDraftBackup(next);
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(next));
     } catch {
       /* Keep the active in-memory journey. Sign-in checks storage separately. */
     }
-  }, []);
+  }, [track]);
   const load = useCallback(async () => {
     setLoadFailed(false);
     setError("");
@@ -178,9 +184,15 @@ export function OnboardingClient({
         const saved = await call<{ userId: string; draft: unknown }>(
           "/api/me/onboarding",
         );
-        if (next.ownerId !== saved.userId && next.ownerId !== null)
-          next = parseDraft(saved.draft);
-        else if (!next.name && !next.role) next = parseDraft(saved.draft);
+        const backup = readDraftBackup(saved.userId);
+        const beforeSignIn = next.ownerId === null && (next.name || next.role);
+        if (!beforeSignIn) {
+          // Once a tab's edits are acknowledged, the account is authoritative.
+          // An older tab must not overwrite answers saved from another device.
+          next = backup ?? (saved.draft ? parseDraft(saved.draft)
+            : next.ownerId === saved.userId ? next : parseDraft(null));
+        }
+        if (saved.draft) acknowledge(parseDraft(saved.draft));
         next.ownerId = saved.userId;
         if (!next.name) next.name = accountName.split(" ")[0].slice(0, 60);
       } catch {
@@ -204,7 +216,7 @@ export function OnboardingClient({
       setError(
         "Google sign-in didn’t finish. Your answers are still here. Try again when you’re ready.",
       );
-  }, [accountName, persist, signedIn]);
+  }, [accountName, acknowledge, persist, signedIn]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -323,7 +335,7 @@ export function OnboardingClient({
     setBusy(true); setError("");
     const next = { ...draft, finished: false };
     try {
-      if (signedIn) await call("/api/me/onboarding", "PATCH", { draft: next });
+      if (signedIn) await save(next);
       persist(next);
       location.assign(signedIn ? "/boiler" : "/");
     } catch { setError("Your progress could not be saved. Try Finish later again before leaving."); }
@@ -373,8 +385,7 @@ export function OnboardingClient({
           completed: [...new Set([...next.completed, "ready" as const])],
         };
       if (signedIn)
-        await call("/api/me/onboarding", "PATCH", {
-          draft: next,
+        await save(next, {
           extensionVersion: pip.state === "installed" ? pip.version : null,
           reviewReceipt,
           deadlinesReviewed: reviewed,
@@ -749,6 +760,7 @@ export function OnboardingClient({
               labelledBy="onboarding-title-status"
               savedLabel="Ready to save"
               onChange={(status, note) => patch({ status, note })}
+              onNoteChange={(note) => patch({ note })}
             />
           </>
         );
@@ -941,9 +953,9 @@ export function OnboardingClient({
                   ? `Step ${index + 1} of ${steps.length}`
                   : "Preparing your setup…"}
               </span>
-              <span>
+              <span role={signedIn ? "status" : undefined}>
                 {signedIn
-                  ? "Saved as you continue"
+                  ? SAVE_LABELS[saveState]
                   : "Your progress stays with you"}
               </span>
             </div>
@@ -1058,7 +1070,9 @@ export function OnboardingClient({
                             }
                           }}
                         >
-                          <div className={styles.body}>{renderContent(s)}</div>
+                          <fieldset disabled={busy || sourceBusy} className="m-0 min-w-0 border-0 p-0">
+                            <div className={styles.body}>{renderContent(s)}</div>
+                          </fieldset>
                         </div>
                       </div>
                     }
@@ -1066,6 +1080,12 @@ export function OnboardingClient({
                 ))}
               </div>
               <div className={styles.controls}>
+                {saveState === "error" && (
+                  <div role="alert" className="mb-3 flex flex-wrap items-center gap-3 text-sm text-redline-ink">
+                    <span>Your latest answers haven’t saved to your account yet.</span>
+                    <Button variant="ghost" disabled={busy || sourceBusy} onClick={retrySave}>Retry saving</Button>
+                  </div>
+                )}
                 {error && (
                   <p
                     role="alert"

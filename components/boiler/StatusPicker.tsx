@@ -7,11 +7,12 @@ import { StatusDot } from "@/components/ui/StatusPill";
 import { STATUSES, STATUS_META } from "@/components/ui/zones";
 import { Input } from "@/components/ui/Field";
 
-/** Status buttons plus an 80-character note. The note saves on blur or Enter. */
+/** Status buttons and a note: blur/Enter saves, with optional live draft updates. */
 export function StatusPicker({
   status,
   note,
   onChange,
+  onNoteChange,
   labelledBy,
   savedLabel = "Saved",
   children,
@@ -19,6 +20,7 @@ export function StatusPicker({
   status: Status;
   note: string;
   onChange: (status: Status, note: string) => boolean | void | Promise<boolean | void>;
+  onNoteChange?: (note: string) => void;
   labelledBy?: string;
   savedLabel?: string;
   children?: ReactNode;
@@ -94,7 +96,7 @@ export function StatusPicker({
         maxLength={80}
         value={draft}
         placeholder="e.g. Launch week, back to normal Fri"
-        onChange={(e) => { dirty.current = true; draftRef.current = e.target.value; setDraft(e.target.value); setSaved(false); setFailed(false); }}
+        onChange={(e) => { dirty.current = true; draftRef.current = e.target.value; setDraft(e.target.value); setSaved(false); setFailed(false); onNoteChange?.(e.target.value); }}
         onBlur={commitNote}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
