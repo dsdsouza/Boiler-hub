@@ -1,11 +1,13 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
   type ReactNode,
+  type SyntheticEvent,
 } from "react";
 import { FlameLoader } from "@/components/ui/FlameLoader";
 import { Button } from "@/components/ui/Button";
@@ -291,6 +293,21 @@ export function OnboardingClient({
       navigate(target);
     }
   }
+  function revealPanel(e: SyntheticEvent<HTMLDetailsElement>) {
+    const panel = e.currentTarget;
+    if (!panel.open) return;
+    requestAnimationFrame(() => {
+      const el = viewport.current;
+      if (!el?.contains(panel)) return;
+      const bounds = panel.getBoundingClientRect();
+      const frame = el.getBoundingClientRect();
+      if (bounds.bottom <= frame.bottom && bounds.top >= frame.top) return;
+      el.scrollTo({
+        top: Math.max(0, el.scrollTop + bounds.top - frame.top - 4),
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      });
+    });
+  }
   function signIn() {
     const next = { ...draft, current: "account" as const };
     try {
@@ -553,7 +570,7 @@ export function OnboardingClient({
                 Your calendar link is ready to review in the next step.
               </p>
             )}
-            <ExtensionStep extension={pip} />
+            <ExtensionStep extension={pip} onToggle={revealPanel} />
           </>
         );
         break;
@@ -589,28 +606,23 @@ export function OnboardingClient({
             {boiler?.calendar === "unavailable" && (
               <CalendarUnavailableBanner />
             )}
-            <details
+            <Disclosure
+              onToggle={revealPanel}
               open={pendingFeed ? true : undefined}
-              className="mt-5 border-t border-line pt-2"
+              className="mt-5"
+              label={draft.role === "student" ? "Add my school calendar" : "Add Apple Calendar or another feed"}
             >
-              <summary className="bp-summary flex min-h-11 cursor-pointer items-center font-semibold text-brass-ink">
-                {draft.role === "student"
-                  ? "Add my school calendar"
-                  : "Add Apple Calendar or another feed"}
-              </summary>
-              <div className="py-4">
-                <CalendarFeedForm
-                  key={pendingFeed ?? "manual"}
-                  initialUrl={pendingFeed ?? undefined}
-                  idPrefix="ob-calendar"
-                  initialProvider={
-                    draft.role === "student" && !pendingFeed ? "brightspace" : undefined
-                  }
-                  onBusyChange={setSourceBusy}
-                  onAdded={sourceAdded}
-                />
-              </div>
-            </details>
+              <CalendarFeedForm
+                key={pendingFeed ?? "manual"}
+                initialUrl={pendingFeed ?? undefined}
+                idPrefix="ob-calendar"
+                initialProvider={
+                  draft.role === "student" && !pendingFeed ? "brightspace" : undefined
+                }
+                onBusyChange={setSourceBusy}
+                onAdded={sourceAdded}
+              />
+            </Disclosure>
             {draft.role === "student" && (
               <div className="mt-5 border-t border-line pt-4">
                 <p role="status" className="text-sm text-body">

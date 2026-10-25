@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import { useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { FlameLoader } from "@/components/ui/FlameLoader";
@@ -334,25 +335,16 @@ export function StudyAccountability({
           )}
         </>
       )}
-      <details className="mt-5 border-t border-line pt-4">
-        <summary className="bp-summary bp-control cursor-pointer rounded text-sm font-semibold text-body">
-          Course material for Pip · {study.sources.length} of 3 documents
-        </summary>
-        <p className="mt-3 mb-3 text-xs leading-relaxed text-muted">
+      <Disclosure className="mt-5" label={`Course material for Pip · ${study.sources.length} of 3 documents`}>
+        <p className="mt-0 mb-3 text-xs leading-relaxed text-muted">
           Paste a syllabus or assignment, or choose a .txt/.md file. Material
           stays in memory for this page and clears on reload; when you send a
           message, it goes to Gemini with your question. Only use material you
           want to share with Google.
         </p>
         {study.sources.map((source) => (
-          <details
-            key={source.id}
-            className="mb-3 rounded-lg border border-line px-3 py-2"
-          >
-            <summary className="bp-summary cursor-pointer text-sm text-fg">
-              {source.title}
-            </summary>
-            <p className="my-3 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere text-body">
+          <Disclosure key={source.id} className="mb-3" label={source.title}>
+            <p className="mt-0 mb-3 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere text-body">
               {source.text}
             </p>
             <Button
@@ -365,7 +357,7 @@ export function StudyAccountability({
             >
               Remove document
             </Button>
-          </details>
+          </Disclosure>
         ))}
         <form onSubmit={addSource} className="grid gap-3">
           <label
@@ -436,7 +428,7 @@ export function StudyAccountability({
             </Button>
           </div>
         </form>
-      </details>
+      </Disclosure>
       {study.sources.length > 0 && (
         <Button
           className="mt-4"
@@ -449,11 +441,8 @@ export function StudyAccountability({
           Ask Pip about my course material
         </Button>
       )}
-      <details className="mt-4 border-t border-line pt-4">
-        <summary className="bp-summary bp-control cursor-pointer rounded text-sm font-semibold text-body">
-          Connect the focus extension
-        </summary>
-        <p className="mt-3 mb-3 text-sm leading-relaxed text-muted">
+      <Disclosure className="mt-4" label="Connect the focus extension">
+        <p className="mt-0 mb-3 text-sm leading-relaxed text-muted">
           Download and unzip the extension. In Chrome’s Extensions page, turn on
           Developer mode, choose Load unpacked, and select the unzipped folder.
           Then reload Connect. The extension runs locally; it does not send
@@ -474,7 +463,7 @@ export function StudyAccountability({
             Enable laptop reminders
           </Button>
         </div>
-      </details>
+      </Disclosure>
       {boiler.source === "fixture" && (
         <p className="mt-4 mb-0 text-xs leading-relaxed text-muted">
           Demo assignments are synthetic. Focus blocking works if you install

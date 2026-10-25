@@ -250,26 +250,68 @@ input[type="range"] {
   .bp-level, .bp-lift { transition: none; }
 }
 
-/* Collapsible headers laid out with flex lose the browser's disclosure marker; draw our own. */
-summary.bp-summary {
-  list-style: none;
+/* Shared expandable panels: a full-row control, with a trailing chevron. */
+.bp-disclosure {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
 }
-summary.bp-summary::-webkit-details-marker {
+.bp-disclosure-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 14px 16px;
+  border-radius: 9px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  list-style: none;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-ui), color 140ms var(--ease-ui);
+}
+.bp-disclosure-trigger::-webkit-details-marker {
   display: none;
 }
-summary.bp-summary::before {
-  content: "▸";
-  display: inline-block;
-  width: 1.1em;
-  flex: none;
-  color: var(--brass-ink);
-  transition: transform 150ms ease;
+.bp-disclosure-trigger:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
-details[open] > summary.bp-summary::before {
-  transform: rotate(90deg);
+.bp-disclosure-trigger:focus-visible {
+  outline: 2px solid var(--brass-ink);
+  outline-offset: 3px;
+}
+.bp-disclosure-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bp-disclosure-chevron {
+  flex: 0 0 18px;
+  color: var(--brass-ink);
+  transition: transform 160ms var(--ease-ui);
+}
+.bp-disclosure[open] > .bp-disclosure-trigger {
+  border-radius: 9px 9px 0 0;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.bp-disclosure[open] > .bp-disclosure-trigger .bp-disclosure-chevron {
+  transform: rotate(180deg);
+}
+.bp-disclosure-content {
+  min-width: 0;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+}
+.bp-disclosure-content-flush {
+  padding: 0;
 }
 @media (prefers-reduced-motion: reduce) {
-  summary.bp-summary::before {
+  .bp-disclosure-trigger,
+  .bp-disclosure-chevron {
     transition: none;
   }
 }
