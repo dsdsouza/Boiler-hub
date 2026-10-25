@@ -84,7 +84,7 @@ const OPTIONAL: StepId[] = [
 ];
 const field =
   "bp-field min-h-14 w-full rounded-[10px] border border-control bg-field px-4 text-lg text-fg placeholder:text-muted";
-const SAVE_LABELS = { idle: "Autosave on", saving: "Saving answers…", saved: "All changes saved", error: "Answers not saved yet" };
+const SAVE_LABELS = { idle: "Autosave on", saving: "Saving answers…", saved: null, error: "Answers not saved yet" };
 async function call<T>(
   path: string,
   method = "GET",
@@ -713,10 +713,6 @@ export function OnboardingClient({
       case "status":
         content = (
           <>
-            <p className={styles.intro}>
-              Your status is your say. It never changes your pressure score, and
-              you control who sees it in each team.
-            </p>
             <StatusPicker
               status={draft.status}
               note={draft.note}
@@ -910,7 +906,7 @@ export function OnboardingClient({
               <strong className="font-bold tabular-nums">
                 {loaded ? `${index + 1} of ${steps.length}` : "Preparing your setup…"}
               </strong>
-              {signedIn && <span role="status">{SAVE_LABELS[saveState]}</span>}
+              {signedIn && SAVE_LABELS[saveState] && <span role="status">{SAVE_LABELS[saveState]}</span>}
             </div>
           </div>
           {!loaded || loadFailed ? (
