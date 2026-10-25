@@ -9,6 +9,8 @@ export interface AddedSource {
   events: number;
   /** null when the source was saved but the resync after it failed (see `warning`). */
   boiler: BoilerResponse | null;
+  /** Owner-bound review of this import; older servers may omit it. */
+  reviewReceipt?: string | null;
   warning?: string;
 }
 

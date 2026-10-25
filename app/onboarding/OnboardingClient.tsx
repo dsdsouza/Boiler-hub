@@ -135,6 +135,7 @@ export function OnboardingClient({
   const viewport = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const loadRequest = useRef(0);
+  const syncRequest = useRef(0);
   const skipDialog = useRef<HTMLDialogElement>(null);
   const persist = useCallback((next: OnboardingDraft) => {
     track(next);
@@ -225,21 +226,24 @@ export function OnboardingClient({
       ),
     });
   const sync = useCallback(async () => {
+    const request = ++syncRequest.current;
     setSyncError("");
     setReviewReceipt(null);
     setReviewed(false);
     setSyncing(true);
     try {
       const result = await call<SetupCheck>("/api/me/onboarding/check", "POST");
+      if (request !== syncRequest.current) return;
       setBoiler(result.boiler);
       setReviewReceipt(result.reviewReceipt);
       setReviewed(false);
     } catch {
+      if (request !== syncRequest.current) return;
       setSyncError(
         "Your calendar could not be refreshed. Try again, or connect it later from Connect.",
       );
     } finally {
-      setSyncing(false);
+      if (request === syncRequest.current) setSyncing(false);
     }
   }, []);
   useEffect(() => {
@@ -385,9 +389,15 @@ export function OnboardingClient({
     }
   }
   const sourceAdded = (r: AddedSource) => {
+    // An outstanding pre-import check must never replace the new classes.
+    ++syncRequest.current;
     if (r.boiler) setBoiler(r.boiler);
-    setReviewReceipt(null); setReviewed(false);
-    void sync();
+    setSyncError("");
+    setSyncing(false);
+    setReviewReceipt(r.reviewReceipt ?? null); setReviewed(false);
+    // Retry only when the import could not supply a verified snapshot (or
+    // during a deployment where an older API still omits the receipt).
+    if (!r.boiler || r.reviewReceipt === undefined) void sync();
     setPendingFeed(null);
     try {
       forgetHelperFeed(sessionStorage);
