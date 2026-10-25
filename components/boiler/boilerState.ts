@@ -12,6 +12,8 @@ export interface MyBoilerData {
   status: Status;
   statusNote: string;
   syncedAt: string;
+  /** Clock used for the current pressure result, including optimistic edits. */
+  pressureComputedAt?: string;
   /** Calendar time zone used by the server, so optimistic forecasts match. */
   timeZone?: string;
   /** "reconnect" when Google tokens are missing or expired: the score uses tasks only. */
@@ -43,7 +45,7 @@ export interface NewTask {
 }
 
 function recompute(data: MyBoilerData, items: LoadItem[], now: Date): MyBoilerData {
-  return { ...data, items, result: computePressure(items, now, { timeZone: data.timeZone ?? "UTC" }) };
+  return { ...data, items, pressureComputedAt: now.toISOString(), result: computePressure(items, now, { timeZone: data.timeZone ?? "UTC" }) };
 }
 
 export function addTask(data: MyBoilerData, task: NewTask, id: string, now: Date, source: "manual" | "team" = "manual"): MyBoilerData {
