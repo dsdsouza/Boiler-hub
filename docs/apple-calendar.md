@@ -4,7 +4,7 @@
 
 In My Boiler or Sources, choose **Subscribe in Apple Calendar**. Confirm creating the private subscription link. When it is ready, choose **Open Apple Calendar** to open its `webcal://` link, then confirm Subscribe in Apple Calendar. The page stays available until you choose that action. You can also copy the HTTPS URL from **Private calendar URL** and paste it into Calendar → Add Subscription Calendar. This is a live subscription, not a one-time file import. [Apple’s subscription guide](https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac) describes its confirmation and refresh controls.
 
-The feed contains open, dated tasks created in Boilerplate and team assignments. Imported calendars and GitHub items are excluded to avoid republishing their existing feeds. Completing, removing, or rescheduling a task changes the next feed response. Each deadline has a stable event ID and a transparent one-minute marker at the actual due time. Apple controls its refresh timing; changes are not pushed instantly. Empty task lists return valid empty calendars; failures return 503 instead of an empty response that could clear downloaded events.
+The feed contains open, dated tasks created in Boilerplate and team assignments. Imported calendar items are excluded to avoid republishing their existing feeds. Completing, removing, or rescheduling a task changes the next feed response. Each deadline has a stable event ID and a transparent one-minute marker at the actual due time. Apple controls its refresh timing; changes are not pushed instantly. Empty task lists return valid empty calendars; failures return 503 instead of an empty response that could clear downloaded events.
 
 Anyone with the private URL can read its deadlines. **Disable subscription** revokes it immediately for future requests. Apple may retain already downloaded data until the calendar is removed. Creating another subscription generates a new token; repeated clicks while enabled keep the existing link working. The server stores a SHA-256 hash and encrypted token, never the raw token. Authenticated management is scoped to the owner with RLS. Calendar clients read through a narrow SQL function using the feed token; it exposes no source credentials or other users’ tasks and uses no service-role client.
 
@@ -16,7 +16,7 @@ Subscriptions belong to individual Boilerplate accounts. If a valid feed looks e
 
 ## Read an existing iCloud calendar in Boilerplate
 
-Apple Calendar connects through a published, read-only iCloud calendar feed. In **Sources → Connect a calendar**, choose **Apple Calendar (iCloud)**, paste its public calendar link, optionally name it, and choose **Connect Apple Calendar**. The same form is in onboarding under **Connect more calendars or GitHub**. Repeat for each calendar you want to include.
+Apple Calendar connects through a published, read-only iCloud calendar feed. In **Sources → Connect a calendar**, choose **Apple Calendar (iCloud)**, paste its public calendar link, optionally name it, and choose **Connect Apple Calendar**. The same form is in onboarding under **Connect more calendars**. Repeat for each calendar you want to include.
 
 On iPhone or iPad, open Calendar → Calendars, tap the info button beside an iCloud calendar, enable Public Calendar, and copy Share Link. On Mac, show the calendar list, click the share button beside an iCloud calendar, enable Public Calendar, and copy its link. See [Apple’s sharing guide](https://support.apple.com/guide/calendar/share-calendars-icl32362/mac).
 

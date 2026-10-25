@@ -7,7 +7,7 @@ The Pip toolbar and the separate Calendar Finder find subscription links on a sc
 1. Install or update the focus extension using the [Focus with Pip instructions](./accountability.md#demo-knowing-what-is-due-versus-actually-starting). Reload the extension and Boilerplate after replacing an existing unpacked build.
 2. Sign in to the school in that browser and open its calendar. Open the Pip toolbar popup, headed **Import your coursework?**, and choose Brightspace, Canvas, Moodle, Blackboard, or **Another calendar**. Its top row also shows the study-block status and an **Open Pip** link.
 3. Follow the provider steps below and leave the feed dialog or subscription link visible. Choose **Find calendar links on this page**. Opening the popup or changing the provider does not scan; only the Find button starts a scan of the chosen page. If that page cannot be scanned, open the school calendar in a regular tab and try again.
-4. Choose **Review import in Boilerplate** beside a found link. Review its URL, name, and coursework setting in Boilerplate, then explicitly connect it. The popup's Sources link also offers Google Calendar, Apple Calendar, and GitHub connections.
+4. Choose **Review import in Boilerplate** beside a found link. Review its URL, name, and coursework setting in Boilerplate, then explicitly connect it. The popup's Sources link also offers Google Calendar and Apple Calendar connections.
 
 | School calendar | Make the subscription link visible before Find |
 | --- | --- |

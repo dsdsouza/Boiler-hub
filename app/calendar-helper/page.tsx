@@ -12,16 +12,17 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
-export default async function CalendarHelperPage() {
+export default async function CalendarHelperPage({ searchParams }: { searchParams: Promise<{ guide?: string }> }) {
+  const guide = (await searchParams).guide === "schedule" ? "schedule" : "calendar";
   const viewer = await getViewer();
   return <div className="min-h-screen">
-    <SiteHeader variant={viewer ? "app" : "marketing"} current={viewer ? "sources" : undefined} account={viewer ? <AccountMenu /> : <LinkButton plain href="/auth/signin?next=%2Fcalendar-helper" variant="ghost">Sign in</LinkButton>} />
+    <SiteHeader variant={viewer ? "app" : "marketing"} current={viewer ? "sources" : undefined} account={viewer ? <AccountMenu /> : <LinkButton plain href={`/auth/signin?next=${encodeURIComponent(guide === "schedule" ? "/calendar-helper?guide=schedule" : "/calendar-helper")}`} variant="ghost">Sign in</LinkButton>} />
     <main className="mx-auto flex max-w-[860px] flex-col gap-6 px-4 pt-8 pb-16 sm:px-8">
       <div className="bp-arrive">
-        <h1 className="m-0 font-display text-[44px] leading-none sm:text-[56px]">Find your school calendar</h1>
-        <p className="mt-3 mb-0 max-w-[65ch] text-base leading-relaxed text-muted">Copy your school’s calendar subscription link into Boilerplate. No extension required.</p>
+        <h1 className="m-0 font-display text-[44px] leading-none sm:text-[56px]">{guide === "schedule" ? "Find your class schedule" : "Find your school calendar"}</h1>
+        <p className="mt-3 mb-0 max-w-[65ch] text-base leading-relaxed text-muted">{guide === "schedule" ? "Copy your Brightspace subscription link to import class times and deadlines." : "Copy your school’s calendar subscription link into Boilerplate. No extension required."}</p>
       </div>
-      <CalendarHelper signedIn={!!viewer} />
+      <CalendarHelper signedIn={!!viewer} guide={guide} />
     </main>
   </div>;
 }
