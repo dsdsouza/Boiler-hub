@@ -27,6 +27,8 @@ async function call<T>(path: string, method: string, body?: unknown): Promise<T>
   });
   const json = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!res.ok) throw new Error(json?.error ?? `${method} ${path} failed (${res.status})`);
+  // Keep the retained My Boiler reading fresh when onboarding saves or syncs.
+  if (method !== "GET") window.dispatchEvent(new Event("boiler:data-changed"));
   return json as T;
 }
 
