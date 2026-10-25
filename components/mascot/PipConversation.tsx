@@ -6,15 +6,17 @@ import { MAX_CHAT_BODY, MAX_CHAT_MESSAGE, type PipMessage } from "@/lib/pip/cont
 import { PIP_STREAM_TYPE, PipChatError, readPipReply } from "@/lib/pip/stream";
 import type { CourseMaterial, StudyContext } from "@/lib/pip/study";
 import type { StudyProposal } from "@/lib/pip/planning";
+import { observePipUser } from "./pip-auth";
 
 type Conversation = { messages: PipMessage[]; draft: string; busy: boolean; streamingReply: string; error: string | null; proposal: StudyProposal | null };
 const empty = (): Conversation => ({ messages: [], draft: "", busy: false, streamingReply: "", error: null, proposal: null });
-type Session = Conversation & { openRequest: number; openChat: (question: string) => void; sources: CourseMaterial[]; setSources: Dispatch<SetStateAction<CourseMaterial[]>>; setDraft: (value: string) => void; send: (question?: string, study?: StudyContext) => Promise<void>; clear: () => void; dismissProposal: () => void };
+type Session = Conversation & { userId: string | null; openRequest: number; openChat: (question: string) => void; sources: CourseMaterial[]; setSources: Dispatch<SetStateAction<CourseMaterial[]>>; setDraft: (value: string) => void; send: (question?: string, study?: StudyContext) => Promise<void>; clear: () => void; dismissProposal: () => void };
 const Context = createContext<Session | null>(null);
 
 /** One in-memory conversation across pages and dock/inline views. Sign-out or a different account clears it. */
 export function PipConversationProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Conversation>(empty);
+  const [userId, setUserId] = useState<string | null>(null);
   const [sources, setSources] = useState<CourseMaterial[]>([]);
   const [openRequest, setOpenRequest] = useState(0);
   const current = useRef(state);
@@ -30,19 +32,18 @@ export function PipConversationProvider({ children }: { children: ReactNode }) {
     const identify = (id: string | null) => {
       if (identity.current === id) return;
       identity.current = id;
+      setUserId(id);
       clear(); setSources([]); setOpenRequest(0);
     };
-    let mounted = true;
-    void client.auth.getSession().then(({ data }) => { if (mounted) identify(data.session?.user.id ?? null); }).catch(() => { if (mounted) identify(null); });
-    const { data } = client.auth.onAuthStateChange((_event, session) => { if (mounted) identify(session?.user.id ?? null); });
-    return () => { mounted = false; data.subscription.unsubscribe(); active.current?.abort(); };
+    const stop = observePipUser(client.auth, identify);
+    return () => { stop(); active.current?.abort(); };
   }, [clear]);
   const setDraft = useCallback((draft: string) => setState((s) => ({ ...s, draft: draft.slice(0, MAX_CHAT_MESSAGE) })), []);
-  const openChat = useCallback((question: string) => { setDraft(question); setOpenRequest((value) => value + 1); }, [setDraft]);
+  const openChat = useCallback((question: string) => { if (!identity.current) return; setDraft(question); setOpenRequest((value) => value + 1); }, [setDraft]);
   const dismissProposal = useCallback(() => setState((s) => ({ ...s, proposal: null })), []);
   const send = useCallback(async (question?: string, supplied?: StudyContext) => {
     const text = (question ?? current.current.draft).trim();
-    if (!text || text.length > MAX_CHAT_MESSAGE || active.current) return;
+    if (!identity.current || !text || text.length > MAX_CHAT_MESSAGE || active.current) return;
     const study = supplied ?? { sources: material.current };
     const history: PipMessage[] = [...current.current.messages.slice(-10), { role: "user", content: text }];
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -63,7 +64,7 @@ export function PipConversationProvider({ children }: { children: ReactNode }) {
       if (active.current === controller) { active.current = null; setState((s) => ({ ...s, busy: false, streamingReply: "" })); }
     }
   }, []);
-  return <Context.Provider value={{ ...state, openRequest, openChat, sources, setSources, setDraft, send, clear, dismissProposal }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...state, userId, openRequest, openChat, sources, setSources, setDraft, send, clear, dismissProposal }}>{children}</Context.Provider>;
 }
 
 export function usePipConversation() {
@@ -71,3 +72,6 @@ export function usePipConversation() {
   if (!session) throw new Error("Pip chat needs its conversation provider");
   return session;
 }
+
+/** Null while signed out or while the saved session is being verified. */
+export function usePipUser() { return useContext(Context)?.userId ?? null; }
