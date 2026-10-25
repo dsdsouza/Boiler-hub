@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      PLAYWRIGHT_BASE_URL: https://boilerplate.zhomander.workers.dev
+      PLAYWRIGHT_BASE_URL: https://boilerplate.select
       QA_EXPECTED_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
       QA_ACCOUNT_BANK: .qa/credentials-regression.json
       QA_NAMESPACE: regression
@@ -44,18 +44,26 @@ jobs:
       - name: Verify all 32 accounts and privacy contracts
         run: pnpm test:e2e:auth
       - name: Finish live personal workflows and verify restoration
-        run: pnpm test:workflows:live --workers=4
+        run: pnpm test:workflows:live journey.spec.ts --workers=4
         env:
           QA_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
           QA_SUPABASE_ANON_KEY: ${{ secrets.QA_SUPABASE_ANON_KEY }}
           QA_WORKFLOW_REPORT_DIR: qa-runs/live-workflows
           QA_WORKFLOW_RUN_ID: ci-live-${{ github.run_id }}
-          QA_WORKFLOW_COVERAGE: Live Cloudflare personal workflows using the existing synthetic identities; task and status restoration verified.
+          QA_WORKFLOW_COVERAGE: Live boilerplate.select personal workflows and signed-in UI using the existing synthetic identities; task and status restoration verified.
+      - name: Inspect signed-in UI without competing account writes
+        run: pnpm test:workflows:live ui.spec.ts --workers=2
+        env:
+          QA_WORKFLOW_REPORT_DIR: qa-runs/live-ui
+          QA_WORKFLOW_RUN_ID: ci-live-ui-${{ github.run_id }}
+          QA_WORKFLOW_COVERAGE: Live boilerplate.select signed-in UI at desktop, tablet and phone widths; private account diagnostics are not uploaded.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: live-workflow-summary
-          path: qa-runs/live-workflows
+          path: |
+            qa-runs/live-workflows
+            qa-runs/live-ui
           retention-days: 7
       - name: Remove private browser sessions
         if: always()

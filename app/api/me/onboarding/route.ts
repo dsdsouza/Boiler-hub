@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { badRequest, readJson, requireUser, serverError, syncSelf } from "../_lib/http";
 import { supportsSetup, courseworkSources } from "@/app/onboarding/setup";
 import { verifyReview } from "./verification";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isStepValid,
   parseDraft,
@@ -120,8 +121,11 @@ export async function PATCH(request: Request) {
       .eq("id", auth.user.id);
     if (error) return serverError("onboarding profile", error);
   }
-  const { error } = await auth.supabase.auth.updateUser({
-    data: {
+  // The caller was verified above and can update only their own parsed draft.
+  // Auth's public /user endpoint shares a small sign-in rate bucket by IP;
+  // autosaving answers there can throttle unrelated users behind this server.
+  const { error } = await createAdminClient().auth.admin.updateUserById(auth.user.id, {
+    user_metadata: {
       onboarding: draft,
       onboarding_setup: setup ?? null,
       ...(draft.finished ? { full_name: draft.name.trim() } : {}),

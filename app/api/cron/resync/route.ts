@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUser } from "@/lib/google/sync";
 
-// GET /api/cron/resync: daily background resync (vercel.json cron), so boilers stay fresh for
-// people who have not opened the app. Vercel sends `Authorization: Bearer $CRON_SECRET`.
+// GET /api/cron/resync: daily background resync from the Cloudflare scheduled handler,
+// authorized by its `Authorization: Bearer $CRON_SECRET` header.
 //
 // This is a system job, not a user request: the secret is the authorization, and every query
 // syncUser makes is scoped to the one user being synced (CLAUDE.md rule 6 applies per user).

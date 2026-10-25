@@ -4,6 +4,7 @@ import { parseDraft, stepsFor } from "@/app/onboarding/model";
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   updateUser: vi.fn(),
+  adminClient: vi.fn(),
   from: vi.fn(),
   profile: vi.fn(),
   task: vi.fn(),
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   sync: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.adminClient }));
 vi.mock("../_lib/http", async () => {
   const actual =
     await vi.importActual<typeof import("../_lib/http")>("../_lib/http");
@@ -46,6 +48,7 @@ beforeEach(() => {
     table === "profiles" ? { update: mocks.profile } : { upsert: mocks.task },
   );
   mocks.updateUser.mockResolvedValue({ error: null });
+  mocks.adminClient.mockReturnValue({ auth: { admin: { updateUserById: mocks.updateUser } } });
   mocks.sync.mockResolvedValue(school());
   mocks.auth.mockResolvedValue({
     user: { id: "owner-id", user_metadata: { onboarding: { name: "Alex" } } },
@@ -67,6 +70,7 @@ describe("owner-scoped onboarding persistence", () => {
     expect((await GET()).status).toBe(401);
     expect((await send({})).status).toBe(401);
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.adminClient).not.toHaveBeenCalled();
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
   it("loads only verified caller metadata, without caching it", async () => {
@@ -81,7 +85,8 @@ describe("owner-scoped onboarding persistence", () => {
     expect(
       (await send({ ownerId: "victim", name: "Alex", role: "student" })).status,
     ).toBe(200);
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding.ownerId).toBe(
+    expect(mocks.updateUser.mock.calls[0][0]).toBe("owner-id");
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding.ownerId).toBe(
       "owner-id",
     );
     expect(mocks.from).not.toHaveBeenCalled();
@@ -95,9 +100,19 @@ describe("owner-scoped onboarding persistence", () => {
   it("autosaves unfinished and partial answers without changing the profile or creating a task", async () => {
     const draft = { ownerId: "owner-id", name: "A", role: "student", milestone: "Still typing", current: "name" };
     expect((await send(draft, { autosave: true, expectedUserId: "owner-id" })).status).toBe(200);
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding).toMatchObject({ name: "A", milestone: "Still typing", ownerId: "owner-id", finished: false });
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding).toMatchObject({ name: "A", milestone: "Still typing", ownerId: "owner-id", finished: false });
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.sync).not.toHaveBeenCalled();
+  });
+  it("restricts the server metadata writer to parsed answers for the verified owner", async () => {
+    expect((await send({ ownerId: "victim", name: "Alex", role: "professional", email: "other@example.test", app_metadata: { role: "admin" } },
+      { userId: "victim", email_confirm: true })).status).toBe(200);
+    const [id, attributes] = mocks.updateUser.mock.calls[0];
+    expect(id).toBe("owner-id");
+    expect(Object.keys(attributes)).toEqual(["user_metadata"]);
+    expect(Object.keys(attributes.user_metadata).sort()).toEqual(["onboarding", "onboarding_setup"]);
+    expect(attributes.user_metadata.onboarding).not.toHaveProperty("email");
+    expect(attributes.user_metadata.onboarding).not.toHaveProperty("app_metadata");
   });
   it("rejects an autosave if the account changed after the draft was loaded", async () => {
     for (const expectedUserId of ["previous-account", undefined]) {
@@ -145,7 +160,7 @@ describe("owner-scoped onboarding persistence", () => {
     });
     expect(options).toEqual({ onConflict: "id", ignoreDuplicates: false });
     expect(mocks.task.mock.calls[1][0].id).toBe(row.id);
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding.finished).toBe(
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding.finished).toBe(
       true,
     );
   });
@@ -171,13 +186,13 @@ describe("owner-scoped onboarding persistence", () => {
     expect(mocks.updateUser).not.toHaveBeenCalled();
     const extra = { extensionVersion: "0.3.2", deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) };
     expect((await send(draft, extra)).status).toBe(200);
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding_setup.sourceIds).toEqual(["school"]);
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding_setup.sourceIds).toEqual(["school"]);
   });
   it("keeps Finish later unfinished without requiring an extension or course import", async () => {
     const draft = parseDraft({ role: "student", name: "Alex", current: "extension", finished: false });
     expect((await send(draft)).status).toBe(200);
     expect(mocks.sync).not.toHaveBeenCalled();
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding.finished).toBe(false);
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding.finished).toBe(false);
   });
   it("finishes after an explicit extension deferral without claiming Pip is installed", async () => {
     const draft = parseDraft({ role: "other", name: "Josh", goal: "balance", starting: "fresh", finished: true });
@@ -187,7 +202,7 @@ describe("owner-scoped onboarding persistence", () => {
     expect((await send(draft)).status).toBe(400);
     draft.milestone = "Plan my first task";
     expect((await send(draft)).status).toBe(200);
-    expect(mocks.updateUser.mock.calls[0][0].data).toMatchObject({
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata).toMatchObject({
       onboarding: { finished: true, extensionDeferred: true },
       onboarding_setup: { extensionVersion: null, extensionDeferred: true },
     });
@@ -211,6 +226,6 @@ describe("owner-scoped onboarding persistence", () => {
     expect(row).toMatchObject({ owner_id: "owner-id", title: "Write my outline", due_at: extra.deadlineAt, size: "M", source: "manual" });
     expect(options).toEqual({ onConflict: "id", ignoreDuplicates: false });
     expect(mocks.task.mock.calls[1][0].id).toBe(row.id);
-    expect(mocks.updateUser.mock.calls[0][0].data.onboarding).toMatchObject({ current: "recommendation", milestone: "Write my outline", finished: true });
+    expect(mocks.updateUser.mock.calls[0][1].user_metadata.onboarding).toMatchObject({ current: "recommendation", milestone: "Write my outline", finished: true });
   });
 });

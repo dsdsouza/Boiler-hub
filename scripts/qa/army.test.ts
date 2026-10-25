@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseOptions, browserArgs, healthyStats, renderReport } from './army.mjs';
 import { summarizeTests } from './army-reporter.mjs';
+import { isTrustedAccountOrigin } from './origins.mjs';
 
 it('defaults to an isolated local run with two workers', () => {
   expect(parseOptions([])).toMatchObject({ workers: 2, repeat: 1, accounts: false, url: null });
@@ -12,6 +13,14 @@ it('supports explicit parallel repetitions and the trusted live account bank', (
 it('accepts the verified Cloudflare deployment for private account checks', () => {
   expect(parseOptions(['--url', 'https://boilerplate.zhomander.workers.dev/', '--accounts']))
     .toMatchObject({ url: 'https://boilerplate.zhomander.workers.dev', accounts: true });
+});
+it('accepts the verified custom domain and rejects lookalike account destinations', () => {
+  expect(parseOptions(['--url', 'https://boilerplate.select/', '--accounts']))
+    .toMatchObject({ url: 'https://boilerplate.select', accounts: true });
+  for (const origin of ['http://boilerplate.select', 'https://boilerplate.select.evil.test', 'https://evilboilerplate.select', 'https://boilerplate.select:8443']) {
+    expect(isTrustedAccountOrigin(origin)).toBe(false);
+    expect(() => parseOptions(['--url', origin, '--accounts'])).toThrow();
+  }
 });
 it.each([
   ['--workers', '0'], ['--workers', '17'], ['--workers', 'NaN'], ['--repeat', '0'], ['--repeat', '101'],

@@ -15,7 +15,7 @@ async function score(page: Page) { return Number((await pressure(page).getAttrib
 async function inspect(page: Page) {
   return page.evaluate(() => {
     const visible = (e: Element | null | undefined) => {
-      if (!e || !e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') return false;
+      if (!e || !e.getClientRects().length || getComputedStyle(e).visibility === 'hidden' || e.closest('[hidden], [aria-hidden="true"], .sr-only')) return false;
       // Engines can retain layout boxes for closed <details> descendants.
       // Only their summary is actionable until the explorer opens the panel.
       let closed = e.closest('details:not([open])');
@@ -41,9 +41,9 @@ async function inspect(page: Page) {
       note: [...document.querySelectorAll<HTMLInputElement>('input')].some((node) => visible(node) && [...(node.labels ?? [])].some((l) => l.textContent?.trim() === 'Status note (shown to your teams)')),
       task: visible(document.querySelector('#nt')), title: visible(title), titleValue: title?.value.trim(),
       slider: visible(document.querySelector('input[type=range]:not(:disabled)')),
-      links: [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(visible).map((n) => n.href),
+      links: [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].map((node, index) => ({ index, href: node.href, visible: visible(node) })).filter(link => link.visible),
       width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
-      overflow: [...document.querySelectorAll('main p')].filter((e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3).slice(0, 3).map((e) => e.textContent?.slice(0, 90)),
+      overflow: [...document.querySelectorAll('main p')].filter((e) => visible(e) && e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3).slice(0, 3).map((e) => e.textContent?.slice(0, 90)),
       personal: gauge ? number(gauge) : null, today: today?.getAttribute('aria-label'),
       team: card && visible(card) ? number(card.querySelector('[role="img"]')) : null,
       workTeam: visible(document.querySelector('[aria-label="Product Squad boilers"]')),
@@ -69,7 +69,9 @@ for (let walk = 0; walk < walks; walk++) {
     const record = (kind: string, detail: string) => {
       if (!findings.some((f) => f.kind === kind && f.detail === detail)) findings.push({ step: history.length, kind, detail });
     };
-    await page.goto('/');
+    const entry = ['/', '/how', '/calendar-helper', '/how#privacy'][walk % 4];
+    const entryResponse = await page.goto(entry);
+    expect(entryResponse?.status(), 'The exploration entry must be a shipped public page').toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     try {
       for (let step = 0; step < steps; step++) {
@@ -109,9 +111,17 @@ for (let walk = 0; walk < walks; walk++) {
           for (const key of ['Home', 'End', 'ArrowLeft', 'ArrowRight']) offer(`slider:${key}`, () => slider.press(key));
         }
         // Only follow public same-origin links discovered from the current page.
-        for (const href of [...new Set(inventory.links)]) {
-          const url = new URL(href);
-          if (url.origin === new URL(page.url()).origin && ['/', '/onboarding', '/how'].includes(url.pathname)) offer(`navigate:${url.pathname}${url.hash}`, () => page.goto(href));
+        const offeredLinks = new Set<string>();
+        for (const link of inventory.links) {
+          const url = new URL(link.href);
+          if (!offeredLinks.has(url.href) && url.origin === new URL(page.url()).origin && ['/', '/how', '/calendar-helper'].includes(url.pathname)) {
+            offeredLinks.add(url.href);
+            offer(`navigate:${url.pathname}${url.hash}`, async () => {
+              await page.locator('a[href]').nth(link.index).click();
+              await expect(page).toHaveURL(url.href);
+              await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+            });
+          }
         }
         if (step % 8 === 7) {
           for (const width of [320, 390, 768, 1280]) offer(`resize:${width}`, () => page.setViewportSize({ width, height: 900 }));
@@ -159,6 +169,7 @@ for (let walk = 0; walk < walks; walk++) {
       const evidence = { baseSeed, seed, walk, project: info.project.name, steps: history.length, paths: [...paths], uniqueActions: used.size, findings, history };
       await info.attach('exploration.json', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
     }
+    expect(history.length, 'An exploration must complete its entire planned action budget').toBe(steps);
     expect(findings, `Base seed ${baseSeed}, walk ${walk + 1}, ${info.project.name}; see exploration.json for the discovered path`).toEqual([]);
   });
 }

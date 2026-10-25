@@ -33,7 +33,7 @@ export function DeadlineCalendar({ month, selected, today, timeZone, data, loadi
       <div>
         <h1 className="m-0 font-display text-[44px] leading-none tracking-[0.02em] sm:text-[56px]">Calendar</h1>
       </div>
-      <button type="button" className={control} disabled={loading} onClick={onRefresh}>{loading ? "Loading…" : "Refresh"}</button>
+      <button type="button" className={`${control} aria-disabled:cursor-wait aria-disabled:opacity-40`} aria-disabled={loading || undefined} aria-busy={loading} onClick={() => !loading && onRefresh()}>{loading ? "Loading…" : "Refresh"}</button>
     </div>
     <section aria-label="Deadline calendar" className="overflow-hidden rounded-[14px] border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">

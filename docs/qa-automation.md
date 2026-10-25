@@ -6,6 +6,29 @@ The automated suite covers the public site, isolated workload fixtures, signed-o
 
 ## Local QA army
 
+The current custom domain is `https://boilerplate.select`. It serves the same
+verified Supabase project as the existing 32 synthetic accounts. Run discovery
+and complete signed-in journeys there with:
+
+```sh
+pnpm qa:explore --url https://boilerplate.select --accounts --workers 16 --walks 2 --steps 60
+pnpm qa:army --url https://boilerplate.select --accounts --workers 16
+```
+
+Signed-in journeys now also inspect My Boiler, Calendar, Teams and Connect at
+desktop, tablet and phone widths, including 320px and both system color
+preferences. They check actual rendered layout, shared control styles, simple
+text contrast and keyboard focus. Detailed signed-in diagnostics stay in
+`.qa/live-ui`; shared reports contain only scenario names and stopping points.
+The production design stays dark with either system color preference.
+Live personal journeys and read-only UI audits run as separate stages, capped at
+four and two workers respectively. Random signed-in walks cover the app pages;
+the controlled onboarding journey owns Auth metadata writes and restoration.
+Public discovery begins at several public routes, ignores screen-reader-only
+text when measuring visual clipping, and fails if it cannot finish its planned
+action budget. Live Google consent and external account connections still
+require separate verification with suitable provider accounts.
+
 TesterArmy is optional. The repository can run its browser instances on this computer with no TesterArmy account or run quota:
 
 ```sh

@@ -16,7 +16,7 @@ Boilerplate (working name) turns each person's calendar and tasks into a live bo
 
 ## Goals and non-goals
 
-The goal is a live, hosted web app that a judge can open on a custom domain (boilerhub.work) and understand in under 30 seconds, with or without logging in.
+The goal is a live, hosted web app that a judge can open on a custom domain (boilerplate.select) and understand in under 30 seconds, with or without logging in.
 
 **Goals (must ship)**
 
@@ -242,10 +242,10 @@ Calendar events are fetched live and never stored. The database holds people, te
 2. In `/auth/callback`, read `provider_token` and `provider_refresh_token` from the session and store them in `google_tokens` (Supabase does not refresh Google tokens for you).
 3. `lib/google/client.ts` refreshes the access token through `https://oauth2.googleapis.com/token` when it is within 5 minutes of expiry.
 4. Fetch `calendars/primary/events` with `timeMin=now`, `timeMax=now+7d`, `singleEvents=true`, `orderBy=startTime`; normalize to `LoadItem`.
-5. Sync on login, on the Refresh button, after task changes, when My Boiler loads with a snapshot older than 30 minutes, and once a day for everyone via the Vercel cron `GET /api/cron/resync` (authorized by `Authorization: Bearer $CRON_SECRET`).
+5. Sync on login, on the Refresh button, after task changes, when My Boiler loads with a snapshot older than 30 minutes, and once a day for everyone via the Cloudflare scheduled handler `GET /api/cron/resync` (authorized by `Authorization: Bearer $CRON_SECRET`).
 6. If Google is unreachable for any reason other than a revoked or expired grant, the result is tasks-only with a "temporarily unavailable" banner and the snapshot is not saved.
 
-**Google Cloud setup.** OAuth consent screen in Testing mode; add every teammate and any judge emails as test users (limit 100); authorized redirect URI is the Supabase callback; add `https://boilerhub.work` to authorized origins (`www.boilerhub.work` and `boiler-hub.vercel.app` 308-redirect to it). Testing-mode refresh tokens expire after 7 days, which is fine for the event.
+**Google Cloud setup.** OAuth consent screen in Testing mode; add every teammate and any judge emails as test users (limit 100); authorized redirect URI is the Supabase callback; add `https://boilerplate.select` to authorized origins. Testing-mode refresh tokens expire after 7 days, which is fine for the event.
 
 **Privacy promise (for the pitch and How it works).** We never store what is on your calendar. Teams see a number, a zone and your status, only if you choose. You can hide from any team at any time.
 
@@ -261,17 +261,17 @@ All worktrees share one Supabase project, one Google OAuth client and one `.env.
 | `GOOGLE_CLIENT_ID` | Google Cloud, Credentials, OAuth client (web) | No |
 | `GOOGLE_CLIENT_SECRET` | Same OAuth client | No |
 | `TOKEN_ENCRYPTION_KEY` | Generate: `openssl rand -base64 32` | No |
-| `CRON_SECRET` | Generate: `openssl rand -hex 32`; Vercel sends it to the daily cron | No |
+| `CRON_SECRET` | Generate: `openssl rand -hex 32`; the Cloudflare scheduled handler supplies it to the daily cron | No |
 
-**Site URL.** No site-URL variable is needed: sign-in, the auth callback and sign-out build their redirects from the request's own origin. Production is `https://boilerhub.work`; `www.boilerhub.work` and `boiler-hub.vercel.app` redirect to it permanently (308), so sign-in cookies live on one host. Supabase's Site URL and allowed redirect URLs, and the Google OAuth client's authorized origins, list `https://boilerhub.work`.
+**Site URL.** No site-URL variable is needed: sign-in, the auth callback and sign-out build their redirects from the request's own origin. Production is `https://boilerplate.select`. Supabase's Site URL and allowed redirect URLs, and the Google OAuth client's authorized origins, include that origin. See `docs/CLOUDFLARE.md` for the Worker fallback URL.
 
 **Local ports.** Engine on 3000, UI on 3001, Teams on 3002. Each `http://localhost:300X/auth/callback` must be in Supabase's allowed redirect URLs and each origin in the Google OAuth client.
 
-**Production.** The same variables go into Vercel project settings; `vercel env pull .env.local` regenerates the local file if it is lost.
+**Production.** Runtime variables and secrets are configured on the Cloudflare Worker. Only the two public Supabase build variables are also GitHub Actions secrets. See `docs/CLOUDFLARE.md` for deployment and recovery.
 
 ## Stack, repo layout and contracts
 
-Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, deployed on Vercel with boilerhub.work pointed at it. The shared types below are written first and frozen, so parallel worktrees can build against them without colliding.
+Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, deployed on Cloudflare Workers through OpenNext at boilerplate.select. The shared types below are written first and frozen, so parallel worktrees can build against them without colliding.
 
 | Layer | Choice | Why |
 | --- | --- | --- |
@@ -281,7 +281,7 @@ Next.js (App Router, TypeScript) with Tailwind, Supabase for auth and Postgres, 
 | Auth and DB | Supabase (Google provider, Postgres, RLS) | Auth and DB in about an hour |
 | Calendar | Google Calendar REST via `fetch` | No SDK needed for one endpoint |
 | Tests | Vitest for `lib/pressure` | Engine correctness without UI |
-| Hosting | Vercel, custom domain boilerhub.work from GoDaddy (CNAME and A records) | Fastest deploy; open question on sponsor rules below |
+| Hosting | Cloudflare Workers with OpenNext, custom domain boilerplate.select | GitHub Actions deploys verified main revisions |
 
 **Repo layout**
 
@@ -423,7 +423,7 @@ Do:
 7. Write CLAUDE.md with the rules in the PRD (frozen types, owned folders, typecheck and test before commit, commit prefixes) and a short "Track ownership" table: engine owns lib/pressure, lib/google, app/api/me, app/api/sync, app/api/tasks, app/api/event-weights; ui owns components/boiler, components/ui, app/page.tsx, app/boiler, app/how, app/demo; teams owns app/teams, app/api/teams, lib/data/teams.ts.
 8. .env.example listing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY. (NEXT_PUBLIC_SITE_URL was in the original list; it was removed later because nothing reads it: auth uses the request origin.)
 
-Done when: pnpm build passes, sign-in with Google works locally and a google_tokens row appears, every route renders its placeholder, and the app is deployed to Vercel. Ask me before choosing anything the PRD does not specify.
+Done when: pnpm build passes, sign-in with Google works locally and a google_tokens row appears, every route renders its placeholder, and the app is deployed to Cloudflare Workers. Ask me before choosing anything the PRD does not specify.
 ```
 
 **A. Engine and Google (`track/engine`)**
@@ -508,7 +508,7 @@ The demo is 3 minutes, built around one moment: a lead previews an assignment an
 
 **Open questions**
 
-- [ ] Does the GoDaddy sponsor prize require GoDaddy hosting, or is a GoDaddy domain pointed at Vercel enough?
+- [ ] Does the GoDaddy sponsor prize require GoDaddy hosting, or is a GoDaddy domain pointed at Cloudflare enough?
 - [ ] Final product name and domain (Boilerplate, Redline, Steamworks).
 - [ ] Can we get judge emails before judging to add as Google test users?
 

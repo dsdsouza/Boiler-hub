@@ -13,6 +13,7 @@ export type UserClient = Awaited<ReturnType<typeof createClient>>;
 export async function requireUser(): Promise<{ user: User; supabase: UserClient } | NextResponse> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
+  if (isRateLimited(error)) return rateLimited();
   if (error || !data.user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   return { user: data.user, supabase };
 }
@@ -27,8 +28,19 @@ export function badRequest(message: string) {
 }
 
 export function serverError(where: string, e: unknown) {
+  if (isRateLimited(e)) return rateLimited();
   console.error(`${where} failed`, e);
   return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+}
+
+function isRateLimited(error: unknown) {
+  return Boolean(error && typeof error === "object" &&
+    (("status" in error && error.status === 429) || ("code" in error && error.code === "over_request_rate_limit")));
+}
+
+function rateLimited() {
+  return NextResponse.json({ error: "Too many requests. Please wait a minute, then try again." },
+    { status: 429, headers: { "Retry-After": "60", "Cache-Control": "no-store" } });
 }
 
 /** Parsed JSON object body, or null if the body is not a JSON object. */

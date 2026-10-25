@@ -7,6 +7,7 @@ import { PipThinking } from "./PipThinking";
 import { usePipConversation } from "./PipConversation";
 import { PipStudyPlan } from "./PipStudyPlan";
 import type { StudyProposal } from "@/lib/pip/planning";
+import { Card } from "@/components/ui/Card";
 
 const EMPTY_MESSAGES: PipMessage[] = [];
 const SUGGESTIONS = [
@@ -52,7 +53,7 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
   }, [messages, busy, streamingReply, expanded]);
 
   return <div className="pip-chat-body flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain">
-    <div className="pip-chat-window flex min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-surface">
+    <Card className="pip-chat-window flex min-h-0 flex-col overflow-hidden">
       {header}
       <div className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain px-2">
         <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="flex shrink-0 flex-col gap-2">
@@ -80,19 +81,15 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
       </div>
       <button type="button" aria-label={expanded ? "Collapse conversation" : "Expand conversation"} aria-controls={conversationId} aria-expanded={expanded}
         onClick={() => { followHistory.current = true; setExpanded((value) => !value); }}
-        className="bp-control mx-2 mt-2 mb-1 flex min-h-11 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent text-[11px] leading-none text-muted hover:bg-surface-2 hover:text-fg">
-        <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-180" : undefined}><path d="m3 7 5-5 5 5" /></svg>
-        <span>{expanded ? "Collapse" : "Expand"}</span>
+        className="bp-control mx-auto mt-2 mb-1 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:bg-surface-2 hover:text-fg">
+        <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-180" : undefined}><path d="m3 3 5 5 5-5" /></svg>
       </button>
-    </div>
+    </Card>
     {proposal && <div className="rounded-xl bg-surface p-3"><PipStudyPlan key={`${proposal.taskId}:${proposal.startAt}`} proposal={proposal} ready={remindersReady} replacing={replacing} onAccept={onAcceptProposal} onDismiss={dismissProposal} /></div>}
-    {(hasReply || busy) && <div role="status" aria-label="Pip's reply" aria-live="polite" aria-atomic="true" className="pip-speech-bubble">
-      <svg className="pip-cloud-shape" viewBox="0 0 300 180" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M37 56C17 34 44 12 68 26C78 0 116 0 132 20C156 0 189 7 197 29C223 13 254 29 253 53C283 48 302 73 286 96C307 121 287 148 259 145C253 170 219 181 200 162C179 184 143 178 132 161C107 181 74 172 70 152C41 164 15 143 24 121C0 114 0 80 20 70C14 55 26 46 37 56Z" />
-      </svg>
+    {(hasReply || busy) && <Card role="status" aria-label="Pip's reply" aria-live="polite" aria-atomic="true" className="pip-speech-bubble flex min-h-0 shrink-[2] flex-col p-3 text-body">
       <div ref={log} onScroll={(event) => { const view = event.currentTarget; followReply.current = view.scrollHeight - view.scrollTop - view.clientHeight < 40; }} className="pip-speech-content max-h-24 overflow-y-auto overscroll-contain">
-        {hasReply ? <p className="m-0 text-[13px] leading-relaxed whitespace-pre-wrap wrap-anywhere"><span className="sr-only">Pip: </span>{reply}{busy && <span aria-hidden="true" className="ml-1 inline-block h-3 w-1 rounded-sm bg-soot motion-safe:animate-pulse" />}</p> : <PipThinking />}
+        {hasReply ? <p className="m-0 text-[13px] leading-relaxed whitespace-pre-wrap wrap-anywhere"><span className="sr-only">Pip: </span>{reply}{busy && <span aria-hidden="true" className="ml-1 inline-block h-3 w-1 rounded-sm bg-current motion-safe:animate-pulse" />}</p> : <PipThinking />}
       </div>
-    </div>}
+    </Card>}
   </div>;
 }

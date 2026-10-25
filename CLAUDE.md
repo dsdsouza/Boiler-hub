@@ -2,7 +2,7 @@
 
 Boilerplate: a hackathon web app that turns calendars and tasks into a live pressure gauge. The full spec is in `docs/PRD.md`. Read it before starting.
 
-Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, Supabase (`@supabase/ssr`), Vitest, pnpm, Vercel.
+Stack: Next.js 15 (App Router, TypeScript strict), Tailwind v4, Framer Motion, Supabase (`@supabase/ssr`), Vitest, pnpm, Cloudflare Workers (OpenNext).
 
 ## Rules
 

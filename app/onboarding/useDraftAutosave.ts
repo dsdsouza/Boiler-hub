@@ -23,11 +23,15 @@ export function useDraftAutosave(draft: OnboardingDraft, enabled: boolean) {
   const queuedCount = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedOwner = useRef<string | null>(null);
+  const cooldown = useRef({ ownerId: null as string | null, until: 0 });
   active.current = { draft, enabled };
 
   const track = useCallback((next: OnboardingDraft) => {
     // A pagehide can happen before React renders the last input event.
     active.current.draft = next;
+    // Some engines can discard pagehide as well as its keepalive request.
+    // Back up the input event itself before any navigation can leave the page.
+    if (active.current.enabled && next.ownerId && !next.finished) rememberDraftBackup(next);
   }, []);
 
   const cancelTimer = useCallback(() => {
@@ -50,6 +54,8 @@ export function useDraftAutosave(draft: OnboardingDraft, enabled: boolean) {
     const waiting = queuedCount.current++ > 0;
     const run = async () => {
       try {
+        if (cooldown.current.ownerId === next.ownerId && cooldown.current.until > Date.now())
+          throw new Error("Too many requests. Please wait a minute, then try again.");
         const response = await fetch("/api/me/onboarding", {
           method: "PATCH",
           headers: { "content-type": "application/json" },
@@ -58,10 +64,15 @@ export function useDraftAutosave(draft: OnboardingDraft, enabled: boolean) {
           keepalive: true,
         });
         if (!response.ok) {
+          if (response.status === 429) {
+            const seconds = Number(response.headers.get("Retry-After") || 60);
+            cooldown.current = { ownerId: next.ownerId, until: Date.now() + (Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, 3600) : 60) * 1000 };
+          }
           const body = await response.json().catch(() => null);
           throw new Error(body?.error ?? "Your answers could not be saved. Try again.");
         }
         confirmed.current = key;
+        if (cooldown.current.ownerId === next.ownerId) cooldown.current.until = 0;
         clearDraftBackup(next);
         if (pending.current === key) pending.current = null;
         if (active.current.enabled && active.current.draft.ownerId === next.ownerId) {
@@ -102,10 +113,11 @@ export function useDraftAutosave(draft: OnboardingDraft, enabled: boolean) {
     if (!pending.current && confirmed.current === key) { clearDraftBackup(draft); setState("saved"); return; }
     if (draft.finished) return;
     if (pending.current === key) return;
-    setState("saving");
+    const remaining = cooldown.current.ownerId === draft.ownerId ? Math.max(0, cooldown.current.until - Date.now()) : 0;
+    setState(remaining ? "error" : "saving");
     // The first account-bound draft (including the pre-signup answers) goes
     // straight to Supabase. Only subsequent typing is briefly coalesced.
-    timer.current = setTimeout(flush, immediate ? 0 : 400);
+    timer.current = setTimeout(flush, Math.max(remaining, immediate ? 0 : 400));
     return cancelTimer;
   }, [draft, enabled, cancelTimer, flush]);
 

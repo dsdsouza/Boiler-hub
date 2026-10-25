@@ -50,3 +50,32 @@ test('a failed month load can recover and distinguish an empty calendar', async 
   await expect(page.getByRole('region', { name: 'Deadline calendar', exact: true }).getByRole('alert')).toHaveCount(0);
   await expect(page.getByText('No deadlines on this day!', { exact: true })).toBeVisible();
 });
+
+test('calendar refresh retains keyboard focus while loading and rejects duplicate activation', async ({ page }) => {
+  let hold = false, requests = 0;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/me/boiler', route => route.fulfill({ status: 401, json: { error: 'fixture' } }));
+  await page.route('**/api/calendar/month?**', async route => {
+    requests++;
+    if (hold) await pending;
+    await route.fulfill({ json: { deadlines: [], unavailableSources: 0, truncated: false } });
+  });
+  try {
+    await page.goto('/qa-components?mode=calendar');
+    const refresh = page.getByRole('button', { name: 'Refresh', exact: true });
+    await expect(refresh).toBeEnabled();
+    await refresh.focus();
+    const before = requests; hold = true;
+    await refresh.press('Enter');
+    const loading = page.getByRole('button', { name: 'Loading…', exact: true });
+    await expect(loading).toBeFocused();
+    await expect(loading).toHaveAttribute('aria-busy', 'true');
+    await expect(loading).toHaveAttribute('aria-disabled', 'true');
+    await loading.press('Enter');
+    expect(requests).toBe(before + 1);
+    release();
+    await expect(refresh).toBeFocused();
+    await expect(refresh).toHaveAttribute('aria-busy', 'false');
+  } finally { release(); }
+});
