@@ -55,7 +55,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-14 sm:pb-20">
           <div className="flex flex-col gap-6">
             <h1 className={`${display} bp-arrive text-[clamp(48px,6.4vw,80px)] leading-[0.98] tracking-[0.01em]`}>
-              Deadlines pile up. Distractions push you to the red line.
+              Deadlines pile up. Distractions push you to <span className="text-redline-ink">the red line</span>.
             </h1>
             <p className="bp-arrive bp-arrive-next m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
               Boilerplate helps you manage homework, exams and study time before the pressure builds. Pip turns what’s due into a plan and nudges you
