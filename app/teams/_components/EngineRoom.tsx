@@ -3,6 +3,7 @@
 import { Disclosure } from "@/components/ui/Disclosure";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LinkButton } from "@/components/ui/Button";
+import { ZONE_FILL } from "@/components/ui/zones";
 import type { AssignmentPreview, Status, Zone } from "@/lib/types";
 import type { EngineRoomView } from "@/lib/data/teams";
 import { movedUp } from "@/app/api/teams/_lib/assignment";
@@ -15,9 +16,10 @@ import { TeamMetadata } from "./TeamMetadata";
 const ZONES: Zone[] = ["redline", "hot", "working", "cool"];
 const STATUSES: Status[] = ["open", "heads_down", "running_hot", "away"];
 
-function FilterCheckbox({ checked, indeterminate = false, onChange, children }: {
+function FilterCheckbox({ checked, indeterminate = false, color = C.brass, onChange, children }: {
   checked: boolean;
   indeterminate?: boolean;
+  color?: string;
   onChange: (checked: boolean) => void;
   children: React.ReactNode;
 }) {
@@ -27,7 +29,7 @@ function FilterCheckbox({ checked, indeterminate = false, onChange, children }: 
     <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium" style={{ color: C.text2 }}>
       <input ref={input} type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)}
         className="h-4 w-4 shrink-0 cursor-pointer outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ accentColor: C.brass, outlineColor: C.brassLight }} />
+        style={{ accentColor: color, outlineColor: C.brassLight }} />
       {children}
     </label>
   );
@@ -101,11 +103,11 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
       <div className="flex flex-col gap-2">
         <div role="group" aria-label="Filter by zone" className="flex flex-wrap gap-x-5 gap-y-1">
           <FilterCheckbox checked={zoneFilter.length === ZONES.length} indeterminate={zoneFilter.length > 0 && zoneFilter.length < ZONES.length} onChange={checked => setZoneFilter(checked ? ZONES : [])}>
-            All · {tiles.length}
+            <span>All <span className="tabular-nums" style={{ color: C.muted }}>({tiles.length})</span></span>
           </FilterCheckbox>
           {ZONES.map((z) => (
-            <FilterCheckbox key={z} checked={zoneFilter.includes(z)} onChange={checked => setZoneFilter(current => checked ? [...current, z] : current.filter(value => value !== z))}>
-              {ZONE_LABEL[z]} · {zoneCount(z)}
+            <FilterCheckbox key={z} color={ZONE_FILL[z]} checked={zoneFilter.includes(z)} onChange={checked => setZoneFilter(current => checked ? [...current, z] : current.filter(value => value !== z))}>
+              <span>{ZONE_LABEL[z]} <span className="tabular-nums" style={{ color: C.muted }}>({zoneCount(z)})</span></span>
             </FilterCheckbox>
           ))}
         </div>
@@ -114,8 +116,7 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
             Any status
           </FilterCheckbox>
           {STATUSES.map((s) => (
-            <FilterCheckbox key={s} checked={statusFilter.includes(s)} onChange={checked => setStatusFilter(current => checked ? [...current, s] : current.filter(value => value !== s))}>
-              <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_META[s].color }} />
+            <FilterCheckbox key={s} color={STATUS_META[s].color} checked={statusFilter.includes(s)} onChange={checked => setStatusFilter(current => checked ? [...current, s] : current.filter(value => value !== s))}>
               {STATUS_META[s].label}
             </FilterCheckbox>
           ))}
