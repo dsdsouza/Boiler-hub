@@ -66,7 +66,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                   Open My Boiler
                 </LinkButton>
               ) : (
-                <GoogleSignInButton href={signin} className="max-sm:w-full" />
+                typeof params.next === "string" && next !== "/onboarding" ? <GoogleSignInButton href={signin} className="max-sm:w-full" /> : <LinkButton href="/onboarding" variant="secondary" size="lg" className="max-sm:w-full">Set up my boiler</LinkButton>
               )}
             </div>
           </div>

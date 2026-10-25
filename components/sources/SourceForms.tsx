@@ -212,7 +212,7 @@ const TOKEN_DOCS_URL =
   "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token";
 
 /** Paste a read-only GitHub personal access token. Used on /settings/sources and in onboarding. */
-export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: AddedSource) => void; idPrefix?: string }) {
+export function GitHubTokenForm({ onAdded, idPrefix = "gh", onBusyChange }: { onAdded?: (r: AddedSource) => void; idPrefix?: string; onBusyChange?: (busy: boolean) => void }) {
   const [token, setToken] = useState("");
   const tokenField = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -223,6 +223,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
     e.preventDefault();
     if (busy) return;
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     setDone(null);
     try {
@@ -235,6 +236,7 @@ export function GitHubTokenForm({ onAdded, idPrefix = "gh" }: { onAdded?: (r: Ad
       setError((err as Error).message);
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
 

@@ -46,6 +46,8 @@ jobs:
       - name: Finish live personal workflows and verify restoration
         run: pnpm test:workflows:live --workers=4
         env:
+          QA_SUPABASE_URL: https://dtnjfycvhbbhzfkfnfio.supabase.co
+          QA_SUPABASE_ANON_KEY: ${{ secrets.QA_SUPABASE_ANON_KEY }}
           QA_WORKFLOW_REPORT_DIR: qa-runs/live-workflows
           QA_WORKFLOW_RUN_ID: ci-live-${{ github.run_id }}
           QA_WORKFLOW_COVERAGE: Live Cloudflare personal workflows using the existing synthetic identities; task and status restoration verified.

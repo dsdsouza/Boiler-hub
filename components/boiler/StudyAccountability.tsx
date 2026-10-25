@@ -136,7 +136,7 @@ export function StudyAccountability({
     setError("");
   };
   return (
-    <Card
+    <Card id="study-accountability"
       as="section"
       aria-labelledby={`${id}-heading`}
       className="px-4 py-5 sm:px-7 sm:py-6"

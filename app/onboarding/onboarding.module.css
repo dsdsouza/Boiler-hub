@@ -1,0 +1,333 @@
+.shell {
+  min-height: 100svh;
+  background: var(--bg);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1240px;
+  margin: auto;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--line);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 680px);
+  justify-content: center;
+  gap: clamp(48px, 7vw, 112px);
+  max-width: 1160px;
+  margin: auto;
+  padding: 48px 32px 32px;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-top: 20px;
+}
+.phases {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.phases li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.phases .phaseActive {
+  color: var(--text);
+}
+.phaseDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rivet);
+  border-radius: 50%;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.phaseActive .phaseDot {
+  border-color: var(--brass-ink);
+  color: var(--brass-ink);
+}
+.journey {
+  min-width: 0;
+}
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 28px;
+}
+.progressTrack {
+  height: 3px;
+  background: var(--line);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: var(--brass-ink);
+  transition: width 300ms var(--ease-ui);
+}
+.viewport {
+  height: clamp(440px, calc(100svh - 310px), 650px);
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+.step {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rivet) transparent;
+  padding: 0 6px 8px 0;
+}
+.stepContent {
+  animation: arrive 260ms var(--ease-ui);
+}
+.title {
+  margin: 0;
+  max-width: 17ch;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 3.9vw, 52px);
+  font-weight: 400;
+  line-height: 1.03;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+  outline: none !important;
+}
+.body {
+  font-size: 15px;
+}
+.intro {
+  margin: 0 0 24px;
+  max-width: 60ch;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.choice {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 80px;
+  padding: 15px 18px;
+  border: 1px solid var(--control);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms var(--ease-ui),
+    background-color 140ms var(--ease-ui);
+}
+.choice > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.choice strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.choice > span > span {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.choice:hover {
+  border-color: var(--brass-ink);
+  background: var(--surface-2);
+}
+.selected {
+  border-color: var(--brass-ink);
+  background: var(--surface-2);
+}
+.radio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 1px solid var(--control);
+  border-radius: 50%;
+  color: var(--brass-ink);
+}
+.selected .radio {
+  border-color: var(--brass-ink);
+}
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  border-block: 1px solid var(--line);
+  color: var(--cool-ink);
+  font-size: 15px;
+}
+.controls {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.stepNav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0;
+  margin: 18px auto 0;
+}
+.stepDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  max-width: 28px;
+  min-width: 16px;
+  flex: 1;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.stepDot span {
+  width: 5px;
+  height: 5px;
+  background: var(--rivet);
+  border-radius: 50%;
+  transition: transform 150ms var(--ease-ui);
+}
+.stepDot:disabled {
+  cursor: not-allowed;
+}
+.stepDot:disabled span {
+  background: var(--line);
+}
+.stepDot[aria-current] span {
+  background: var(--brass-ink);
+  transform: scale(1.6);
+}
+.loading {
+  min-height: 400px;
+  padding-top: 40px;
+  color: var(--text-2);
+}
+@keyframes arrive {
+  from {
+    transform: translateY(12px);
+    opacity: 0.65;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 680px);
+    gap: 24px;
+    padding-top: 24px;
+  }
+  .sidebar {
+    padding: 0;
+    gap: 0;
+  }
+  .phases {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .phases li {
+    gap: 8px;
+    font-size: 12px;
+  }
+  .phaseDot {
+    width: 24px;
+    height: 24px;
+  }
+  .viewport {
+    height: clamp(440px, calc(100svh - 330px), 650px);
+  }
+}
+@media (max-width: 639px) {
+  .header {
+    padding: 12px 20px;
+  }
+  .layout {
+    gap: 22px;
+    padding: 22px 20px 24px;
+  }
+  .phases {
+    gap: 8px;
+  }
+  .phases li {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .viewport {
+    height: max(440px, calc(100svh - 390px));
+  }
+  .title {
+    font-size: 38px;
+  }
+  .progress {
+    padding-bottom: 24px;
+  }
+  .choice {
+    min-height: 78px;
+    padding: 14px;
+    gap: 12px;
+  }
+  .controls {
+    padding-top: 18px;
+  }
+  .stepNav {
+    margin-top: 16px;
+  }
+  .stepDot {
+    width: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stepContent {
+    animation: none;
+  }
+  .progressTrack span,
+  .choice,
+  .stepDot span {
+    transition: none;
+  }
+}

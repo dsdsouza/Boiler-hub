@@ -65,7 +65,10 @@ describe("distributable extension", () => {
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.permissions).toEqual(["activeTab","scripting"]);
     expect(manifest.host_permissions).toBeUndefined();
-    expect(manifest.content_scripts).toBeUndefined();
+    expect(manifest.content_scripts).toHaveLength(1);
+    expect(manifest.content_scripts[0].js).toEqual(["bridge.js"]);
+    expect(manifest.content_scripts[0].matches).not.toContain("<all_urls>");
+    expect(manifest.content_scripts[0].matches).toContain("https://boilerhub.work/*");
     expect(manifest.background).toBeUndefined();
     expect(manifest.content_security_policy.extension_pages).toContain("connect-src 'none'");
   });

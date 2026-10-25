@@ -355,3 +355,8 @@ html { scrollbar-color: #6b5a44 #15120e; scrollbar-width: thin; }
 @media (prefers-reduced-motion: reduce) {
   .bp-progress-fill { transition: background-color 100ms ease-out; }
 }
+
+/* The guided setup owns its Pip; keep the floating companion clear of its controls. */
+body:has([data-onboarding]) [data-pip-companion] {
+  display: none;
+}
