@@ -12,7 +12,7 @@ const FEED = readFileSync(join(__dirname, "__fixtures__", "icloud.ics"), "utf8")
 const SOURCE = "33333333-3333-4333-8333-333333333333";
 const NOW = new Date("2026-10-26T12:00:00Z");
 const LINK = "webcal://p123-caldav.icloud.com/published/2/example-calendar-token";
-const classify = (text = FEED) => classifyIcs(text, { sourceId: SOURCE, coursework: false, now: NOW, timeZone: "UTC" });
+const classify = (text = FEED) => classifyIcs(text, { sourceId: SOURCE, coursework: false, now: NOW, timeZone: "UTC", feedUrl: LINK });
 
 describe("Apple Calendar links", () => {
   it.each([LINK, LINK.replace("webcal:", "https:"), LINK.replace("webcal:", "webcals:"), `  ${LINK}  `])(
@@ -58,15 +58,22 @@ describe("iCloud event ingestion (synthetic Apple-format fixture)", () => {
     expect(items.find((i) => i.title === "Planning, review and next steps")).toMatchObject({
       kind: "event", source: "ics", start: "2026-10-27T18:00:00.000Z", end: "2026-10-27T19:00:00.000Z",
     });
-    for (const title of ["Birthday", "Optional catch-up", "Cancelled catch-up"]) {
+    for (const title of ["Birthday", "Assignment due", "Optional catch-up", "Cancelled catch-up"]) {
       expect(items.some((i) => i.title === title)).toBe(false);
     }
-    expect(items.find((i) => i.title === "Assignment due")).toMatchObject({
-      kind: "task", due: "2026-11-02T04:59:00.000Z", size: "S",
-    });
+    expect(items.every((item) => item.kind === "event")).toBe(true);
     const result = computePressure(items, NOW);
-    expect(result.counts).toMatchObject({ meetings: 7, meetingHours: 4.5, tasksDue: 1 });
+    expect(result.counts).toMatchObject({ meetings: 7, meetingHours: 4.5, tasksDue: 0 });
     expect(result.score).toBeGreaterThan(0);
+  });
+
+  it("keeps timed deadline titles as events and never turns an iCloud feed into coursework tasks", () => {
+    const text = FEED.replace("Planning\\, review and next steps", "Project report due");
+    for (const coursework of [false, true]) {
+      const items = classifyIcs(text, { sourceId: SOURCE, coursework, now: NOW, timeZone: "UTC", feedUrl: LINK });
+      expect(items.find(item => item.title === "Project report due")).toMatchObject({ kind: "event", start: "2026-10-27T18:00:00.000Z", end: "2026-10-27T19:00:00.000Z" });
+      expect(items.filter(item => item.kind === "task")).toEqual([]);
+    }
   });
 
   it("fetches the normalized iCloud link through the existing read-only adapter", async () => {

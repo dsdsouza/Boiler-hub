@@ -71,7 +71,6 @@ const TITLES: Record<StepId, string> = {
   milestone: "What’s one thing you want to finish?",
   deadline: "When would you like to finish it?",
   status: "How are you showing up today?",
-  sources: "Anything else on your plate?",
   team: "Have a team invite?",
   recommendation: "A starting point, just for you.",
   ready: "Your boiler is ready.",
@@ -80,7 +79,6 @@ const OPTIONAL: StepId[] = [
   "calendar",
   "milestone",
   "deadline",
-  "sources",
   "team",
 ];
 const field =
@@ -563,7 +561,7 @@ export function OnboardingClient({
             <p className={styles.intro}>
               {draft.role === "student"
                 ? "Use Pip on your school calendar to find its subscription link. Choose All Calendars and Tasks in Brightspace, then Use in onboarding in Pip. You can also paste the feed below."
-                : "Google Calendar connects when you sign in. Add Apple Calendar or another subscription here if your work lives elsewhere."}
+                : "Google Calendar connects when you sign in. Add coursework or another calendar feed here to bring the rest of your schedule into view."}
             </p>
             {syncing && (
               <FlameLoader label="Reading your week…" />
@@ -586,11 +584,16 @@ export function OnboardingClient({
             {boiler?.calendar === "unavailable" && (
               <CalendarUnavailableBanner />
             )}
+            {!!boiler?.sources?.length && (
+              <p className="text-cool-ink">
+                Connected: {boiler.sources.map((s) => s.label).join(", ")}.
+              </p>
+            )}
             <Disclosure
               onToggle={revealPanel}
               open={pendingFeed ? true : undefined}
               className="mt-5"
-              label={draft.role === "student" ? "Add my school calendar" : "Add Apple Calendar or another feed"}
+              label={draft.role === "student" ? "Add my school calendar or another feed" : "Add a calendar feed"}
             >
               <CalendarFeedForm
                 key={pendingFeed ?? "manual"}
@@ -602,6 +605,9 @@ export function OnboardingClient({
                 onBusyChange={setSourceBusy}
                 onAdded={sourceAdded}
               />
+              <p className="mt-5 mb-0 text-sm text-muted">
+                Titles and dates are fetched live. Private subscription links are stored encrypted.
+              </p>
             </Disclosure>
             {draft.role === "student" && (
               <div className="mt-5 border-t border-line pt-4">
@@ -713,29 +719,6 @@ export function OnboardingClient({
               onChange={(status, note) => patch({ status, note })}
               onNoteChange={(note) => patch({ note })}
             />
-          </>
-        );
-        break;
-      case "sources":
-        content = (
-          <>
-            <p className={styles.intro}>
-              Connect coursework or Apple Calendar to bring more of your
-              work together. You can always add these later in Connect.
-            </p>
-            {boiler?.sources?.length ? (
-              <p className="text-cool-ink">
-                Connected: {boiler.sources.map((s) => s.label).join(", ")}.
-              </p>
-            ) : null}
-            <CalendarFeedForm
-              idPrefix="ob-feed"
-              onAdded={sourceAdded}
-              onBusyChange={setSourceBusy}
-            />
-            <p className="mt-5 mb-0 text-sm text-muted">
-              Titles and dates are fetched live. Private subscription links are stored encrypted.
-            </p>
           </>
         );
         break;
