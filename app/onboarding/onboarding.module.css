@@ -26,39 +26,6 @@
   gap: 40px;
   padding-top: 20px;
 }
-.phases {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.phases li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--muted);
-}
-.phases .phaseActive {
-  color: var(--text);
-}
-.phaseDot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--rivet);
-  border-radius: 50%;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.phaseActive .phaseDot {
-  border-color: var(--brass-ink);
-  color: var(--brass-ink);
-}
 .journey {
   min-width: 0;
 }
@@ -83,7 +50,6 @@
 .viewport {
   height: clamp(440px, calc(100svh - 310px), 650px);
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
   overscroll-behavior: contain;
   scrollbar-width: none;
 }
@@ -91,12 +57,7 @@
   display: none;
 }
 .step {
-  height: 100%;
-  overflow-y: auto;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rivet) transparent;
+  min-height: 100%;
   padding: 0 6px 8px 0;
 }
 .stepContent {
@@ -111,10 +72,29 @@
   line-height: 1.03;
   letter-spacing: 0.02em;
   text-wrap: balance;
+  overflow-wrap: anywhere;
   outline: none !important;
 }
 .body {
   font-size: 15px;
+}
+.body :is(input, textarea):focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--text-2);
+}
+.skipDialog {
+  width: min(440px, calc(100% - 40px));
+  max-height: calc(100svh - 40px);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--control);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.skipDialog::backdrop {
+  background: rgb(21 18 14 / 80%);
 }
 .intro {
   margin: 0 0 24px;
@@ -151,6 +131,9 @@
   transition:
     border-color 140ms var(--ease-ui),
     background-color 140ms var(--ease-ui);
+}
+.compact .choice {
+  min-height: 64px;
 }
 .choice > span:first-child {
   display: flex;
@@ -261,21 +244,7 @@
     padding-top: 24px;
   }
   .sidebar {
-    padding: 0;
-    gap: 0;
-  }
-  .phases {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .phases li {
-    gap: 8px;
-    font-size: 12px;
-  }
-  .phaseDot {
-    width: 24px;
-    height: 24px;
+    display: none;
   }
   .viewport {
     height: clamp(440px, calc(100svh - 330px), 650px);
@@ -288,14 +257,6 @@
   .layout {
     gap: 22px;
     padding: 22px 20px 24px;
-  }
-  .phases {
-    gap: 8px;
-  }
-  .phases li {
-    flex-direction: column;
-    gap: 6px;
-    font-size: 11px;
   }
   .viewport {
     height: max(440px, calc(100svh - 390px));
