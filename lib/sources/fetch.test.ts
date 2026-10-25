@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { isBlockedIp, parseFeedUrl, safeFetchText, type Lookup } from "./fetch";
 import { SourceError } from "./types";
+import type { LookupAddress, LookupAllOptions } from "node:dns";
 
 vi.mock("node:dns/promises", () => ({
   lookup: vi.fn(),
@@ -10,6 +11,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { lookup, resolve4, resolve6 } from "node:dns/promises";
 
+const lookupAll = vi.mocked(lookup as (host: string, options: LookupAllOptions) => Promise<LookupAddress[]>);
 const publicLookup: Lookup = async () => ["93.184.216.34"];
 const ok = (body: string, init?: ResponseInit) => new Response(body, { status: 200, ...init });
 
@@ -35,6 +37,37 @@ describe("parseFeedUrl", () => {
 });
 
 describe("safeFetchText", () => {
+  it("handles Workers CNAME answers without skipping any IP checks", async () => {
+    lookupAll.mockResolvedValue([
+      { address: "calendar.school.example.", family: 4 },
+      { address: "93.184.216.34", family: 4 },
+      { address: "calendar.school.example.", family: 6 },
+    ]);
+    const fetchImpl = vi.fn(async () => ok("BEGIN:VCALENDAR"));
+    await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).resolves.toBe("BEGIN:VCALENDAR");
+    fetchImpl.mockClear();
+
+    lookupAll.mockResolvedValue([
+      { address: "calendar.school.example.", family: 4 },
+      { address: "93.184.216.34", family: 4 },
+      { address: "fd00::1", family: 6 },
+    ]);
+    await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).rejects.toThrow(/not reachable/);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("rejects alias-only and malformed DNS answers", async () => {
+    const fetchImpl = vi.fn();
+    lookupAll.mockResolvedValue([{ address: "calendar.school.example.", family: 4 }]);
+    await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).rejects.toThrow(/not reachable/);
+    lookupAll.mockResolvedValue([
+      { address: "93.184.216.34", family: 4 },
+      { address: "not an address", family: 6 },
+    ]);
+    await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).rejects.toThrow(/Could not find/);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("uses DNS records on Workers and checks both address families", async () => {
     vi.mocked(lookup).mockRejectedValue(new Error("[unenv] dns.lookup is not implemented yet!"));
     vi.mocked(resolve4).mockResolvedValue(["93.184.216.34"]);
@@ -44,6 +77,14 @@ describe("safeFetchText", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
 
     vi.mocked(resolve6).mockRejectedValue(Object.assign(new Error("No AAAA record"), { code: "ENODATA" }));
+    await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).resolves.toBe("BEGIN:VCALENDAR");
+  });
+
+  it("handles CNAME records in the Workers record-resolution fallback", async () => {
+    vi.mocked(lookup).mockRejectedValue(new Error("Not implemented"));
+    vi.mocked(resolve4).mockResolvedValue(["calendar.school.example.", "93.184.216.34"]);
+    vi.mocked(resolve6).mockResolvedValue(["calendar.school.example."]);
+    const fetchImpl = vi.fn(async () => ok("BEGIN:VCALENDAR"));
     await expect(safeFetchText("https://school.example/feed.ics", { fetchImpl })).resolves.toBe("BEGIN:VCALENDAR");
   });
 
