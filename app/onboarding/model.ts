@@ -1,7 +1,7 @@
 import type { Status } from "@/lib/types";
 
 export const DRAFT_KEY = "boiler:onboarding:v1";
-export const ROLES = ["student", "professional", "lead", "helping"] as const;
+export const ROLES = ["student", "professional", "lead", "other"] as const;
 export type Role = (typeof ROLES)[number];
 export type Goal = "deadlines" | "balance" | "focus" | "team" | "recommend";
 export type StepId =
@@ -34,6 +34,7 @@ export interface OnboardingDraft {
   note: string;
   inviteCode: string;
   joinedTeam: string;
+  extensionDeferred: boolean;
   current: StepId;
   completed: StepId[];
   finished: boolean;
@@ -51,6 +52,7 @@ export const EMPTY_DRAFT: OnboardingDraft = {
   note: "",
   inviteCode: "",
   joinedTeam: "",
+  extensionDeferred: false,
   current: "identity",
   completed: [],
   finished: false,
@@ -185,7 +187,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
   const draft: OnboardingDraft = {
     ...EMPTY_DRAFT,
     ownerId: str("ownerId", 80) || null,
-    role: ROLES.includes(v.role as Role) ? (v.role as Role) : "",
+    role: v.role === "helping" ? "other" : ROLES.includes(v.role as Role) ? (v.role as Role) : "",
     name: str("name", 60),
     goal: GOALS.includes(v.goal as Goal) ? (v.goal as Goal) : "",
     starting: STARTING.includes(str("starting", 30)) ? str("starting", 30) : "",
@@ -199,6 +201,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, ""),
     joinedTeam: str("joinedTeam", 80),
+    extensionDeferred: v.extensionDeferred === true,
     completed: [],
     current: "identity",
     finished: v.finished === true,

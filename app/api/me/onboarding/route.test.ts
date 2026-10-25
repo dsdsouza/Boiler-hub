@@ -28,7 +28,7 @@ import type { BoilerResponse } from "@/lib/pressure/api-types";
 const school = () => ({ sources: [{ id: "school", kind: "ics", label: "Brightspace", coursework: true, status: "ok", lastSyncedAt: "2026-10-24T10:00:00Z" }], tasks: [], events: [] }) as unknown as BoilerResponse;
 const send = (draft: unknown, extra = {}) =>
   PATCH(
-    new Request("https://boilerhub.work/api/me/onboarding", {
+    new Request("https://boilerplate.select/api/me/onboarding", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ draft, ...extra }),
@@ -178,5 +178,23 @@ describe("owner-scoped onboarding persistence", () => {
     expect((await send(draft)).status).toBe(200);
     expect(mocks.sync).not.toHaveBeenCalled();
     expect(mocks.updateUser.mock.calls[0][0].data.onboarding.finished).toBe(false);
+  });
+  it("finishes after an explicit extension deferral without claiming Pip is installed", async () => {
+    const draft = parseDraft({ role: "other", name: "Josh", goal: "balance", starting: "fresh", finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft)).status).toBe(400);
+    draft.extensionDeferred = true;
+    expect((await send(draft)).status).toBe(200);
+    expect(mocks.updateUser.mock.calls[0][0].data).toMatchObject({
+      onboarding: { finished: true, extensionDeferred: true },
+      onboarding_setup: { extensionVersion: null, extensionDeferred: true },
+    });
+  });
+  it("still requires students to review coursework when extension installation is deferred", async () => {
+    const draft = parseDraft({ role: "student", name: "Josh", goal: "balance", starting: "fresh", extensionDeferred: true, finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft)).status).toBe(400);
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect((await send(draft, { deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) })).status).toBe(200);
   });
 });
