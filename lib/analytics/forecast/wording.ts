@@ -1,4 +1,4 @@
-import { NO_DUE_DAYS, OVERDUE_STALE_DAYS, URGENCY_CAP, WINDOW_DAYS } from "@/lib/pressure/config";
+import { NO_DUE_DAYS, OVERDUE_STALE_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
 import { WEIGHT_LABEL, weekday } from "@/components/boiler/format";
 import type { Contributor, Coverage, EventContributor, ForecastDayExplanation, TaskContributor } from "./explain";
 
@@ -35,7 +35,7 @@ export function taskTiming(c: TaskContributor): string {
     case "no-due":
       return `no due date, treated as ${NO_DUE_DAYS} days out`;
     case "overdue":
-      return `overdue, held at the ${URGENCY_CAP}× cap`;
+      return "overdue; unfinished work stays counted with gradual aging";
     case "older-overdue":
       return `overdue more than ${OVERDUE_STALE_DAYS} days, kept as backlog`;
     case "due-this-day":
@@ -47,7 +47,7 @@ export function taskTiming(c: TaskContributor): string {
 
 /** "M task: 4 size pts × 0.5 deadline". */
 export function taskFormula(c: TaskContributor): string {
-  return `${c.size} task: ${c.sizePoints} size pts × ${formatFactor(c.urgency)} deadline`;
+  return `${c.size} task: ${c.sizePoints} size pts × ${formatFactor(c.urgency)} deadline/preparation × ${formatFactor(c.scaleFactor)} scale`;
 }
 
 /** "1.5 h × Normal 1 × 4 people 1.09 × organizer 1.2 × distance 0.74". Hours are the event's length only. */
@@ -56,6 +56,7 @@ export function eventFormula(c: EventContributor): string {
   if (c.attendeeFactor !== 1) parts.push(`${plural(c.attendees, "person", "people")} ${formatFactor(c.attendeeFactor)}`);
   if (c.organizerFactor !== 1) parts.push(`organizer ${formatFactor(c.organizerFactor)}`);
   if (c.proximity !== 1) parts.push(`distance ${formatFactor(c.proximity)}`);
+  if (c.windowFactor !== 1) parts.push(`window ${formatFactor(c.windowFactor)}`);
   return parts.join(" × ");
 }
 

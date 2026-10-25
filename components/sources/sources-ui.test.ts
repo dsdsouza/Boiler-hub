@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { computePressure } from "@/lib/pressure";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
 import * as S from "@/components/boiler/boilerState";
 import { clearItemsBody, sourceItemBody, toMyBoilerData } from "@/components/boiler/fromApi";
@@ -33,6 +34,9 @@ const res: BoilerResponse = {
   computedAt: NOW.toISOString(),
 };
 
+// Keep the API fixture consistent with the real shared engine.
+res.result = computePressure(toMyBoilerData(res).items, NOW);
+
 describe("source items in the My Boiler view model", () => {
   it("keeps source metadata for source tasks only", () => {
     const d = toMyBoilerData(res);
@@ -50,7 +54,7 @@ describe("source items in the My Boiler view model", () => {
     expect(overdue.map((i) => i.title)).toEqual(["Problem Set 5 - Due"]);
     const cleared = S.clearTasks(d, new Set(overdue.map((i) => i.id)), NOW);
     expect(cleared.items.find((i) => i.id === overdue[0]!.id)?.doneAt).toBe(NOW.toISOString());
-    expect(cleared.result.raw).toBe(5);
+    expect(cleared.result.raw).toBeCloseTo(computePressure(d.items.filter(i => i.id !== overdue[0]!.id), NOW).raw);
     const restored = S.setTaskDone(cleared, overdue[0]!.id, false, NOW).data;
     expect(restored.result.raw).toBeGreaterThan(cleared.result.raw);
     expect(restored.result.counts.overdue).toBe(1);

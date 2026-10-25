@@ -33,6 +33,9 @@ describe("classifyIcs (Brightspace-style feed)", () => {
     expect(events.map((e) => `${e.title} ${e.start}`).sort()).toEqual([
       "BIO 101 Lecture 2026-10-26T15:00:00.000Z",
       "BIO 101 Lecture 2026-10-30T15:00:00.000Z", // Oct 28 is an EXDATE
+      "BIO 101 Lecture 2026-11-02T16:00:00.000Z",
+      "BIO 101 Lecture 2026-11-04T16:00:00.000Z",
+      "BIO 101 Lecture 2026-11-06T16:00:00.000Z",
       "Collaboration session 2026-10-29T19:00:00.000Z", // "lab" only matches as a word
       "Office Hours 2026-10-27T18:00:00.000Z",
     ]);
@@ -247,6 +250,10 @@ describe("cleanTitle", () => {
 });
 
 describe("sizeForTitle", () => {
+  it("sizes school tests as major exams, while keeping sample essays medium", () => {
+    expect(sizeForTitle("PHY 131 Test 2")).toBe("L");
+    expect(sizeForTitle("Test Essay")).toBe("M");
+  });
   const sizes = (titles: string[]) => titles.map(sizeForTitle);
 
   it("L for exams, midterms and finals", () => {

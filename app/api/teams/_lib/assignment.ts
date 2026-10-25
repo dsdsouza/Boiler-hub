@@ -23,6 +23,7 @@ export type Freshness = "fresh" | "dim" | "stale" | "never";
 export function freshness(updatedAt: string | null | undefined, now: Date): Freshness {
   if (!updatedAt) return "never";
   const age = now.getTime() - Date.parse(updatedAt);
+  if (!Number.isFinite(age)) return "stale";
   if (age > STALE_AFTER_MS) return "stale";
   if (age > DIM_AFTER_MS) return "dim";
   return "fresh";
@@ -55,6 +56,8 @@ export interface AssignmentTarget {
   zone: Zone | null;
   /** computed_at of the snapshot; null when never synced. */
   updatedAt: string | null;
+  /** Persistent targets explicitly identify snapshots computed with a different formula. */
+  modelCompatible?: boolean;
 }
 
 export interface TargetResult {
@@ -94,7 +97,10 @@ export function computeTargets(targets: AssignmentTarget[], input: AssignmentInp
   return targets.map((t) => {
     const before = t.score ?? 0;
     const zoneBefore = t.zone ?? zoneFor(before);
-    const next = applyTaskToRaw(t.raw ?? 0, { due: input.due, size: input.size }, now);
+    const compatible = t.modelCompatible !== false;
+    const next = compatible || t.raw === null
+      ? applyTaskToRaw(t.raw ?? 0, input, now)
+      : { raw: t.raw, score: before, zone: zoneBefore };
     return {
       userId: t.userId,
       visible: t.visible,
@@ -103,7 +109,7 @@ export function computeTargets(targets: AssignmentTarget[], input: AssignmentInp
       zoneBefore,
       zoneAfter: next.zone,
       rawAfter: next.raw,
-      recent: t.raw !== null && freshness(t.updatedAt, now) !== "stale" && freshness(t.updatedAt, now) !== "never",
+      recent: compatible && t.raw !== null && freshness(t.updatedAt, now) !== "stale" && freshness(t.updatedAt, now) !== "never",
     };
   });
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { computePressure } from "@/lib/pressure";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SYNTHETIC_NOW, SYNTHETIC_TIME_ZONE, syntheticItems } from "@/lib/analytics";
 import { WhatIfSimulator } from "./WhatIfSimulator";
@@ -19,7 +20,8 @@ describe("WhatIfSimulator initial render", () => {
   });
 
   it("hands Pip the simulated score and zone through his existing props", () => {
-    expect(html).toMatch(/data-pip-score="78" data-pip-zone="hot"/);
+    const expected = computePressure([...syntheticItems()], SYNTHETIC_NOW, { timeZone: SYNTHETIC_TIME_ZONE });
+    expect(html).toContain(`data-pip-score="${expected.score}" data-pip-zone="${expected.zone}"`);
   });
 
   it("lists only open sample tasks and shows forecast, assumptions and coverage", () => {

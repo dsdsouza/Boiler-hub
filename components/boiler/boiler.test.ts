@@ -17,10 +17,10 @@ describe("lib/pressure as used by the UI", () => {
     expect(Number.isFinite(rawFromScore(100))).toBe(true);
   });
 
-  it("caps task urgency at 3 and treats overdue as 3", () => {
-    expect(taskPoints({ due: "2026-10-24T13:00:00", size: "S" }, NOW)).toBe(6);
-    expect(taskPoints({ due: "2026-10-20T12:00:00", size: "S" }, NOW)).toBe(6);
-    expect(taskPoints({ due: "2026-10-26T12:00:00", size: "S" }, NOW)).toBeCloseTo(1);
+  it("uses calibrated task weights and keeps a deadline continuous", () => {
+    expect(taskPoints({ due: "2026-10-24T13:00:00", size: "S" }, NOW)).toBeCloseTo(1.263147507);
+    expect(taskPoints({ due: "2026-10-20T12:00:00", size: "S" }, NOW)).toBeCloseTo(1.263147507);
+    expect(taskPoints({ due: "2026-10-26T12:00:00", size: "S" }, NOW)).toBeLessThan(1);
   });
 
   it("applyTaskToRaw only ever raises pressure", () => {

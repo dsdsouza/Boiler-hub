@@ -7,7 +7,7 @@ import { scoreFromRaw, taskPoints, zoneFor } from "./compute";
  */
 export function applyTaskToRaw(
   raw: number,
-  task: { due: string; size: Size },
+  task: { due: string; size: Size; title?: string },
   now: Date,
 ): { score: number; zone: Zone; raw: number } {
   const next = raw + taskPoints(task, now);

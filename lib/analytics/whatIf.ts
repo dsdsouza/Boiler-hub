@@ -1,5 +1,5 @@
 import type { ForecastDay, LoadItem, PressureResult, Size, Source } from "@/lib/types";
-import { SIZE_POINTS, TASK_LOOKAHEAD_DAYS, WINDOW_DAYS, computePressure, isStaleOverdue } from "@/lib/pressure";
+import { SIZE_POINTS, WINDOW_DAYS, computePressure, isStaleOverdue, taskHorizonDays, OVERDUE_GRACE_DAYS, OVERDUE_STALE_DAYS, NO_DUE_DAYS } from "@/lib/pressure";
 import { formatLocal, startOfLocalDay } from "./time";
 
 // Personal what-if simulator. Pure: no I/O, no writes, no mutation of its inputs.
@@ -226,9 +226,9 @@ function coverageFor(items: readonly Readonly<LoadItem>[], now: Date, timeZone: 
     else if (due < nowMs) {
       tasks.overdue += 1;
       if (isStaleOverdue(item.due, now)) tasks.staleOverdue += 1;
-    } else if (due > nowMs + TASK_LOOKAHEAD_DAYS * DAY_MS) {
+    } else if (due >= nowMs + taskHorizonDays(item.title) * DAY_MS) {
       tasks.outsideWindowNow += 1;
-      if (due <= lastDayStart + TASK_LOOKAHEAD_DAYS * DAY_MS) tasks.enterWindowDuringForecast += 1;
+      if (due < lastDayStart + taskHorizonDays(item.title) * DAY_MS) tasks.enterWindowDuringForecast += 1;
     }
   }
   return {
@@ -247,12 +247,12 @@ function coverageNotes(c: CoverageSummary): string[] {
       `Calendar events are included only through ${c.eventsCoveredThrough.slice(0, 10)}. Each forecast day looks ${WINDOW_DAYS} days ahead, so ${plural(c.partialEventDays, "day is", "days are")} missing events that start later.`,
     );
   }
-  if (t.openNoDueDate > 0) notes.push(`${plural(t.openNoDueDate, "open task has", "open tasks have")} no deadline and ${t.openNoDueDate === 1 ? "counts" : "count"} as due in 7 days on every day.`);
+  if (t.openNoDueDate > 0) notes.push(`${plural(t.openNoDueDate, "open task has", "open tasks have")} no deadline and ${t.openNoDueDate === 1 ? "counts" : "count"} as due in ${NO_DUE_DAYS} days on every day.`);
   if (t.outsideWindowNow > 0) {
-    const later = t.enterWindowDuringForecast > 0 ? `; ${t.enterWindowDuringForecast} come${t.enterWindowDuringForecast === 1 ? "s" : ""} within ${TASK_LOOKAHEAD_DAYS} days during the forecast` : "";
-    notes.push(`${plural(t.outsideWindowNow, "open task is", "open tasks are")} due more than ${TASK_LOOKAHEAD_DAYS} days out and ${t.outsideWindowNow === 1 ? "adds" : "add"} nothing today${later}.`);
+    const later = t.enterWindowDuringForecast > 0 ? `; ${t.enterWindowDuringForecast} enter${t.enterWindowDuringForecast === 1 ? "s" : ""} their preparation window during the forecast` : "";
+    notes.push(`${plural(t.outsideWindowNow, "open task is", "open tasks are")} outside its preparation window and ${t.outsideWindowNow === 1 ? "adds" : "add"} nothing today${later}.`);
   }
-  if (t.staleOverdue > 0) notes.push(`${plural(t.staleOverdue, "task is", "tasks are")} overdue by more than 14 days and counted at reduced weight.`);
+  if (t.staleOverdue > 0) notes.push(`${plural(t.staleOverdue, "task is", "tasks are")} overdue by more than ${OVERDUE_STALE_DAYS} days and counted at reduced weight.`);
   if (t.invalidDue > 0) notes.push(`${plural(t.invalidDue, "open task has", "open tasks have")} an unreadable deadline and ${t.invalidDue === 1 ? "is" : "are"} left out.`);
   notes.push("Only the items provided are modeled. A disconnected or failing source adds nothing, and events that are not on the calendar are unknown.");
   return notes;
@@ -271,7 +271,7 @@ function assumptionsFor(a: FinishArgs): string[] {
   if (change.type === "size") out.push(`Size changes scale this task's points (S ${SIZE_POINTS.S}, M ${SIZE_POINTS.M}, L ${SIZE_POINTS.L}) at its existing deadline.`);
   if (change.type === "deadline") {
     out.push(
-      `A deadline later than ${TASK_LOOKAHEAD_DAYS} days out adds nothing yet. A deadline in the past counts as overdue, at full urgency for 14 days and reduced weight after that. Times show in ${timeZone}${target.due ? `; the current deadline is ${formatLocal(target.due, timeZone)}` : ""}.`,
+      `This task's preparation window ends at ${taskHorizonDays(target.title)} days. Unfinished overdue work keeps its at-deadline weight for ${OVERDUE_GRACE_DAYS} days, then ages gradually. Times show in ${timeZone}${target.due ? `; the current deadline is ${formatLocal(target.due, timeZone)}` : ""}.`,
     );
   }
   if (IMPORTED_SOURCES.includes(target.source)) out.push("This task is imported. The change is hypothetical and does not edit the source or your school's deadline.");

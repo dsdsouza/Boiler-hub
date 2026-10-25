@@ -1,4 +1,4 @@
-import { WINDOW_DAYS } from "@/lib/pressure/config";
+import { CALENDAR_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
 import { GoogleReconnectError } from "./client";
 
 // Google Calendar REST, primary calendar only. Events are fetched live and never stored.
@@ -28,7 +28,7 @@ export interface CalendarWeek {
   timeZone: string;
 }
 
-/** Primary-calendar events from `now` to now + 7 days, recurring events expanded. */
+/** Current event window plus forecast coverage, with recurring events expanded. */
 export async function fetchPrimaryEvents(accessToken: string, now: Date): Promise<CalendarWeek> {
   const events: GoogleEvent[] = [];
   let timeZone = "UTC";
@@ -37,7 +37,7 @@ export async function fetchPrimaryEvents(accessToken: string, now: Date): Promis
   for (let page = 0; page < MAX_PAGES; page++) {
     const params = new URLSearchParams({
       timeMin: now.toISOString(),
-      timeMax: new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+      timeMax: new Date(now.getTime() + CALENDAR_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString(),
       singleEvents: "true",
       orderBy: "startTime",
       maxResults: "250",
