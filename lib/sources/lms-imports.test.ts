@@ -6,7 +6,8 @@ import { applyItemState } from "./state";
 
 const NOW = new Date("2026-10-23T12:00:00Z");
 const SOURCE = "11111111-1111-4111-8111-111111111111";
-const opts = { sourceId: SOURCE, coursework: true, now: NOW, timeZone: "America/New_York" };
+// An already-connected feed: reconciliation still includes work that became overdue after connection.
+const opts = { sourceId: SOURCE, coursework: true, now: NOW, timeZone: "America/New_York", importedAt: new Date("2026-10-01T12:00:00Z") };
 const feed = (provider: string, version: number) => readFileSync(join(__dirname, "__fixtures__/lms", `${provider}-v${version}.ics`), "utf8");
 
 describe.each(["brightspace", "canvas", "moodle", "blackboard"])("%s investigation feed", (provider) => {

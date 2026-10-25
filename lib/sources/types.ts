@@ -28,6 +28,8 @@ export interface AdapterSource {
   label: string;
   coursework: boolean;
   secret: string;
+  /** Connection creation instant: exclude deadlines before its local calendar day. */
+  importedAt?: string;
 }
 
 /** A LoadItem from a source, plus what the owner needs to act on it. Titles are live, never stored. */

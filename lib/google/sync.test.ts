@@ -124,19 +124,32 @@ describe("syncUser with sources", () => {
     expect(writes.some((w) => w.table === "pressure_snapshots" && w.op === "upsert")).toBe(true);
   });
 
-  it("on a feed's first sync, preserves unfinished overdue work", async () => {
+  it("on a new feed's first sync, excludes history without marking schoolwork complete", async () => {
     const { admin, writes } = fakeAdmin({
       profiles: [{ status: "open", status_note: null }],
-      sources: [source(GOOD, "https://school.example.com/feed.ics", { last_synced_at: null })],
+      sources: [source(GOOD, "https://school.example.com/feed.ics", { last_synced_at: null, created_at: NOW.toISOString() })],
     });
 
     const res = await syncUser(admin, USER, NOW, { freshSources: true });
 
     expect(writes.some((w) => w.table === "source_item_state")).toBe(false);
+    expect(res.tasks.some((t) => t.title === "Problem Set 5")).toBe(false);
+    expect(res.tasks.some((t) => t.title === "Reading Response 1")).toBe(false);
+    expect(res.tasks.some((t) => t.title === "Lab Report 3")).toBe(true);
+    expect(res.result.counts.overdue).toBe(0);
+    expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
+  });
+
+  it("keeps genuinely missed work from an existing connection until the owner completes it", async () => {
+    const { admin, writes } = fakeAdmin({
+      profiles: [{ status: "open", status_note: null }],
+      sources: [source(GOOD, "https://school.example.com/feed.ics", { created_at: "2026-09-01T12:00:00Z" })],
+    });
+    const res = await syncUser(admin, USER, NOW, { freshSources: true });
     expect(res.tasks.find((t) => t.title === "Problem Set 5")?.doneAt).toBeNull();
     expect(res.tasks.find((t) => t.title === "Reading Response 1")?.doneAt).toBeNull();
     expect(res.result.counts.overdue).toBe(2);
-    expect(res.result.contributions.every((c) => c.points > 0)).toBe(true);
+    expect(writes.some((w) => w.table === "source_item_state")).toBe(false);
   });
 
   it("a Google outage gives a tasks-only result, not an error, and saves no snapshot", async () => {

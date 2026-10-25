@@ -77,7 +77,7 @@ export async function fetchSource(
   } catch {
     throw new SourceError("This source's saved credentials could not be read. Remove it and add it again");
   }
-  const source: AdapterSource = { id: row.id, kind: row.kind, label: row.label, coursework: row.coursework, secret };
+  const source: AdapterSource = { id: row.id, kind: row.kind, label: row.label, coursework: row.coursework, secret, importedAt: row.created_at };
   const items = await adapter.fetchItems(source, ctx);
   if (!ctx.dateWindow && opts.store !== false) cache.set(row.id, { at: ctx.now.getTime(), items });
   return { items, cached: false };

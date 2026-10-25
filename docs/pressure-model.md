@@ -27,6 +27,7 @@ Other checks cover preparation for a deadline ten days away, old overdue work, f
 
 ## Clearing and recovery
 
+- New calendar feeds start with deadlines dated on or after their connection day, using the feed's time zone or the owner's calendar zone. The existing source creation timestamp fixes that boundary without storing school contents. Later syncs retain work imported from that day when it becomes overdue, so missed work does not silently disappear. Calendar-month reads use the same boundary.
 - Never automatically complete overdue work on a feed's first sync.
 - Require review before bulk completion; the server accepts only owned, open, actually overdue source tasks.
 - Retain completed or cleared source tasks in an owner-only disclosure. Restoring an item clears the owner's completion mark and immediately recomputes its pressure.
