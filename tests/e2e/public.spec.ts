@@ -126,3 +126,18 @@ test('public routes load their assets without missing chunks or runtime errors',
   expect(failures, 'HTML must reference assets available on the same deployment').toEqual([]);
   expect(errors).toEqual([]);
 });
+
+
+test('guests cannot see or open Pip on public screens', async ({ page }) => {
+  for (const path of ['/', '/demo', '/how', '/onboarding', '/mascot-preview']) {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-pip-companion]')).toHaveCount(0);
+    await expect(page.getByRole('img', { name: /^Pip/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Chat with Pip', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveCount(0);
+    if (path === '/' && process.env.PIP_ACCESS_SCREENSHOTS) {
+      await page.screenshot({ path: `${process.env.PIP_ACCESS_SCREENSHOTS}/guest-home.png` });
+    }
+  }
+});
