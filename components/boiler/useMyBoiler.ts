@@ -9,6 +9,7 @@ import { mayaBoiler } from "./fixture";
 import { ownerMutations } from "./owner-mutations";
 import { clearItemsBody, eventWeightBody, newTaskBody, sourceItemBody, statusBody, taskDoneBody, toMyBoilerData } from "./fromApi";
 import { useBoilerSession } from "./BoilerSession";
+import { crossedIntoRedline, cuePip } from "@/components/mascot/pipReactions";
 
 export type DataSource = "fixture" | "api";
 
@@ -70,6 +71,15 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Pip boils over when a change pushes the gauge into Redline.
+  const score = data?.result.score;
+  const lastScore = useRef<number | null>(null);
+  useEffect(() => {
+    if (score === undefined) return;
+    if (crossedIntoRedline(lastScore.current, score)) cuePip("boil");
+    lastScore.current = score;
+  }, [score]);
 
   useEffect(() => {
     if (source !== "api" || !userId) return;
@@ -138,7 +148,10 @@ export function useMyBoiler(source: DataSource = SOURCE, userId?: string) {
       const current = dataRef.current;
       if (!current) return Promise.resolve();
       const { vented } = S.setTaskDone(current, id, done, new Date());
-      if (done) setVent((v) => ({ key: v.key + 1, amount: vented }));
+      if (done) {
+        setVent((v) => ({ key: v.key + 1, amount: vented }));
+        cuePip("dance");
+      }
       // Source items (ICS, GitHub) keep their done mark in source_item_state, not in tasks.
       const meta = current.taskMeta?.[id];
       return mutate(
