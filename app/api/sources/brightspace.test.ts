@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { decrypt } from "@/lib/crypto";
+import { verifyReview } from "@/app/api/me/onboarding/verification";
 import { POST } from "./route";
 
 const mocks = vi.hoisted(() => ({ requireUser: vi.fn(), syncSelf: vi.fn() }));
@@ -30,7 +31,10 @@ it("imports a Brightspace schedule through the source endpoint without persistin
     select: () => ({ single: async () => ({ data: { ...row, status: "ok", error: null, last_synced_at: now.toISOString() }, error: null }) }),
   }));
   mocks.requireUser.mockResolvedValue({ user, supabase: { from: () => ({ select: () => ({ eq: async () => ({ count: 0, error: null }) }), insert }) } });
-  mocks.syncSelf.mockResolvedValue({ sources: [] });
+  mocks.syncSelf.mockImplementation(async () => ({
+    sources: [{ id: insert.mock.calls[0]![0].id, kind: "ics", label: "Brightspace", coursework: true, status: "ok", error: null, lastSyncedAt: now.toISOString() }],
+    tasks: [], events: [],
+  }));
   const link = "https://purdue.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=fictional-schedule-token";
 
   const response = await POST(new Request("http://localhost/api/sources", {
@@ -42,6 +46,8 @@ it("imports a Brightspace schedule through the source endpoint without persistin
   expect(json.source).toMatchObject({ kind: "ics", label: "Brightspace", coursework: true, status: "ok" });
   expect(json.events).toBe(7);
   expect(json.tasks).toBeGreaterThan(0);
+  expect(verifyReview(json.reviewReceipt, user.id, json.boiler)).toBe(true);
+  expect(verifyReview(json.reviewReceipt, "another-user", json.boiler)).toBe(false);
   const saved = insert.mock.calls[0]![0];
   expect(saved.user_id).toBe(user.id);
   expect(Object.keys(saved).sort()).toEqual(["coursework", "id", "kind", "label", "secret_encrypted", "user_id"]);

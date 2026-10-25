@@ -6,6 +6,7 @@ import { defaultFeedLabel, isAppleCalendarUrl, isCourseworkUrl } from "@/lib/sou
 import { errorMessage, fetchNewSource, toSummary } from "@/lib/sources/load";
 import { SOURCE_COLUMNS, SourceError, type SourceRow } from "@/lib/sources/types";
 import { badRequest, readJson, requireUser, serverError, syncSelf } from "@/app/api/me/_lib/http";
+import { issueReview } from "@/app/api/me/onboarding/verification";
 import { MAX_SOURCES, itemCounts } from "./_lib";
 
 // GET: the caller's sources (never the secret). RLS and column grants keep it owner-only.
@@ -72,7 +73,9 @@ export async function POST(request: Request) {
   try {
     const boiler = await syncSelf(auth.user, { freshSources: true });
     const source = boiler.sources.find((s) => s.id === id) ?? toSummary(data);
-    return NextResponse.json({ source, ...counts, boiler }, { status: 201 });
+    // The import already read every source. Let onboarding review that exact
+    // result without a second fetch that can fail or race an earlier check.
+    return NextResponse.json({ source, ...counts, boiler, reviewReceipt: issueReview(auth.user.id, boiler) }, { status: 201 });
   } catch (e) {
     console.error("POST /api/sources resync failed", e);
     return NextResponse.json(
