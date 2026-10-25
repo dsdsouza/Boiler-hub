@@ -67,7 +67,7 @@ test("older autosaves cannot overwrite newer typing or Continue", async ({ page,
   await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toHaveCount(0);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   release();
-  await expect(page.getByRole("heading", { name: "What would you like a hand with?", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Heyo Latest answer! What would you like a hand with?", exact: true })).toBeVisible();
   expect(service.users[0].onboarding).toMatchObject({ name: "Latest answer", current: "goal" });
   await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toBeVisible();
 });
@@ -121,7 +121,7 @@ test("signed-out answers stay local and never start account autosaves", async ({
   await page.goto("/qa-workflows?view=onboarding&guest=1");
   await nameField(page).fill("Anonymous answer");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "What would you like a hand with?", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Heyo Anonymous answer! What would you like a hand with?", exact: true })).toBeVisible();
   expect(service.writes.filter(write => write.includes("/api/me/onboarding"))).toEqual([]);
   expect(service.users[0].onboarding).toBeNull();
 });
@@ -142,10 +142,13 @@ test("leaving before the typing delay preserves the latest answer on return", as
 
 test("a failed initial account read cannot autosave an empty draft over saved answers", async ({ page, context }) => {
   const service = world(); await service.connect(context); service.users[0].onboarding = nameDraft();
-  service.failOnce("GET /api/me/onboarding");
+  let unavailable = true;
+  await page.route("**/api/me/onboarding", route => route.request().method() === "GET" && unavailable
+    ? route.fulfill({ status: 503, json: { error: "Account read unavailable" } }) : route.fallback());
   await page.goto("/qa-workflows?view=onboarding");
   await expect(page.getByRole("button", { name: "Try loading again", exact: true })).toBeVisible();
   expect(service.writes.filter(write => write.includes("/api/me/onboarding"))).toEqual([]);
+  unavailable = false;
   await page.getByRole("button", { name: "Try loading again", exact: true }).click();
   await expect(nameField(page)).toHaveValue("Original name");
 });

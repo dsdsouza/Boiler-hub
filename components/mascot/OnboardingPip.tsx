@@ -34,7 +34,6 @@ export function OnboardingPip() {
             </li>
           ))}
         </ul>
-        <p className="m-0 text-[13px] text-muted">It measures load, not how you feel. You’re the judge of that.</p>
       </div>
     </Card>
   );
