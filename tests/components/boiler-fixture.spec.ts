@@ -125,7 +125,10 @@ test('forecast has seven days and today agrees with the gauge', async ({ page })
 });
 
 test('zone filter supports an empty state and switching teams resets it', async ({ page }) => {
+  // A major exam gives this fixture an empty Cool zone even when routine task weights change.
+  await page.getByRole('complementary', { name: 'New assignment', exact: true }).getByRole('textbox', { name: 'Title', exact: true }).fill('Final exam');
   const filters = page.getByRole('group', { name: 'Filter by zone', exact: true });
+  await expect(filters.getByRole('button', { name: /^Cool/ })).toHaveText('Cool · 0');
   await filters.getByRole('button', { name: /^Cool/ }).click();
   await expect(page.getByRole('region', { name: 'AP Bio P3 boilers', exact: true })).toContainText('No visible students in this zone.');
   await page.getByRole('button', { name: 'Product Squad', exact: true }).click();
