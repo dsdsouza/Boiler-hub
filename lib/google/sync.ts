@@ -37,7 +37,7 @@ interface TaskRow {
 export const TASK_COLUMNS = "id, title, due_at, size, done_at, source, assignment_id, course";
 
 /**
- * Fetch the user's calendar, tasks and connected sources (ICS, GitHub), compute pressure, and upsert
+ * Fetch the user's calendar, tasks and connected calendar feeds, compute pressure, and upsert
  * pressure_snapshots. A failing source is marked 'error' and skipped; it never fails the sync.
  *
  * `admin` is the service-role client (google_tokens is service-role only). It bypasses RLS, so the

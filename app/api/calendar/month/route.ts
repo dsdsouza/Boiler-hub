@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const [tasks, ownedSources] = await Promise.all([
       auth.supabase.from("tasks").select("id,title,due_at,source,course", { count: "exact" }).eq("owner_id", auth.user.id).is("done_at", null)
         .gte("due_at", new Date(start).toISOString()).lt("due_at", new Date(end).toISOString()).order("due_at").order("id").limit(1000),
-      auth.supabase.from("sources").select("id").eq("user_id", auth.user.id),
+      auth.supabase.from("sources").select("id").eq("user_id", auth.user.id).eq("kind", "ics"),
     ]);
     if (tasks.error || ownedSources.error) throw new Error("Calendar unavailable");
     // Identity is verified above. Privileged source reads are scoped to this owner.

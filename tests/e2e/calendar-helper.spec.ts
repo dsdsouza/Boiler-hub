@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
 import { noOverflow } from './helpers';
 
@@ -6,6 +7,19 @@ const scanner = readFileSync('browser-helper/scan.js', 'utf8').replace('export f
 async function scan(page: Page) {
   return page.evaluate(() => (window as unknown as { scanCalendarPage: () => { candidates: { url: string }[]; provider: string } }).scanCalendarPage());
 }
+
+test('class schedule has its own guide and returns to the schedule import', async ({ page }, info) => {
+  await page.goto('/calendar-helper?guide=schedule');
+  await expect(page.getByRole('heading', { level: 1, name: 'Find your class schedule', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get your Brightspace schedule link', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open Sources', exact: true })).toHaveAttribute('href', '/settings/sources#class-schedule');
+  await expect(page.getByText('Import schedule', { exact: true })).toBeVisible();
+  if (process.env.SOURCES_SCREENSHOTS) {
+    await mkdir(process.env.SOURCES_SCREENSHOTS, { recursive: true });
+    await page.screenshot({ path: `${process.env.SOURCES_SCREENSHOTS}/schedule-guide-${info.project.name}.png`, fullPage: true, animations: 'disabled' });
+  }
+  await noOverflow(page);
+});
 for (const [provider, url] of [
   ['Brightspace', 'https://school.example.edu/d2l/le/calendar/feed/user/feed.ics?token=fictional'],
   ['Canvas', 'https://school.example.edu/feeds/calendars/user_fake.ics'],

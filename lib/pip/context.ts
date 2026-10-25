@@ -33,7 +33,7 @@ export async function assignmentContext(supabase: SupabaseClient, userId: string
   const [tasks, ownedSources] = await Promise.all([
     supabase.from("tasks").select("id,title,due_at,size,source", { count: "exact" })
       .eq("owner_id", userId).is("done_at", null).order("due_at", { nullsFirst: false }).limit(201).returns<TaskRow[]>(),
-    supabase.from("sources").select("id").eq("user_id", userId),
+    supabase.from("sources").select("id").eq("user_id", userId).eq("kind", "ics"),
   ]);
   if (tasks.error || ownedSources.error) throw new Error("Assignment context unavailable");
   // The authenticated caller owns this resource. loadSources also scopes every privileged

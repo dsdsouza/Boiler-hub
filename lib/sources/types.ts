@@ -1,7 +1,8 @@
 import type { LoadItem, Size } from "@/lib/types";
 
-// Shapes for external task sources (ICS feeds, GitHub). Defined here, not in lib/types.ts (frozen).
+// Calendar feeds and legacy source metadata. Defined here, not in lib/types.ts (frozen).
 
+// Keep the retired kind readable so owners can remove old connections without a migration.
 export type SourceKind = "ics" | "github";
 export type SourceStatus = "ok" | "error";
 
@@ -20,7 +21,7 @@ export interface SourceRow {
 /** Columns clients may select (column grants in 0002_sources.sql). */
 export const SOURCE_COLUMNS = "id, kind, label, coursework, last_synced_at, status, error, created_at";
 
-/** What an adapter gets: the row plus the decrypted secret (ICS URL or GitHub token). Server only. */
+/** What an adapter gets: the row plus the decrypted calendar URL. Server only. */
 export interface AdapterSource {
   id: string;
   kind: SourceKind;
@@ -35,7 +36,7 @@ export interface SourceItem extends LoadItem {
   sourceId: string;
   /** sha256 hex of the external id; the source_item_state key. */
   itemKey: string;
-  /** Source-provided link to the item (GitHub or LMS). */
+  /** Source-provided link to the item in its calendar or LMS. */
   url?: string;
   /** Course name supplied by an LMS feed. Fetched live, never stored. */
   courseName?: string;

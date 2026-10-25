@@ -7,19 +7,22 @@ vi.mock("./schedule-context", () => ({ scheduleContext: vi.fn(async () => ({ sta
 import { assignmentContext } from "./context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 afterEach(() => vi.resetAllMocks());
-function database(tasks: unknown[], ownedSources: unknown[] = []) {
+function database(tasks: unknown[], ownedSources: { id: string; kind?: "ics" | "github" }[] = []) {
   const filters: unknown[][] = [];
   const tasksResult = { data: tasks, count: tasks.length, error: null };
-  const from = vi.fn((table: string) => ({ select: () => ({
-    eq: (...args: unknown[]) => {
-      filters.push([table, ...args]);
-      return table === "sources" ? Promise.resolve({ data: ownedSources, error: null }) : {
-        is: (...where: unknown[]) => { filters.push(where); return { order: () => ({ limit: () => ({ returns: async () => tasksResult }) }) }; },
-      };
-    },
-  }) }));
+  const from = vi.fn((table: string) => {
+    const query = {
+      select: () => query,
+      eq: (...args: unknown[]) => { filters.push([table, ...args]); return query; },
+      is: (...args: unknown[]) => { filters.push(args); return query; },
+      order: () => query, limit: () => query, returns: async () => tasksResult,
+      then: (yes: (value: unknown) => unknown) => Promise.resolve({ data: ownedSources.filter(row => !filters.some(([name, key, value]) => name === "sources" && key === "kind" && (row.kind ?? "ics") !== value)), error: null }).then(yes),
+    };
+    return query;
+  });
   return { client: { from } as unknown as SupabaseClient, filters };
 }
+
 describe("server-owned assignment context", () => {
   it("scopes database reads, excludes completed imported work and events, and strips URLs and source secrets", async () => {
     const db = database([{ title: "Manual draft", due_at: null, size: "M", source: "manual" }], [{ id: "owned-feed" }]);
@@ -45,6 +48,13 @@ describe("server-owned assignment context", () => {
     expect(context).toMatchObject({ totalOpen: 150, truncated: true, unavailableSources: 0 });
     expect(context.assignments).toHaveLength(100);
     expect(mocks.admin).not.toHaveBeenCalled();
+  });
+  it("ignores retired connections without failing or reading their credentials", async () => {
+    const db = database([], [{ id: "retired", kind: "github" }]);
+    expect(await assignmentContext(db.client, "verified-user", "UTC")).toMatchObject({ totalOpen: 0, unavailableSources: 0 });
+    expect(db.filters).toContainEqual(["sources", "kind", "ics"]);
+    expect(mocks.admin).not.toHaveBeenCalled();
+    expect(mocks.sources).not.toHaveBeenCalled();
   });
   it("does not silently report a complete list when source loading fails", async () => {
     const db = database([], [{ id: "feed" }]);

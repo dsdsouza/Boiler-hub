@@ -2,7 +2,6 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decrypt } from "@/lib/crypto";
 import type { SourceInfo } from "@/lib/pressure/api-types";
-import { githubAdapter } from "./github";
 import { icsAdapter } from "./ics";
 import { applyItemState } from "./state";
 import {
@@ -20,10 +19,10 @@ import {
 // Runs every source a user has connected. One failing source never fails the sync: it is marked
 // status 'error' with a user-facing message, and the others still count.
 
-export const ADAPTERS: Record<SourceKind, SourceAdapter> = { ics: icsAdapter, github: githubAdapter };
+export const ADAPTERS: Partial<Record<SourceKind, SourceAdapter>> = { ics: icsAdapter };
 
-/** Best-effort, per server instance (Vercel instances do not share memory). Live items, never persisted. */
-const CACHE_TTL_MS: Record<SourceKind, number> = { ics: 5 * 60_000, github: 2 * 60_000 };
+/** Best-effort, per server instance (Worker instances do not share memory). Live items, never persisted. */
+const CACHE_TTL_MS = 5 * 60_000;
 const cache = new Map<string, { at: number; items: SourceItem[] }>();
 
 export type SourceSummary = SourceInfo;
@@ -51,8 +50,8 @@ export function toSummary(row: SourceRow): SourceSummary {
     kind: row.kind,
     label: row.label,
     coursework: row.coursework,
-    status: row.status,
-    error: row.error,
+    status: row.kind === "ics" ? row.status : "error",
+    error: row.kind === "ics" ? row.error : "This integration has been removed.",
     lastSyncedAt: row.last_synced_at,
   };
 }
@@ -68,10 +67,10 @@ export async function fetchSource(
   ctx: FetchContext,
   opts: LoadOptions = {},
 ): Promise<{ items: SourceItem[]; cached: boolean }> {
-  const hit = cache.get(row.id);
-  if (!ctx.dateWindow && !opts.fresh && hit && ctx.now.getTime() - hit.at < CACHE_TTL_MS[row.kind]) return { items: hit.items, cached: true };
   const adapter = ADAPTERS[row.kind];
-  if (!adapter) throw new SourceError(`${row.kind} sources are not supported yet`);
+  if (!adapter) throw new SourceError("This integration is no longer available.");
+  const hit = cache.get(row.id);
+  if (!ctx.dateWindow && !opts.fresh && hit && ctx.now.getTime() - hit.at < CACHE_TTL_MS) return { items: hit.items, cached: true };
   let secret: string;
   try {
     secret = decrypt(row.secret_encrypted);
@@ -91,7 +90,7 @@ export function forgetSource(id: string) {
 /** Fetch a source the caller is known to own, as an AdapterSource (POST validation). */
 export async function fetchNewSource(source: AdapterSource, now: Date, timeZone = "UTC"): Promise<SourceItem[]> {
   const adapter = ADAPTERS[source.kind];
-  if (!adapter) throw new SourceError(`${source.kind} sources are not supported yet`);
+  if (!adapter) throw new SourceError("This integration is no longer available.");
   return adapter.fetchItems(source, { now, timeZone });
 }
 
@@ -113,6 +112,7 @@ export async function testSource(
     .maybeSingle<SecretRow>();
   if (error) throw new Error(`sources read failed: ${error.message}`);
   if (!row) return null;
+  if (row.kind !== "ics") return { summary: toSummary(row), items: [] };
 
   let items: SourceItem[] = [];
   let message: string | null = null;
@@ -154,7 +154,7 @@ export async function loadSources(
     console.error("[sources] sources read failed", rowsRes.error.message);
     return { items: [], sources: [] };
   }
-  const rows = rowsRes.data ?? [];
+  const rows = (rowsRes.data ?? []).filter((row) => row.kind === "ics");
   if (rows.length === 0) return { items: [], sources: [] };
   if (stateRes.error) console.error("[sources] source_item_state read failed", stateRes.error.message);
   const state = [...(stateRes.data ?? [])];

@@ -35,7 +35,7 @@ function database() {
       ...row, last_synced_at: null, status: "ok", error: null, created_at: NOW.toISOString(),
     }, error: null }) }) };
   });
-  const from = vi.fn(() => ({ select: async () => ({ count: 0, error: null }), insert }));
+  const from = vi.fn(() => ({ select: () => ({ eq: async () => ({ count: 0, error: null }) }), insert }));
   return { client: { from }, insert, inserted: () => inserted };
 }
 
