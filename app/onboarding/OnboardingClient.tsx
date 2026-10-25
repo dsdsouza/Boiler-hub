@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Link from "next/link";
 import { FlameLoader } from "@/components/ui/FlameLoader";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/SiteHeader";
@@ -36,6 +35,9 @@ import {
   forgetHelperFeed,
 } from "@/lib/sources/helper-handoff";
 import { ExtensionStep } from "./ExtensionStep";
+import { useExtension } from "./useExtension";
+import { DeadlineReview } from "./DeadlineReview";
+import { courseworkReady, courseworkSources, type SetupCheck } from "./setup";
 import {
   DRAFT_KEY,
   goalOptions,
@@ -57,8 +59,8 @@ const TITLES: Record<StepId, string> = {
   starting: "Where are you starting from?",
   reassurance: "You don’t have to hold it all in your head.",
   account: "Keep your progress. Connect your calendar.",
-  extension: "A shortcut to your school calendar.",
-  "focus-extension": "Make your focus time count.",
+  extension: "Meet Pip in your browser.",
+  review: "Review your imported deadlines.",
   calendar: "Bring your week into view.",
   milestone: "What’s one thing you want to finish?",
   deadline: "When would you like to finish it?",
@@ -76,7 +78,7 @@ const PHASE: Record<StepId, number> = {
   reassurance: 0,
   account: 1,
   extension: 2,
-  "focus-extension": 2,
+  review: 2,
   calendar: 2,
   milestone: 2,
   deadline: 2,
@@ -87,8 +89,6 @@ const PHASE: Record<StepId, number> = {
   ready: 3,
 };
 const OPTIONAL: StepId[] = [
-  "extension",
-  "focus-extension",
   "calendar",
   "milestone",
   "deadline",
@@ -139,21 +139,9 @@ export function OnboardingClient({
   const [syncing, setSyncing] = useState(false);
   const [pendingFeed, setPendingFeed] = useState<string | null>(null);
   const [joined, setJoined] = useState("");
-  const [verified, setVerified] = useState({ calendar: false, focus: false });
-  const verifyCalendar = useCallback(
-    (installed: boolean) =>
-      setVerified((v) =>
-        v.calendar === installed ? v : { ...v, calendar: installed },
-      ),
-    [],
-  );
-  const verifyFocus = useCallback(
-    (installed: boolean) =>
-      setVerified((v) =>
-        v.focus === installed ? v : { ...v, focus: installed },
-      ),
-    [],
-  );
+  const pip = useExtension("focus");
+  const [reviewReceipt, setReviewReceipt] = useState<string | null>(null);
+  const [reviewed, setReviewed] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const sections = useRef<Partial<Record<StepId, HTMLElement>>>({});
@@ -237,9 +225,14 @@ export function OnboardingClient({
     });
   const sync = useCallback(async () => {
     setSyncError("");
+    setReviewReceipt(null);
+    setReviewed(false);
     setSyncing(true);
     try {
-      setBoiler(await call<BoilerResponse>("/api/sync", "POST"));
+      const result = await call<SetupCheck>("/api/me/onboarding/check", "POST");
+      setBoiler(result.boiler);
+      setReviewReceipt(result.reviewReceipt);
+      setReviewed(false);
     } catch {
       setSyncError(
         "Your calendar could not be refreshed. Try again, or connect it later from Sources.",
@@ -252,7 +245,7 @@ export function OnboardingClient({
     if (
       signedIn &&
       loaded &&
-      (step === "calendar" || step === "recommendation") &&
+      (step === "calendar" || step === "review" || step === "recommendation") &&
       !boiler &&
       !syncError &&
       !syncing
@@ -290,7 +283,15 @@ export function OnboardingClient({
       navigationLock.current = false;
       heading.current?.focus({ preventScroll: true });
     }, 420);
-    return () => clearTimeout(timer);
+    let height = el?.clientHeight;
+    const resize = new ResizeObserver(() => {
+      if (el && el.clientHeight !== height) {
+        height = el.clientHeight;
+        el.scrollTo({ top: index * height, behavior: "instant" });
+      }
+    });
+    if (el) resize.observe(el);
+    return () => { clearTimeout(timer); resize.disconnect(); };
   }, [loaded, loadFailed, step, index]);
   function signIn() {
     const next = { ...draft, current: "account" as const };
@@ -305,14 +306,31 @@ export function OnboardingClient({
       );
     }
   }
+  const setupReady = pip.state === "installed" &&
+    (draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
+  const canSkip = OPTIONAL.includes(step) && !(draft.role === "student" && step === "calendar");
+  async function finishLater() {
+    if (!loaded || loadFailed || busy || sourceBusy) return;
+    setBusy(true); setError("");
+    const next = { ...draft, finished: false };
+    try {
+      if (signedIn) await call("/api/me/onboarding", "PATCH", { draft: next });
+      persist(next);
+      location.assign(signedIn ? "/boiler" : "/");
+    } catch { setError("Your progress could not be saved. Try Finish later again before leaving."); }
+    finally { setBusy(false); }
+  }
   async function advance(skip = false) {
     if (
       busy ||
       sourceBusy ||
+      (skip && !canSkip) ||
       (!skip &&
         (!isStepValid(step, draft, signedIn) ||
-          (step === "extension" && !verified.calendar) ||
-          (step === "focus-extension" && !verified.focus)))
+          (step === "extension" && pip.state !== "installed") ||
+          (step === "calendar" && draft.role === "student" && (!courseworkReady(boiler) || !reviewReceipt)) ||
+          (step === "review" && (!reviewReceipt || !reviewed)) ||
+          (["recommendation", "ready"].includes(step) && !setupReady)))
     )
       return;
     if (step === "ready") {
@@ -353,6 +371,9 @@ export function OnboardingClient({
       if (signedIn)
         await call("/api/me/onboarding", "PATCH", {
           draft: next,
+          extensionVersion: pip.state === "installed" ? pip.version : null,
+          reviewReceipt,
+          deadlinesReviewed: reviewed,
           deadlineAt: next.deadline
             ? new Date(`${next.deadline}T23:59:00`).toISOString()
             : null,
@@ -366,6 +387,8 @@ export function OnboardingClient({
   }
   const sourceAdded = (r: AddedSource) => {
     if (r.boiler) setBoiler(r.boiler);
+    setReviewReceipt(null); setReviewed(false);
+    void sync();
     setPendingFeed(null);
     try {
       forgetHelperFeed(sessionStorage);
@@ -564,19 +587,20 @@ export function OnboardingClient({
                 Your calendar link is ready to review in the next step.
               </p>
             )}
-            <ExtensionStep kind="calendar" onVerified={verifyCalendar} />
+            <ExtensionStep extension={pip} />
           </>
         );
         break;
-      case "focus-extension":
-        content = <ExtensionStep kind="focus" onVerified={verifyFocus} />;
+      case "review":
+        content = <DeadlineReview boiler={boiler} checked={reviewed} onChange={setReviewed} ready={!!reviewReceipt && courseworkReady(boiler)} busy={syncing} onRefresh={() => void sync()} />;
         break;
       case "calendar":
         content = (
           <>
             <p className={styles.intro}>
-              Google Calendar connects when you sign in. Add a school or Apple
-              Calendar subscription here if your work lives elsewhere.
+              {draft.role === "student"
+                ? "Use Pip on your school calendar to find its subscription link. Choose All Calendars and Tasks in Brightspace, then Use in onboarding in Pip. You can also paste the feed below."
+                : "Google Calendar connects when you sign in. Add Apple Calendar or another subscription here if your work lives elsewhere."}
             </p>
             {syncing && (
               <FlameLoader label="Reading your week…" />
@@ -621,6 +645,17 @@ export function OnboardingClient({
                 />
               </div>
             </details>
+            {draft.role === "student" && (
+              <div className="mt-5 border-t border-line pt-4">
+                <p role="status" className="text-sm text-body">
+                  {courseworkReady(boiler) && reviewReceipt
+                    ? `Coursework verified: ${courseworkSources(boiler).map((s) => s.label).join(", ")}. Review its deadlines next.`
+                    : "Connect a readable school calendar with Coursework enabled to continue. Google Calendar alone does not confirm a course import."}
+                </p>
+                {courseworkSources(boiler).filter((s) => s.status !== "ok").map((s) => <p key={s.id} className="text-sm text-redline-ink">{s.label}: {s.error || "This feed could not be read. Check the link and try again."}</p>)}
+                <Button variant="secondary" disabled={syncing || sourceBusy} onClick={() => void sync()}>{syncing ? "Checking coursework…" : "Check coursework again"}</Button>
+              </div>
+            )}
             {boiler && (
               <div className="mt-6 border-t border-line pt-5">
                 <p className="mt-0 mb-4 font-semibold">Your first reading</p>
@@ -790,6 +825,16 @@ export function OnboardingClient({
                 ? `Based on your answers, ${draft.name.trim()}, Pip recommends this.`
                 : `Here’s where we’ll begin, ${draft.name.trim()}.`}
             </p>
+            <div className="mb-5 border-y border-line py-4" aria-label="Setup checks">
+              <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : "Pip connection needs checking"}</p>
+              <Button variant="ghost" onClick={() => navigate("extension")}>Check Pip</Button>
+              {draft.role === "student" && <>
+                <p className="text-sm">{courseworkReady(boiler) && reviewReceipt ? "Coursework import verified" : "Coursework import needs checking"}</p>
+                <Button variant="ghost" onClick={() => navigate("calendar")}>Check coursework</Button>
+                <p className="text-sm">{reviewed && reviewReceipt ? "Deadlines reviewed" : "Deadline review still needed"}</p>
+                <Button variant="ghost" onClick={() => navigate("review")}>Review deadlines</Button>
+              </>}
+            </div>
             <div className="border-y border-line py-6">
               <h2 className="mt-0 mb-3 font-display text-[32px] font-normal">
                 {plan.title}
@@ -843,18 +888,17 @@ export function OnboardingClient({
   }
   const valid =
     isStepValid(step, draft, signedIn) &&
-    (step !== "extension" || verified.calendar) &&
-    (step !== "focus-extension" || verified.focus);
+    (step !== "extension" || pip.state === "installed") &&
+    (step !== "calendar" || draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt)) &&
+    (step !== "review" || (!!reviewReceipt && reviewed)) &&
+    (!["recommendation", "ready"].includes(step) || setupReady);
   return (
     <div className={styles.shell} data-onboarding>
       <header className={styles.header}>
         <Logo />
-        <Link
-          href={signedIn ? "/boiler" : "/"}
-          className="inline-flex min-h-11 items-center text-sm text-muted no-underline"
-        >
-          {signedIn ? "Finish later" : "Back to home"}
-        </Link>
+        <Button variant="ghost" disabled={!loaded || loadFailed || busy || sourceBusy} onClick={() => void finishLater()}>
+          Finish later
+        </Button>
       </header>
       <main className={styles.layout}>
         <aside className={styles.sidebar} aria-label="Onboarding progress">
@@ -1042,7 +1086,7 @@ export function OnboardingClient({
                     Back
                   </Button>
                   <div className="flex flex-wrap items-center justify-end gap-2">
-                    {OPTIONAL.includes(step) && (
+                    {canSkip && (
                       <Button
                         variant="ghost"
                         disabled={busy || sourceBusy}

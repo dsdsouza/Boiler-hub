@@ -10,6 +10,7 @@ it("opens the paired app and keeps private feed data out of requests and sign-in
   expect(url.origin).toBe("https://boilerplate.zhomander.workers.dev");
   expect(url.pathname).toBe("/calendar-helper");
   expect(url.search).toBe("");
+  expect(new URL(reviewDestination("https://boilerplate.zhomander.workers.dev/boiler", feed, true)).pathname).toBe("/onboarding");
   expect(decodeURIComponent(url.hash.slice(6))).toBe(feed);
   expect(appDestination("https://boilerhub.work/boiler", "/settings/sources")).toBe("https://boilerhub.work/settings/sources");
   expect(appDestination("http://localhost:3100/boiler")).toBe("http://localhost:3100/boiler");

@@ -52,7 +52,8 @@ describe("onboarding paths and retained progress", () => {
     expect(stepsFor({ ...d, milestone: "" })).not.toContain("deadline");
     const focus = { ...d, goal: "focus" as const };
     expect(stepsFor(focus)).not.toContain("deadline");
-    expect(stepsFor(focus)).toContain("focus-extension");
+    expect(stepsFor(focus)).not.toContain("focus-extension");
+    expect(stepsFor(focus)).toContain("review");
     expect(parseDraft(JSON.parse(JSON.stringify(focus))).milestone).toBe(
       "Lab report",
     );
@@ -60,6 +61,13 @@ describe("onboarding paths and retained progress", () => {
     expect(
       isStepValid("goal", { ...d, role: "professional", goal: "team" }, true),
     ).toBe(false);
+  });
+  it("retains legacy answers but reopens setup that previously allowed skipped checks", () => {
+    const d = parseDraft({ version: 1, role: "student", name: "Alex", goal: "balance", starting: "fresh", finished: true, current: "ready", completed: ["identity", "name", "goal", "starting", "reassurance", "account", "extension", "calendar", "recommendation", "ready"] });
+    expect(d.name).toBe("Alex");
+    expect(d.finished).toBe(false);
+    expect(d.current).toBe("extension");
+    expect(d.completed).not.toContain("calendar");
   });
   it("bounds untrusted drafts and rejects malformed dates or injected steps", () => {
     const d = parseDraft({

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   profile: vi.fn(),
   task: vi.fn(),
   eq: vi.fn(),
+  sync: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("../_lib/http", async () => {
@@ -16,11 +17,15 @@ vi.mock("../_lib/http", async () => {
   return {
     ...actual,
     requireUser: mocks.auth,
+    syncSelf: mocks.sync,
     serverError: () =>
       NextResponse.json({ error: "Could not save" }, { status: 500 }),
   };
 });
 import { GET, PATCH } from "./route";
+import { issueReview } from "./verification";
+import type { BoilerResponse } from "@/lib/pressure/api-types";
+const school = () => ({ sources: [{ id: "school", kind: "ics", label: "Brightspace", coursework: true, status: "ok", lastSyncedAt: "2026-10-24T10:00:00Z" }], tasks: [], events: [] }) as unknown as BoilerResponse;
 const send = (draft: unknown, extra = {}) =>
   PATCH(
     new Request("https://boilerhub.work/api/me/onboarding", {
@@ -32,6 +37,7 @@ const send = (draft: unknown, extra = {}) =>
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://qa-project.supabase.co");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "qa-key");
+  vi.stubEnv("TOKEN_ENCRYPTION_KEY", Buffer.alloc(32, 7).toString("base64"));
   vi.clearAllMocks();
   mocks.eq.mockResolvedValue({ error: null });
   mocks.task.mockResolvedValue({ error: null });
@@ -40,6 +46,7 @@ beforeEach(() => {
     table === "profiles" ? { update: mocks.profile } : { upsert: mocks.task },
   );
   mocks.updateUser.mockResolvedValue({ error: null });
+  mocks.sync.mockResolvedValue(school());
   mocks.auth.mockResolvedValue({
     user: { id: "owner-id", user_metadata: { onboarding: { name: "Alex" } } },
     supabase: { from: mocks.from, auth: { updateUser: mocks.updateUser } },
@@ -98,7 +105,7 @@ describe("owner-scoped onboarding persistence", () => {
       finished: true,
     });
     d.completed = stepsFor(d);
-    const extra = { deadlineAt: "2026-11-03T04:59:00Z" };
+    const extra = { deadlineAt: "2026-11-03T04:59:00Z", extensionVersion: "0.3.2", deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) };
     expect((await send(d, extra)).status).toBe(200);
     expect((await send(d, extra)).status).toBe(200);
     expect(mocks.eq).toHaveBeenCalledWith("id", "owner-id");
@@ -131,7 +138,24 @@ describe("owner-scoped onboarding persistence", () => {
     });
     d.completed = stepsFor(d);
     mocks.eq.mockResolvedValue({ error: new Error("database unavailable") });
-    expect((await send(d)).status).toBe(500);
+    expect((await send(d, { extensionVersion: "0.3.2" })).status).toBe(500);
     expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+  it("requires a current Pip reply and a valid reviewed import before finishing student setup", async () => {
+    const draft = parseDraft({ role: "student", name: "Alex", goal: "balance", starting: "fresh", finished: true });
+    draft.completed = stepsFor(draft);
+    expect((await send(draft)).status).toBe(400);
+    expect((await send(draft, { extensionVersion: "0.3.0" })).status).toBe(400);
+    expect((await send(draft, { extensionVersion: "0.3.2", deadlinesReviewed: true, reviewReceipt: "forged" })).status).toBe(400);
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    const extra = { extensionVersion: "0.3.2", deadlinesReviewed: true, reviewReceipt: issueReview("owner-id", school()) };
+    expect((await send(draft, extra)).status).toBe(200);
+    expect(mocks.updateUser.mock.calls[0][0].data.onboarding_setup.sourceIds).toEqual(["school"]);
+  });
+  it("keeps Finish later unfinished without requiring an extension or course import", async () => {
+    const draft = parseDraft({ role: "student", name: "Alex", current: "extension", finished: false });
+    expect((await send(draft)).status).toBe(200);
+    expect(mocks.sync).not.toHaveBeenCalled();
+    expect(mocks.updateUser.mock.calls[0][0].data.onboarding.finished).toBe(false);
   });
 });

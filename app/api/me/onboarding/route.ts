@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { badRequest, readJson, requireUser, serverError } from "../_lib/http";
+import { badRequest, readJson, requireUser, serverError, syncSelf } from "../_lib/http";
+import { supportsSetup, courseworkSources } from "@/app/onboarding/setup";
+import { verifyReview } from "./verification";
 import {
   isStepValid,
   parseDraft,
@@ -32,6 +34,8 @@ export async function PATCH(request: Request) {
   if (!body || !body.draft || typeof body.draft !== "object")
     return badRequest("Expected onboarding answers");
   const draft = parseDraft(body.draft);
+  if ((body.draft as Record<string, unknown>).finished === true && !draft.finished)
+    return badRequest("Setup has changed. Refresh and verify Pip and your coursework before finishing.");
   const deadlineAt =
     typeof body.deadlineAt === "string" ? body.deadlineAt : null;
   if (
@@ -55,7 +59,20 @@ export async function PATCH(request: Request) {
   )
     return badRequest("Complete the required questions first");
   // Save real profile changes before marking the journey complete; a retry is idempotent.
+  let setup = undefined;
   if (draft.finished) {
+    if (typeof body.extensionVersion !== "string" || !supportsSetup(body.extensionVersion))
+      return badRequest("Connect the current Pip extension in this browser before finishing setup.");
+    setup = { version: 2, extensionVersion: body.extensionVersion, checkedAt: new Date().toISOString(), sourceIds: [] as string[], deadlinesReviewedAt: null as string | null };
+    if (draft.role === "student") {
+      try {
+        const boiler = await syncSelf(auth.user, { freshSources: true, persist: "ifStale" });
+        if (body.deadlinesReviewed !== true || !verifyReview(body.reviewReceipt, auth.user.id, boiler))
+          return badRequest("Connect your coursework and review its current deadlines before finishing. If the feed changed, review it again.");
+        setup.sourceIds = courseworkSources(boiler).map((s) => s.id);
+        setup.deadlinesReviewedAt = setup.checkedAt;
+      } catch (error) { return serverError("onboarding verification", error); }
+    }
     if (resolvedGoal(draft) === "deadlines" && draft.milestone.trim()) {
       // Stable owner-scoped UUID makes retries safe, including a lost response.
       const hash = new Uint8Array(
@@ -99,6 +116,7 @@ export async function PATCH(request: Request) {
   const { error } = await auth.supabase.auth.updateUser({
     data: {
       onboarding: draft,
+      onboarding_setup: setup ?? null,
       ...(draft.finished ? { full_name: draft.name.trim() } : {}),
     },
   });
