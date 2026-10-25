@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { Contribution, LoadItem, Size } from "@/lib/types";
@@ -381,10 +382,9 @@ export function TaskList({
       <ul className="m-0 list-none p-0">
         {shown.map(renderTask)}
       </ul>
-      {tab === "open" && completedTasks.length > 0 && <details className="border-t border-line">
-        <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-body">Completed or cleared ({completedTasks.length})</summary>
+      {tab === "open" && completedTasks.length > 0 && <Disclosure className="mt-3" flush label={`Completed or cleared (${completedTasks.length})`}>
         <ul className="m-0 list-none p-0">{completedTasks.map(renderTask)}</ul>
-      </details>}
+      </Disclosure>}
       </div>
       <form onSubmit={submit} className="bp-task-form border-t border-line pt-4">
         <div className="bp-task-fields">
