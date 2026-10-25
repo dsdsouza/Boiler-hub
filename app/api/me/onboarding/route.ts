@@ -5,6 +5,7 @@ import { verifyReview } from "./verification";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isStepValid,
+  needsManualTask,
   parseDraft,
   resolvedGoal,
   stepsFor,
@@ -66,13 +67,13 @@ export async function PATCH(request: Request) {
   // Save real profile changes before marking the journey complete; a retry is idempotent.
   let setup = undefined;
   if (draft.finished) {
-    const manualStart = draft.extensionDeferred;
+    const manualStart = needsManualTask(draft);
     const extensionVersion = typeof body.extensionVersion === "string" && supportsSetup(body.extensionVersion) ? body.extensionVersion : null;
-    if (!extensionVersion && !draft.extensionDeferred)
+    if (!extensionVersion && !draft.extensionDeferred && draft.role !== "lead")
       return badRequest("Connect the current Pip extension in this browser before finishing setup.");
     if (extensionVersion) draft.extensionDeferred = false;
-    setup = { version: 2, extensionVersion, extensionDeferred: !extensionVersion && draft.extensionDeferred, checkedAt: new Date().toISOString(), sourceIds: [] as string[], deadlinesReviewedAt: null as string | null };
-    if (draft.role === "student") {
+    setup = { version: 2, extensionVersion, extensionDeferred: !extensionVersion && draft.extensionDeferred, courseworkDeferred: draft.role === "student" && draft.courseworkDeferred, checkedAt: new Date().toISOString(), sourceIds: [] as string[], deadlinesReviewedAt: null as string | null };
+    if (draft.role === "student" && !draft.courseworkDeferred) {
       try {
         const boiler = await syncSelf(auth.user, { freshSources: true, persist: "ifStale" });
         if (body.deadlinesReviewed !== true || !verifyReview(body.reviewReceipt, auth.user.id, boiler))

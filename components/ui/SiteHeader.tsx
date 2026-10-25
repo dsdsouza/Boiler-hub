@@ -23,7 +23,7 @@ const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "calendar", href: "/calendar", label: "Calendar" },
   { key: "teams", href: "/teams", label: "Teams" },
   { key: "sources", href: "/settings/sources", label: "Connect" },
-  { key: "how", href: "/how", label: "Help" },
+  { key: "how", href: "/how", label: "How it works" },
 ];
 
 function NavLink({ href, label, current, prefetch }: { href: string; label: string; current: boolean; prefetch?: boolean }) {
@@ -167,7 +167,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
     {
       key: "how",
       href: "/how",
-      label: "Help",
+      label: "How it works",
       icon: (
         <>
           <circle cx="12" cy="12" r="9" />
@@ -188,7 +188,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
           prefetch={true}
           aria-label={t.label}
           aria-current={current === t.key ? "page" : undefined}
-          className={`bp-control relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold no-underline ${
+          className={`bp-control relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-center text-xs font-semibold no-underline ${
             current === t.key ? "text-brass-ink after:absolute after:top-0 after:h-0.5 after:w-8 after:rounded-full after:bg-brass hover:text-brass-ink" : "text-muted hover:text-fg"
           }`}
         >
