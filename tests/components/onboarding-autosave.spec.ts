@@ -134,7 +134,10 @@ test("another account cannot inherit the previous account’s pending answers", 
   }, privateDraft);
   await page.goto("/qa-workflows?view=onboarding");
   await expect(nameField(page)).toHaveValue("Member answer");
+  // Let the step's initial heading focus settle before WebKit starts typing.
+  await expect(page.getByRole("heading", { name: "What should Pip call you?", exact: true })).toBeFocused();
   await nameField(page).fill("New member answer");
+  await expect(nameField(page)).toHaveValue("New member answer");
   await expect.poll(() => service.users[1].onboarding?.name).toBe("New member answer");
   expect(service.users[0].onboarding).toBeNull();
 });
