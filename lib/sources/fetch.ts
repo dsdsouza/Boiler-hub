@@ -58,9 +58,20 @@ export function isBlockedIp(address: string): boolean {
 
 export type Lookup = (host: string) => Promise<string[]>;
 
+function resolvedAddresses(records: string[]): string[] {
+  return records.filter((record) => {
+    if (isIP(record)) return true;
+    // Workers includes fully qualified CNAME answers in lookup/resolve results.
+    // They are aliases, not IPs. Keep checking every actual A/AAAA address;
+    // an alias-only answer stays empty and is rejected by assertPublicHost.
+    if (record.length <= 254 && /^(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+$/i.test(record)) return false;
+    throw new Error("Unexpected DNS address");
+  });
+}
+
 const defaultLookup: Lookup = async (host) => {
   try {
-    return (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
+    return resolvedAddresses((await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address));
   } catch (error) {
     // Workers supports DNS record resolution, but not the OS-backed lookup API.
     if (!(error instanceof Error) || !/not implemented/i.test(error.message)) throw error;
@@ -71,7 +82,7 @@ const defaultLookup: Lookup = async (host) => {
         throw record.reason;
       }
     }
-    return records.flatMap((record) => record.status === "fulfilled" ? record.value : []);
+    return resolvedAddresses(records.flatMap((record) => record.status === "fulfilled" ? record.value : []));
   }
 };
 
