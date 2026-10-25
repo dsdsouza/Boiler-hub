@@ -1,6 +1,6 @@
 import type { LoadItem } from "@/lib/types";
 
-// Labeled synthetic inputs for /forecast-explanation-preview and the tests. Not anyone's data.
+// Labeled synthetic inputs for the forecast explanation tests. Not anyone's data.
 
 export interface ForecastScenario {
   id: string;
