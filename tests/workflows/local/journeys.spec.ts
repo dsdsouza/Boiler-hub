@@ -199,6 +199,8 @@ test('A dated first task and revised answers survive reopening onboarding', plan
     await next.click(); await next.click();
     await next.click();
     await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible(); await next.click();
+    await expect(page.getByRole('heading', { name: 'Your first reading', exact: true })).toBeVisible();
+    await next.click();
     await page.getByRole('checkbox', { name: /I checked my school calendar/ }).check(); await next.click();
     await page.getByLabel('Your first task', { exact: true }).fill('Finish the onboarding test'); await next.click();
     await page.getByLabel('Target date (optional)', { exact: true }).fill('2026-10-30');
