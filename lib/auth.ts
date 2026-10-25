@@ -1,5 +1,5 @@
 // Routes that require a signed-in user. Used by middleware.
-export const PROTECTED_PREFIXES = ["/boiler", "/teams", "/onboarding", "/settings"];
+export const PROTECTED_PREFIXES = ["/boiler", "/calendar", "/teams", "/onboarding", "/settings"];
 
 // Cookie carrying the post-login path from /auth/signin to /auth/callback.
 export const NEXT_COOKIE = "bp_next";

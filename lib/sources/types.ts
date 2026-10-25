@@ -47,6 +47,8 @@ export interface SourceItem extends LoadItem {
 
 export interface FetchContext {
   now: Date;
+  /** Optional owner calendar window; does not change the pressure-scoring horizon. */
+  dateWindow?: { from: Date; to: Date };
   /** IANA zone for all-day deadlines; the user's calendar zone. */
   timeZone: Promise<string> | string;
   fetchImpl?: typeof fetch;

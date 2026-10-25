@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -9,10 +9,7 @@ import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { PipDressUp } from "@/components/mascot/PipDressUp";
-import { PipChat } from "@/components/mascot/PipChat";
-import { PipConnection } from "@/components/mascot/PipConnection";
 import { usePipConversation } from "@/components/mascot/PipConversation";
-import type { StudyProposal } from "@/lib/pip/planning";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -95,23 +92,7 @@ export function MyBoilerView({
   useTick(30_000);
   const accessory = usePipAccessory();
   const study = useStudyAccountability(boiler);
-  const [chatRequest, setChatRequest] = useState<{ question: string; key: number } | null>(null);
-  const chatRegion = useRef<HTMLElement | null>(null);
-  const { clear: clearConversation, dismissProposal } = usePipConversation();
-  const [planError, setPlanError] = useState("");
-  const askPip = (question: string) => {
-    setChatRequest((previous) => ({ question, key: (previous?.key ?? 0) + 1 }));
-    chatRegion.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  const acceptPlan = (proposal: StudyProposal) => {
-    const task = boiler.data?.items.find((item) => item.id === proposal.taskId && item.kind === "task" && !item.doneAt);
-    const now = Date.now();
-    if (!task) { setPlanError("That task is no longer open. Ask Pip for an updated plan."); return; }
-    if (!study.blocker.connected || !study.blocker.remindersSupported || !study.blocker.remindersEnabled) { setPlanError("Pair the Pip extension and enable laptop reminders first."); return; }
-    if (proposal.startAt < now - 60000 || proposal.endAt <= now + 60000) { setPlanError("That study time has passed. Ask Pip for a new window."); return; }
-    study.send({ id: crypto.randomUUID(), taskId: task.id, title: task.title.slice(0, 200), goal: proposal.goal, startAt: Math.max(now, proposal.startAt), endAt: proposal.endAt, demo: false, scope: study.scope });
-    setPlanError(""); dismissProposal();
-  };
+  const { openChat: askPip } = usePipConversation();
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
   // The forecast day whose drill-down is open. Lives here so both strip copies and the panel share it.
@@ -169,20 +150,6 @@ export function MyBoilerView({
         </button>
       </div>
 
-      <Card as="section" ref={chatRegion} aria-label="Chat with Pip" className="flex min-w-0 flex-col gap-4 px-4 py-5 sm:px-7 sm:py-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="m-0 font-display text-[30px] leading-none tracking-[0.03em]">Chat with Pip</h2><p className="mt-2 mb-0 text-sm text-muted">Deadlines, priorities, a study plan you can follow through on.</p></div>
-          <Button variant="ghost" onClick={clearConversation}>New conversation</Button>
-        </div>
-        <PipConnection study={study} />
-        {study.session && !study.session.outcome && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-          <p role="status" className="m-0 text-sm text-body">{study.phase === "review" ? "Your focus block ended. Tell Pip what got done." : study.phase === "scheduled" ? `Your study commitment starts ${new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(study.session.startAt)}.` : "Your focus block is running. Pip is here if you get stuck."}</p>
-          <Button variant="ghost" onClick={() => askPip(`Help me check in on ${study.session!.title}. My small step was: ${study.session!.goal}. Ask me what I managed to do, then help me choose the next step.`)}>Check in with Pip</Button>
-        </div>}
-        <PipChat studyContext={study.context} draftRequest={chatRequest} enabled={boiler.source !== "fixture"} remindersReady={Boolean(study.blocker.connected && study.blocker.remindersSupported && study.blocker.remindersEnabled)} replacing={Boolean(study.session && !study.session.outcome)} onAcceptProposal={acceptPlan} />
-        {boiler.source === "fixture" && <p className="m-0 text-sm text-muted"><a className="underline underline-offset-4" href="/auth/signin?next=/boiler">Sign in to talk to Pip about your own work.</a> Demo tasks below are synthetic; the extension demo still works.</p>}
-        {planError && <p role="alert" className="m-0 text-sm text-hot-ink">{planError}</p>}
-      </Card>
       <StudyAccountability boiler={boiler} study={study} onAsk={askPip} />
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
