@@ -210,9 +210,9 @@ export function DemoEngineRoom({ personal, onAssign }: { personal: MyBoilerData 
                 <span id="dl" className="text-[13px] font-medium text-body">
                   Due
                 </span>
-                <div role="group" aria-labelledby="dl" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,96px),1fr))] gap-2">
+                <div role="group" aria-labelledby="dl" className="flex flex-wrap gap-2">
                   {options.map((o) => (
-                    <button key={o.key} type="button" aria-pressed={dueKey === o.key} onClick={() => setDueKey(o.key)} className={`${chip(dueKey === o.key)} px-2`}>
+                    <button key={o.key} type="button" aria-pressed={dueKey === o.key} onClick={() => setDueKey(o.key)} className={`${chip(dueKey === o.key)} grow`}>
                       {o.label}
                     </button>
                   ))}
