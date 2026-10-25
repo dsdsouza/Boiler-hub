@@ -17,7 +17,7 @@ test("onboarding keeps the requested copy and puts the small bold count below th
   await expect(page.getByText("A few small questions. A clearer picture of your week.")).toHaveCount(0);
   await expect(page.getByText("Your progress stays with you")).toHaveCount(0);
   await expect(page.getByText("About you", { exact: true })).toHaveCount(0);
-  const count = page.getByText("1 of 13", { exact: true });
+  const count = page.getByText("1 of 14", { exact: true });
   await expect(count).toBeVisible();
   const countStyle = await count.evaluate(el => ({ weight: getComputedStyle(el).fontWeight, size: parseFloat(getComputedStyle(el).fontSize), top: el.getBoundingClientRect().top }));
   expect(Number(countStyle.weight)).toBeGreaterThanOrEqual(700);
@@ -44,34 +44,41 @@ test("onboarding keeps the requested copy and puts the small bold count below th
   await page.screenshot({ path: test.info().outputPath("starting.png"), fullPage: true });
 });
 
-test("scrolling up from question four shows one complete question and retains answers", async ({ page, context }) => {
+test("scrolling and swiping never change steps, while buttons retain answers", async ({ page, context }) => {
   const service = world(); await service.connect(context);
   service.users[0].onboarding = draftAt("starting");
   await page.goto("/qa-workflows?view=onboarding");
   await expect(title(page)).toHaveText("Where are you starting from?");
-  // Let the entrance finish before beginning a new scroll gesture.
   await page.waitForTimeout(300);
   await title(page).hover();
   await page.mouse.wheel(0, -180);
+  await page.waitForTimeout(300);
+  await expect(title(page)).toHaveText("Where are you starting from?");
+  if (await page.evaluate(() => "Touch" in window)) {
+    await title(page).dispatchEvent("touchstart", { touches: [{ identifier: 1, clientX: 120, clientY: 160 }] });
+    await title(page).dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientX: 120, clientY: 300 }] });
+    await expect(title(page)).toHaveText("Where are you starting from?");
+  }
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(title(page)).toHaveText("Heyo Josh! What would you like a hand with?");
+  await page.waitForTimeout(300);
+  await title(page).hover();
+  await page.mouse.wheel(0, 180);
+  await page.waitForTimeout(300);
+  if (await page.evaluate(() => "Touch" in window)) {
+    await title(page).dispatchEvent("touchstart", { touches: [{ identifier: 1, clientX: 120, clientY: 300 }] });
+    await title(page).dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientX: 120, clientY: 160 }] });
+  }
   await expect(title(page)).toHaveText("Heyo Josh! What would you like a hand with?");
   await expect(page.locator("[data-onboarding] h1")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "I already use a calendar", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Understand my workload", exact: true })).toHaveAttribute("aria-pressed", "true");
-  const geometry = await title(page).evaluate(el => {
-    const viewport = el.closest("section")!.parentElement!;
-    return { scroll: viewport.scrollTop, top: el.getBoundingClientRect().top - viewport.getBoundingClientRect().top, overflow: document.documentElement.scrollWidth > innerWidth };
-  });
-  expect(geometry.scroll).toBe(0);
-  expect(geometry.top).toBeGreaterThanOrEqual(0);
-  expect(geometry.top).toBeLessThan(16);
-  expect(geometry.overflow).toBe(false);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await next(page).click();
+  await expect(title(page)).toHaveText("Where are you starting from?");
+  expect(await title(page).evaluate(el => el.closest("section")!.parentElement!.scrollTop)).toBe(0);
   await expect(page.getByRole("button", { name: "I’m starting fresh", exact: true })).toHaveAttribute("aria-pressed", "true");
-  if (await page.evaluate(() => "Touch" in window)) {
-    await page.waitForTimeout(300);
-    await title(page).dispatchEvent("touchstart", { touches: [{ identifier: 1, clientX: 120, clientY: 160 }] });
-    await title(page).dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientX: 120, clientY: 300 }] });
-  } else await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(title(page)).toHaveText("Heyo Josh! What would you like a hand with?");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Your name", exact: true })).toHaveValue("Josh");
@@ -96,10 +103,10 @@ test("a failed Pip check can be deferred explicitly and setup still completes af
   expect(service.users[0].onboarding?.extensionDeferred).toBe(false);
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await dialog.getByRole("button", { name: "Complete later", exact: true }).click();
-  await expect(title(page)).toHaveText("Bring your week into view.");
+  await expect(title(page)).toHaveText("Bring your week into view");
   await expect.poll(() => service.users[0].onboarding?.extensionDeferred).toBe(true);
   await page.reload();
-  await expect(title(page)).toHaveText("Bring your week into view.");
+  await expect(title(page)).toHaveText("Bring your week into view");
   await page.getByRole("button", { name: "Skip for now", exact: true }).click();
   await expect(title(page)).toHaveText("How are you showing up today?");
   await next(page).click();
@@ -109,6 +116,39 @@ test("a failed Pip check can be deferred explicitly and setup still completes af
   await page.getByRole("button", { name: "Finish setup", exact: true }).click();
   await expect(title(page)).toHaveText("Your boiler is ready.");
   expect(service.users[0].onboarding).toMatchObject({ finished: true, extensionDeferred: true, name: "Josh" });
+  expect(service.users[0].onboarding?.completed).not.toContain("reading");
+});
+
+test("the first reading follows calendar connection and resumes on its own page", async ({ page, context }) => {
+  const service = world(); await service.connect(context);
+  service.users[0].onboarding = draftAt("calendar");
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("Bring your week into view");
+  await expect(page.getByText("Google Calendar connected", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your first reading", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Workload summary" })).toHaveCount(0);
+  // Long connection forms still scroll within the same step.
+  await page.getByText("Add Apple Calendar or another feed", { exact: true }).click();
+  const viewport = title(page).locator("xpath=ancestor::section/..");
+  await viewport.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await viewport.hover();
+  await page.mouse.wheel(0, 350);
+  await expect(title(page)).toHaveText("Bring your week into view");
+  await expect.poll(() => viewport.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  await next(page).click();
+  await expect(title(page)).toHaveText("Your first reading");
+  await expect(page.getByRole("list", { name: "Workload summary" })).toBeVisible();
+  await expect.poll(() => service.users[0].onboarding?.current).toBe("reading");
+  await page.screenshot({ path: test.info().outputPath("first-reading.png"), fullPage: true });
+  await page.reload();
+  await expect(title(page)).toHaveText("Your first reading");
+  await expect(page.getByRole("list", { name: "Workload summary" })).toBeVisible();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(title(page)).toHaveText("Bring your week into view");
+  await next(page).click();
+  await expect(title(page)).toHaveText("Your first reading");
+  await next(page).click();
+  await expect(title(page)).toHaveText("How are you showing up today?");
 });
 
 test("sign-in confirmation uses the onboarding name and detected Pip keeps Continue", async ({ page, context }) => {
