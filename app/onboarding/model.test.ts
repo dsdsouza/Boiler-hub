@@ -60,9 +60,20 @@ describe("onboarding paths and retained progress", () => {
   it("keeps previously finished journeys ready after separating the reading page", () => {
     const draft = parseDraft({ role: "other", name: "Josh", goal: "balance", starting: "fresh" });
     const finished = parseDraft({ ...draft, current: "ready", finished: true, completed: stepsFor(draft).filter(step => step !== "reading") });
-    expect(finished.current).toBe("ready");
+    expect(finished.current).toBe("recommendation");
     expect(finished.finished).toBe(true);
-    expect(stepsFor(finished)[unlockedIndex(finished, true)]).toBe("ready");
+    expect(stepsFor(finished)[unlockedIndex(finished, true)]).toBe("recommendation");
+  });
+  it("ends at the recommendation and collects manual tasks there when Pip was skipped", () => {
+    const draft = parseDraft({ role: "other", goal: "deadlines", extensionDeferred: true });
+    expect(stepsFor(draft).at(-1)).toBe("recommendation");
+    expect(stepsFor(draft)).not.toContain("ready");
+    expect(stepsFor(draft)).not.toContain("milestone");
+    expect(stepsFor(draft)).not.toContain("deadline");
+    expect(isStepValid("recommendation", draft, true)).toBe(false);
+    expect(isStepValid("recommendation", { ...draft, milestone: "   " }, true)).toBe(false);
+    expect(isStepValid("recommendation", { ...draft, milestone: "Write my outline" }, true)).toBe(true);
+    expect(recommendation({ ...draft, goal: "focus" }).href).toBe("/boiler");
   });
   it("reopens the merged calendar step for a saved sources page without losing answers", () => {
     const draft = parseDraft({ version: 2, role: "student", name: "Josh", goal: "deadlines", starting: "calendar", milestone: "Lab report", deadline: "2026-11-02", current: "sources", completed: ["identity", "name", "goal", "starting", "reassurance", "account", "extension", "calendar", "reading", "review", "milestone", "deadline", "status"] });

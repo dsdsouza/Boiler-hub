@@ -65,6 +65,7 @@ export async function PATCH(request: Request) {
   // Save real profile changes before marking the journey complete; a retry is idempotent.
   let setup = undefined;
   if (draft.finished) {
+    const manualStart = draft.extensionDeferred;
     const extensionVersion = typeof body.extensionVersion === "string" && supportsSetup(body.extensionVersion) ? body.extensionVersion : null;
     if (!extensionVersion && !draft.extensionDeferred)
       return badRequest("Connect the current Pip extension in this browser before finishing setup.");
@@ -79,7 +80,7 @@ export async function PATCH(request: Request) {
         setup.deadlinesReviewedAt = setup.checkedAt;
       } catch (error) { return serverError("onboarding verification", error); }
     }
-    if (resolvedGoal(draft) === "deadlines" && draft.milestone.trim()) {
+    if ((resolvedGoal(draft) === "deadlines" || manualStart) && draft.milestone.trim()) {
       // Stable owner-scoped UUID makes retries safe, including a lost response.
       const hash = new Uint8Array(
         await crypto.subtle.digest(

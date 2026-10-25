@@ -131,7 +131,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             Coursework feed: all-day entries are deadlines
           </label>}
         </div>
-        <p className="m-0 text-sm text-muted">{isApple ? "Timed events count toward your schedule. All-day and free events are excluded, just like Google Calendar." : "New feeds start with deadlines due today or later."}</p>
+        {isApple && <p className="m-0 text-sm text-muted">Timed events count toward your schedule. All-day and free events are excluded, just like Google Calendar.</p>}
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={!url.trim()} aria-disabled={busy || !url.trim()} aria-busy={busy}>
             {busy ? "Checking the feed…" : isApple ? "Connect Apple Calendar" : isBrightspace ? "Import schedule" : "Add feed"}
