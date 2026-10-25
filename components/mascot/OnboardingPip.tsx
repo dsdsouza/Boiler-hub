@@ -19,7 +19,7 @@ export function OnboardingPip() {
       <div className="flex min-w-0 flex-col gap-3">
         <CardTitle id="pip-hello">Hi, I’m {MASCOT_NAME}.</CardTitle>
         <p className="m-0 text-[15px] leading-relaxed text-body">
-          I keep an eye on your pressure, so you can see a heavy week coming before it arrives. I’ll speak up rarely, and only with something you can act on.
+          I’ll keep an eye on your pressure, ol’ friend, so a heavy week doesn’t sneak up on you. I won’t bend your ear unless I’ve got something useful you can act on.
         </p>
         <ul aria-label={`How ${MASCOT_NAME} looks in each zone`} className="m-0 grid list-none grid-cols-2 gap-x-3 gap-y-2 p-0 sm:grid-cols-4">
           {ZONES.map((z) => (

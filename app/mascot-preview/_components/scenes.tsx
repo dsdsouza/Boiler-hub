@@ -384,7 +384,7 @@ export function OnboardingScene({ onFinish }: { onFinish: () => void }) {
       title: `Hi, I’m ${MASCOT_NAME}.`,
       body: (
         <p className="m-0">
-          I keep an eye on your pressure, so you can see a heavy week coming before it arrives. I’ll speak up rarely, and only with something you can act on.
+          I’ll keep an eye on your pressure, ol’ friend, so a heavy week doesn’t sneak up on you. I won’t bend your ear unless I’ve got something useful you can act on.
         </p>
       ),
     },
