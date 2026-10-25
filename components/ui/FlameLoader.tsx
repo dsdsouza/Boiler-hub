@@ -36,8 +36,10 @@ export function FlameLoader({
   return <span ref={root} role={decorative ? undefined : "status"} aria-hidden={decorative || undefined}
     data-flame-loader="" data-paused={paused || undefined} className={`bp-loading-flame bp-loading-flame-${size}`}>
     <svg viewBox="0 0 64 80" width="64" height="80" fill="currentColor" aria-hidden="true" focusable="false">
-      <path d={FLAME} />
-      <path d={FLAME} className="bp-loading-flame-fill" />
+      <g className="bp-loading-flame-tip">
+        <path d={FLAME} />
+        <path d={FLAME} className="bp-loading-flame-fill" />
+      </g>
     </svg>
     {!decorative && <span className="sr-only">{label}</span>}
   </span>;
