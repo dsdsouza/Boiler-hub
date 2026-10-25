@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ValveLoader } from "@/components/ui/ValveLoader";
 
 const STEAM_THOUGHTS = [
@@ -19,7 +19,12 @@ export function PipThinking() {
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const line = STEAM_THOUGHTS[thought];
-  const lastWord = line.lastIndexOf(" ") + 1;
+  let offset = 0;
+  const words = line.split(" ").map((word) => {
+    const start = offset;
+    offset += word.length + 1;
+    return { word, start };
+  });
 
   useEffect(() => {
     let visible = true;
@@ -56,16 +61,25 @@ export function PipThinking() {
     <span className="sr-only">Pip is preparing a reply.</span>
     <ValveLoader size="sm" decorative />
     <span className="min-w-0" aria-hidden="true">
-      <span key={`${thought}-start`} className="bp-pip-thought">{line.slice(0, lastWord)}</span>
-      <span className="inline-block whitespace-nowrap">
-        <span key={`${thought}-end`} className="bp-pip-thought">{line.slice(lastWord)}</span>
-        {/* Keep the dots mounted when the thought changes so their wave stays continuous. */}
-        <svg className="bp-pip-dots" viewBox="0 0 18 12" width="18" height="12" fill="currentColor" aria-hidden="true" focusable="false">
-          <circle className="bp-pip-dot" cx="3" cy="10" r="1.5" />
-          <circle className="bp-pip-dot" cx="9" cy="10" r="1.5" />
-          <circle className="bp-pip-dot" cx="15" cy="10" r="1.5" />
-        </svg>
-      </span>
+      {words.map(({ word, start }, index) => {
+        const text = <span className="inline-block whitespace-nowrap">
+          {Array.from(word).map((letter, letterIndex) => (
+            <span key={letterIndex} className="bp-pip-letter" style={{
+              "--bp-pip-wave-delay": `${Math.round((start + letterIndex) / (line.length - 1) * 200)}ms`,
+            } as CSSProperties}>{letter}</span>
+          ))}
+        </span>;
+        if (index < words.length - 1) return <Fragment key={index}>{text}{" "}</Fragment>;
+        // A stable last-word group keeps the dots mounted across phrase changes.
+        return <span key="last" className="inline-block whitespace-nowrap">
+          {text}
+          <svg className="bp-pip-dots" viewBox="0 0 18 12" width="18" height="12" fill="currentColor" aria-hidden="true" focusable="false">
+            <circle className="bp-pip-dot" cx="3" cy="10" r="1.5" />
+            <circle className="bp-pip-dot" cx="9" cy="10" r="1.5" />
+            <circle className="bp-pip-dot" cx="15" cy="10" r="1.5" />
+          </svg>
+        </span>;
+      })}
     </span>
   </div>;
 }
