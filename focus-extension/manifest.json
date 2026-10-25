@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Boilerplate · Focus with Pip",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Import school calendar links, plan with Pip, and pause distracting sites during your study commitments.",
   "minimum_chrome_version": "120",
   "permissions": ["declarativeNetRequest", "storage", "alarms", "tabs", "notifications", "activeTab", "scripting"],
@@ -21,6 +21,8 @@
   "content_scripts": [
     {
       "matches": [
+        "https://boilerplate.select/*",
+        "https://www.boilerplate.select/*",
         "https://boilerhub.work/*",
         "https://www.boilerhub.work/*",
         "https://boilerplate.zhomander.workers.dev/*",

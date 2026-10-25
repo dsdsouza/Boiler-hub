@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { FlameLoader } from "@/components/ui/FlameLoader";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Field";
@@ -151,7 +153,12 @@ export function StudyAccountability({
             : "Focus extension not connected"}
         </span>
       </div>
-      {open ? (
+      {!boiler.data ? (
+        boiler.error ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-hot-ink">
+          <span>{boiler.error}</span>
+          <Button disabled={boiler.syncing} onClick={() => void boiler.refresh()}>Try again</Button>
+        </div> : <FlameLoader label="Loading your focus tasks…" />
+      ) : open ? (
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_auto]">
           <div>
             <p role="status" className="m-0 text-lg font-semibold text-fg">
@@ -322,8 +329,7 @@ export function StudyAccountability({
             </>
           ) : (
             <p className="m-0 text-sm text-muted">
-              Add an assignment to your task list below, then choose a time to
-              focus on it.
+              Add an assignment in <Link href="/boiler" className="underline underline-offset-4">My Boiler</Link>, then choose a time to focus on it.
             </p>
           )}
         </>
@@ -450,7 +456,7 @@ export function StudyAccountability({
         <p className="mt-3 mb-3 text-sm leading-relaxed text-muted">
           Download and unzip the extension. In Chrome’s Extensions page, turn on
           Developer mode, choose Load unpacked, and select the unzipped folder.
-          Then reload My Boiler. The extension runs locally; it does not send
+          Then reload Connect. The extension runs locally; it does not send
           browsing history to Gemini.
         </p>
         <div className="flex flex-wrap gap-3">

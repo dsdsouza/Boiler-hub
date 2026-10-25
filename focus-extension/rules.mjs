@@ -73,6 +73,8 @@ export function isApp(url) {
     const parsed = new URL(url);
     return (
       [
+        "https://boilerplate.select",
+        "https://www.boilerplate.select",
         "https://boilerhub.work",
         "https://www.boilerhub.work",
         "https://boilerplate.zhomander.workers.dev",

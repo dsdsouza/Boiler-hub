@@ -33,7 +33,7 @@ for (const [name, url] of [['Landing', '/'], ['Demo', '/demo'], ['Help', '/how']
   });
 }
 
-for (const [name, view] of [['Workload', 'boiler'], ['Team forms', 'teams'], ['Sources', 'sources'], ['Onboarding', 'onboarding']]) {
+for (const [name, view] of [['Workload', 'boiler'], ['Team forms', 'teams'], ['Connect', 'sources'], ['Onboarding', 'onboarding']]) {
   test(`${name}: signed-in components and keyboard focus`, async ({ page, context }, info) => {
     const service = world(); await service.connect(context);
     await test.step('Load synthetic signed-in components', async () => {

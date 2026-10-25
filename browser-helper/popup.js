@@ -47,9 +47,9 @@ async function find() {
         await chrome.tabs.create({ url: destination.href });
       }));
       actions.append(button("Copy link", async () => {
-        try { await navigator.clipboard.writeText(item.url); status.textContent = "Link copied. Paste it into Sources in Boilerplate."; }
+        try { await navigator.clipboard.writeText(item.url); status.textContent = "Link copied. Paste it into Connect in Boilerplate."; }
         catch {
-          status.textContent = "Copy this subscription link, then paste it into Sources.";
+          status.textContent = "Copy this subscription link, then paste it into Connect.";
           let input = section.querySelector("input");
           if (!input) { input = document.createElement("input"); input.readOnly = true; input.setAttribute("aria-label", "Calendar subscription link"); input.value = item.url; section.append(input); }
           input.focus(); input.select();

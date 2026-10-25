@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AccountMenu } from "@/components/ui/Account";
 import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
+import { FocusConnection } from "@/components/sources/FocusConnection";
 import { SourcesSettings } from "@/components/sources/SourcesSettings";
 import { getCurrentUser } from "@/lib/supabase/user";
 import { toSummary } from "@/lib/sources/load";
 import { SOURCE_COLUMNS, type SourceRow } from "@/lib/sources/types";
 
-export const metadata: Metadata = { title: "Sources · Boilerplate" };
+export const metadata: Metadata = { title: "Connect · Boilerplate" };
 export const dynamic = "force-dynamic";
 
 export default async function SourcesPage() {
@@ -23,14 +24,14 @@ export default async function SourcesPage() {
       <SiteHeader variant="app" current="sources" account={<AccountMenu />} />
       <main className="mx-auto flex max-w-[1000px] flex-col gap-6 px-4 pt-8 pb-24 sm:px-8 sm:pb-16">
         <div className="bp-arrive">
-          <h1 className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">Sources</h1>
+          <h1 className="m-0 font-display text-[44px] leading-none font-normal tracking-[0.02em] sm:text-[56px]">Connect</h1>
         </div>
         {error && (
           <p role="alert" className="m-0 rounded-lg border border-redline-ink px-4 py-3 text-sm text-redline-ink">
-            Could not load your sources. Try again in a moment.
+            Could not load your connections. Try again in a moment.
           </p>
         )}
-        <SourcesSettings initial={(data ?? []).map(toSummary)} />
+        <SourcesSettings initial={(data ?? []).map(toSummary)}><FocusConnection key={user.id} userId={user.id} /></SourcesSettings>
       </main>
       <MobileTabBar current="sources" />
     </div>

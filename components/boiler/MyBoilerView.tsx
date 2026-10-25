@@ -10,7 +10,6 @@ import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
 import { PipDressUp } from "@/components/mascot/PipDressUp";
-import { usePipConversation } from "@/components/mascot/PipConversation";
 import { CalendarSubscription } from "@/components/sources/CalendarSubscription";
 import { PipHero } from "@/components/mascot/PipHero";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
@@ -26,8 +25,6 @@ import { fireFromForecast } from "./geometry";
 import { browserZone } from "./taskView";
 import { forecastBreakdown } from "@/lib/pressure";
 import type { MyBoiler } from "./useMyBoiler";
-import { StudyAccountability } from "./StudyAccountability";
-import { useStudyAccountability } from "./useStudyAccountability";
 
 function useTick(ms: number) {
   const [, setTick] = useState(0);
@@ -93,8 +90,6 @@ export function MyBoilerView({
 }) {
   useTick(30_000);
   const accessory = usePipAccessory();
-  const study = useStudyAccountability(boiler);
-  const { openChat: askPip } = usePipConversation();
   const { data, error, syncing, vent } = boiler;
   const Heading = headingLevel === 1 ? "h1" : "h2";
   // The forecast day whose drill-down is open. Lives here so both strip copies and the panel share it.
@@ -155,7 +150,6 @@ export function MyBoilerView({
         </button>
       </div>
 
-      <StudyAccountability boiler={boiler} study={study} onAsk={askPip} />
       {data.calendar === "reconnect" && <ReconnectBanner />}
       {data.calendar === "unavailable" && <CalendarUnavailableBanner />}
       {data.sources && <SourcesBanner sources={data.sources} />}

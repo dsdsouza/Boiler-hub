@@ -32,7 +32,6 @@ export function DeadlineCalendar({ month, selected, today, timeZone, data, loadi
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 className="m-0 font-display text-[44px] leading-none tracking-[0.02em] sm:text-[56px]">Calendar</h1>
-        <p className="mt-2 mb-0 text-sm text-muted">Your open deadlines, month by month.</p>
       </div>
       <button type="button" className={control} disabled={loading} onClick={onRefresh}>{loading ? "Loading…" : "Refresh"}</button>
     </div>
@@ -49,9 +48,9 @@ export function DeadlineCalendar({ month, selected, today, timeZone, data, loadi
           </button>
         </div>
       </div>
-      <p role="status" className="mx-4 mt-0 mb-4 text-xs leading-relaxed text-muted sm:mx-6">{loading ? "Loading this month’s deadlines…" : `${data.deadlines.length} open ${data.deadlines.length === 1 ? "deadline" : "deadlines"}`}<span className="mx-2" aria-hidden="true">·</span>Times in {timeZone.replaceAll("_", " ")}</p>
+      {loading && <p role="status" className="mx-4 mt-0 mb-4 text-xs leading-relaxed text-muted sm:mx-6">Loading this month’s deadlines…</p>}
       {error && <div role="alert" className="mx-4 mb-4 flex flex-wrap items-center gap-3 text-sm text-hot-ink sm:mx-6"><span>{error}</span><button type="button" className={control} onClick={onRefresh}>Try again</button></div>}
-      {!error && data.unavailableSources > 0 && <p role="status" className="mx-4 mb-4 text-sm text-hot-ink sm:mx-6">Some connected sources couldn’t load. Refresh to try again, or check <a href="/settings/sources" className="underline underline-offset-4">Sources</a>.</p>}
+      {!error && data.unavailableSources > 0 && <p role="status" className="mx-4 mb-4 text-sm text-hot-ink sm:mx-6">Some connected sources couldn’t load. Refresh to try again, or check <a href="/settings/sources" className="underline underline-offset-4">Connect</a>.</p>}
       {data.truncated && <p className="mx-4 mb-4 text-sm text-hot-ink sm:mx-6">Showing the first 1,000 saved deadlines, plus imported deadlines.</p>}
       <table aria-label={`${title} deadlines`} className="w-full table-fixed border-collapse">
         <thead><tr>{WEEKDAYS.map((name) => <th scope="col" key={name} className="border-y border-line bg-surface-2 py-2 text-center text-[11px] font-medium text-muted sm:text-xs">{name}</th>)}</tr></thead>
@@ -78,7 +77,7 @@ export function DeadlineCalendar({ month, selected, today, timeZone, data, loadi
       {loading ? <p className="text-sm text-muted">Loading deadlines…</p> : error ? <p className="text-sm text-muted">Your deadlines will appear here once they load.</p> : due.length ? <ul className="m-0 list-none divide-y divide-line border-y border-line p-0">{due.map((deadline) => <li key={deadline.id} className="flex min-w-0 flex-wrap items-start justify-between gap-x-6 gap-y-2 py-4">
         <div className="min-w-0 flex-1"><p className="m-0 text-sm leading-relaxed font-semibold wrap-anywhere text-fg">{deadline.title}</p><p className="mt-1 mb-0 text-xs text-muted">{deadline.course || (deadline.source === "manual" ? "Personal task" : deadline.source === "team" ? "Team assignment" : deadline.source === "ics" ? "Imported deadline" : "GitHub")}</p></div>
         <time dateTime={deadline.dueAt} className={`shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-mono text-xs tabular-nums ${calendarDay(deadline.dueAt, timeZone) < today ? "text-hot-ink" : "text-brass-ink"}`}>{new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(new Date(deadline.dueAt))}</time>
-      </li>)}</ul> : <p className="m-0 border-y border-line py-6 text-sm text-muted">No deadlines on this day.{!data.deadlines.length && " This month has no open deadlines."}</p>}
+      </li>)}</ul> : <p className="m-0 border-y border-line py-6 text-sm text-muted">No deadlines on this day!</p>}
     </section>
   </div>;
 }

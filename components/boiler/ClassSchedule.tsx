@@ -36,7 +36,7 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
 
       {hasFeed && <>
         {failed.length > 0 && <p role="status" className="mt-0 mb-4 text-sm text-redline-ink">
-          Could not read {failed.map((s) => s.label).join(", ")}. This schedule may be incomplete. Refresh to try again, or check the connection in Sources.
+          Could not read {failed.map((s) => s.label).join(", ")}. This schedule may be incomplete. Refresh to try again, or check the connection in Connect.
         </p>}
         <div role="group" aria-label="Choose a schedule day" className="mb-4 grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day, i) => <button
@@ -57,7 +57,7 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
         <div id="class-schedule-events" aria-live="polite" aria-atomic="true">
           <h3 className="mt-0 mb-2 text-sm font-semibold">{active.date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h3>
           {active.entries.length === 0 ? <p className="m-0 border-t border-line py-4 text-sm text-muted">
-            {failed.length === feeds.length ? "Your coursework calendars are unavailable. Check Sources to reconnect." : "No upcoming classes or timed events in your connected feeds for this day."}
+            {failed.length === feeds.length ? "Your coursework calendars are unavailable. Check Connect to reconnect." : "No upcoming classes or timed events in your connected feeds for this day."}
           </p> : <ul className="m-0 list-none p-0">
             {active.entries.map(({ item, sourceLabel }) => <li key={item.id} className="flex flex-col gap-1 border-t border-line py-3 sm:flex-row sm:items-baseline sm:gap-4">
               <span className="shrink-0 font-mono text-xs text-brass-ink tabular-nums">

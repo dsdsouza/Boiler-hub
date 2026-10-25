@@ -41,6 +41,8 @@ it("matches intended domains without blocking school sites, the app, or lookalik
   expect(isDistracting("https://boilerhub.work/boiler")).toBe(false);
   expect(isDistracting("https://stonybrook.instructure.com")).toBe(false);
   expect(isApp("https://boilerhub.work/demo")).toBe(true);
+  expect(isApp("https://boilerplate.select/settings/sources")).toBe(true);
+  expect(isApp("https://boilerplate.select.evil.example/")).toBe(false);
   expect(isApp("https://boilerplate.zhomander.workers.dev/boiler")).toBe(true);
   expect(isApp("http://localhost:3100/demo")).toBe(true);
   expect(isApp("https://boilerhub.work.evil.example")).toBe(false);

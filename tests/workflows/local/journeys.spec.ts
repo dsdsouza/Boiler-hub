@@ -155,12 +155,12 @@ test('Private calendar subscription from consent through revocation', plan([
 });
 
 test('Pip help through a failed request and a fresh conversation', plan([
-  'Open Pip from the workload', 'Keep a question after a failed reply', 'Retry and receive a reply',
+  'Open Pip from Connect', 'Keep a question after a failed reply', 'Retry and receive a reply',
   'Ask a follow-up question', 'Start a new conversation', 'Verify the previous conversation is cleared',
 ]), async ({ page, context }) => {
   const service = world(); await service.connect(context); service.failOnce('POST /api/pip/chat');
   try {
-    await step('Open Pip from the workload', async () => { await open(page); await openPip(page); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeFocused(); });
+    await step('Open Pip from Connect', async () => { await open(page, 'sources'); await openPip(page); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeFocused(); });
     await step('Keep a question after a failed reply', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('What should I work on?'); await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('alert').filter({ hasText: 'temporarily unavailable' })).toBeVisible(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue('What should I work on?'); });
     await step('Retry and receive a reply', async () => { await page.getByRole('button', { name: 'Send message', exact: true }).click(); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true })).toContainText('Workflow: start with the dated deliverable.'); });
     await step('Ask a follow-up question', async () => { await page.getByRole('textbox', { name: 'Message Pip', exact: true }).fill('And after that?'); await page.getByRole('textbox', { name: 'Message Pip', exact: true }).press('Enter'); await expect(page.getByRole('log', { name: 'Conversation with Pip', exact: true }).getByText('Workflow: start with the dated deliverable.', { exact: false })).toHaveCount(2); });

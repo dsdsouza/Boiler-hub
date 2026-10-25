@@ -403,7 +403,7 @@ function AppChrome({ title, compact }: { title: string; compact?: boolean }) {
           <span aria-hidden="true" className="hidden gap-4 pl-3 text-sm text-muted md:flex">
             <span className={title === "My Boiler" ? "text-fg" : ""}>My Boiler</span>
             <span className={title === "Engine Room" ? "text-fg" : ""}>Teams</span>
-            <span>Sources</span>
+            <span>Connect</span>
           </span>
         )}
       </div>

@@ -34,7 +34,7 @@ export function CalendarHelper({ signedIn, guide = "calendar" }: { signedIn: boo
         const chosen = incoming || (!hash ? cached : null);
         setPending(chosen); setRetained(!!chosen && cached === chosen);
       } catch { setPending(incoming); }
-      setError(hash && !incoming ? "That link could not be used. Scan the school calendar again, or paste its subscription link in Sources." : null);
+      setError(hash && !incoming ? "That link could not be used. Scan the school calendar again, or paste its subscription link in Connect." : null);
       setReady(true);
     };
     receive();
@@ -85,11 +85,11 @@ export function CalendarHelper({ signedIn, guide = "calendar" }: { signedIn: boo
             <li>In Brightspace, open <strong>Calendar → Settings</strong>.</li>
             <li>Turn on <strong>Enable Calendar Feeds</strong> and save.</li>
             <li>Choose <strong>Subscribe → All Calendars and Tasks</strong>, then copy the subscription link.</li>
-            <li>Open Sources, choose <strong>Class schedule</strong>, paste the link and choose <strong>Import schedule</strong>.</li>
+            <li>Open Connect, choose <strong>Class schedule</strong>, paste the link and choose <strong>Import schedule</strong>.</li>
           </ol>
           <p className="mt-0 mb-5 max-w-[65ch] text-sm leading-relaxed text-muted">Class times posted to that calendar appear in your schedule. Assignment deadlines appear in Tasks. If class times are missing, check your school’s official timetable for a calendar subscription.</p>
-        </> : <p className="mt-0 mb-5 max-w-[65ch] text-base leading-relaxed text-body">You can connect your calendar without installing anything. Copy the subscription link from your school’s calendar, then paste it into Sources.</p>}
-        <LinkButton href={guide === "schedule" ? "/settings/sources#class-schedule" : "/settings/sources"} variant="primary">Open Sources</LinkButton>
+        </> : <p className="mt-0 mb-5 max-w-[65ch] text-base leading-relaxed text-body">You can connect your calendar without installing anything. Copy the subscription link from your school’s calendar, then paste it into Connect.</p>}
+        <LinkButton href={guide === "schedule" ? "/settings/sources#class-schedule" : "/settings/sources"} variant="primary">Open Connect</LinkButton>
         {guide === "calendar" && <div className="mt-6 flex flex-col border-y border-line">
           {[
             ["Brightspace (D2L)", "Open Calendar → Settings and enable Calendar Feeds. Choose Subscribe → All Calendars and Tasks, then copy the subscription link."],

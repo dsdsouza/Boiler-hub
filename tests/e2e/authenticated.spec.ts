@@ -19,7 +19,7 @@ test('tab navigation keeps the owner boiler ready and Refresh still fetches fres
   await page.goto('/boiler');
   const gauge = page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img');
   await expect(gauge).toBeVisible();
-  for (const [name, path] of [['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how'], ['My Boiler', '/boiler']]) {
+  for (const [name, path] of [['Teams', '/teams'], ['Connect', '/settings/sources'], ['Help', '/how'], ['My Boiler', '/boiler']]) {
     await page.getByRole('banner').getByRole('link', { name, exact: true }).click();
     await page.waitForURL(url => url.pathname === path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -43,7 +43,7 @@ test('connecting a source invalidates the saved boiler on the next tab visit', a
       boiler: updated, itemCount: 1, tasks: 1, events: 0 } }) : route.continue());
   await page.goto('/boiler');
   await expect(page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img')).toBeVisible();
-  await page.getByRole('banner').getByRole('link', { name: 'Sources', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Connect', exact: true }).click();
   await page.getByLabel('Brightspace subscription link', { exact: true }).fill('https://school.brightspace.com/d2l/le/calendar/feed/user/test.ics');
   await page.getByRole('button', { name: 'Import schedule', exact: true }).click();
   await expect(page.getByText('Navigation test calendar', { exact: true })).toBeVisible();
@@ -274,7 +274,7 @@ test('signed-in home and Help keep the account and app navigation across screen 
       const bottomNavigation = path === '/' && width < 640;
       const nav = page.getByRole('navigation', { name: bottomNavigation ? 'App' : 'Main', exact: true });
       await expect(nav).toHaveCount(1);
-      const destinations = [[bottomNavigation ? 'Boiler' : 'My Boiler', '/boiler'], ['Calendar', '/calendar'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how']];
+      const destinations = [[bottomNavigation ? 'Boiler' : 'My Boiler', '/boiler'], ['Calendar', '/calendar'], ['Teams', '/teams'], ['Connect', '/settings/sources'], ['Help', '/how']];
       for (const [name, href] of destinations) {
         const link = nav.getByRole('link', { name, exact: true });
         await expect(link).toBeVisible();

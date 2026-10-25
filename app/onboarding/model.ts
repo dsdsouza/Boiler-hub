@@ -237,8 +237,8 @@ export function recommendation(draft: OnboardingDraft) {
   if (goal === "focus")
     return {
       title: "A little space for focused work",
-      body: "Start with one task in My Boiler. Choose a focus session with Pip and, if you installed Focus with Pip, pause distracting sites while you work.",
-      href: "/boiler#study-accountability",
+      body: "Add a task in My Boiler, then open Focus with Pip in Connect to protect a study session. If you installed the extension, distracting sites pause while you work.",
+      href: "/settings/sources#study-accountability",
       action: "Open my focus setup",
     };
   if (goal === "deadlines")
