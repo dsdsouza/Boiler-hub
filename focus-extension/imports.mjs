@@ -8,10 +8,10 @@ export function appDestination(savedAppUrl, path = "/boiler") {
   return new URL(path, origin).href;
 }
 
-export function reviewDestination(savedAppUrl, rawFeed) {
+export function reviewDestination(savedAppUrl, rawFeed, onboarding = false) {
   const feed = normalizeFeedUrl(rawFeed);
   if (!feed) throw new Error("Choose a calendar subscription link.");
-  return `${appDestination(savedAppUrl, "/calendar-helper")}#feed=${encodeURIComponent(feed)}`;
+  return `${appDestination(savedAppUrl, onboarding ? "/onboarding" : "/calendar-helper")}#feed=${encodeURIComponent(feed)}`;
 }
 
 export function calendarNavigation(pages) {

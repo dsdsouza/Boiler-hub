@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { supportsSetup } from "./setup";
 
 export function useExtension(extension: "calendar" | "focus") {
-  const [state, setState] = useState<"checking" | "missing" | "installed">(
+  const [state, setState] = useState<"checking" | "missing" | "installed" | "outdated">(
     "checking",
   );
   const [version, setVersion] = useState("");
@@ -32,7 +33,7 @@ export function useExtension(extension: "calendar" | "focus") {
       )
         return;
       if (timeout.current) clearTimeout(timeout.current);
-      setState("installed");
+      setState(supportsSetup(data.version) ? "installed" : "outdated");
       setVersion(data.version.slice(0, 24));
     };
     window.addEventListener("message", receive);

@@ -51,8 +51,10 @@ test('Onboarding through a completed and restored task', plan([
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await expect(page.getByText('Signed in as Workflow lead', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
-      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('checkbox', { name: /I checked my school calendar/ }).check();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
     });
     await step('Save an onboarding status note', async () => {
@@ -179,12 +181,13 @@ test('A dated first task and revised answers survive reopening onboarding', plan
     await page.getByRole('button', { name: 'Stay ahead of coursework', exact: false }).click(); await next.click();
     await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await next.click();
     await next.click(); await next.click();
-    await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+    await next.click();
     await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible(); await next.click();
+    await page.getByRole('checkbox', { name: /I checked my school calendar/ }).check(); await next.click();
     await page.getByLabel('Your first task', { exact: true }).fill('Finish the onboarding test'); await next.click();
     await page.getByLabel('Target date (optional)', { exact: true }).fill('2026-10-30');
     await next.click();
-    await page.getByRole('button', { name: 'Step 10: When would you like to finish it?', exact: true }).click();
+    await page.getByRole('button', { name: /^Step \d+: When would you like to finish it\?$/ }).click();
     await page.reload();
     await expect(page.getByRole('heading', { name: 'When would you like to finish it?', exact: true })).toBeVisible();
     await expect(page.getByLabel('Target date (optional)', { exact: true })).toHaveValue('2026-10-30');
@@ -194,6 +197,9 @@ test('A dated first task and revised answers survive reopening onboarding', plan
     await expect(page.getByRole('heading', { name: 'Have a team invite?', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
     await expect(page.getByText(/First task: Finish the onboarding test/)).toContainText('Nov 2, 2026');
+    await page.getByRole('button', { name: 'Review deadlines', exact: true }).click();
+    await page.getByRole('checkbox', { name: /I checked my school calendar/ }).check();
+    await page.getByRole('button', { name: /^Step \d+: A starting point, just for you\.$/ }).click();
     await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
     expect(service.users[0].tasks).toHaveLength(1);

@@ -63,7 +63,8 @@ async function find() {
       const heading = document.createElement("h2"); heading.textContent = item.label || `${item.provider === "Other" ? "Calendar" : item.provider} subscription`;
       const host = document.createElement("p"); host.textContent = new URL(item.url.replace(/^webcal:/, "https:")).hostname;
       const review = action("Review import in Boilerplate", async () => { await chrome.tabs.create({ url: reviewDestination(savedAppUrl, item.url) }); });
-      row.append(heading, host, review); results.append(row);
+      const setup = action("Use in onboarding", async () => { await chrome.tabs.create({ url: reviewDestination(savedAppUrl, item.url, true) }); });
+      row.append(heading, host, review, setup); results.append(row);
     }
     for (const url of calendarNavigation(pages))
       element("navigation").append(action("Open school calendar", async () => { await chrome.tabs.create({ url }); }));

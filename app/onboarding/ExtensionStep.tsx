@@ -1,28 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { useExtension } from "./useExtension";
 
 export function ExtensionStep({
-  kind,
-  onVerified,
+  extension,
 }: {
-  kind: "calendar" | "focus";
-  onVerified: (installed: boolean) => void;
+  extension: ReturnType<typeof useExtension>;
 }) {
-  const extension = useExtension(kind);
-  useEffect(
-    () => onVerified(extension.state === "installed"),
-    [extension.state, onVerified],
-  );
-  const name = kind === "calendar" ? "Calendar Finder" : "Focus with Pip";
+  const name = "Pip";
   return (
     <div className="flex flex-col gap-5">
       <p className="m-0 text-body leading-relaxed">
-        {kind === "calendar"
-          ? "Find the subscription link on your school’s calendar page, then review it before connecting. Available for desktop Chrome and Edge."
-          : "Pause distracting websites during the focus sessions you choose with Pip. Available for desktop Chrome and Edge."}
+        Install Pip once to import school calendar links, receive laptop reminders and pause distracting sites during the study sessions you accept. Available for desktop Chrome, Brave and Edge.
       </p>
       <div
         className="flex flex-wrap items-center justify-between gap-3 border-y border-line py-4"
@@ -38,6 +28,8 @@ export function ExtensionStep({
         >
           {extension.state === "installed"
             ? `${name} is installed · v${extension.version}`
+            : extension.state === "outdated"
+              ? `Pip v${extension.version} needs an update. Download and reload the current version.`
             : extension.state === "checking"
               ? "Checking this browser…"
               : "Extension not detected in this browser"}
@@ -53,11 +45,7 @@ export function ExtensionStep({
         <>
           <LinkButton
             plain
-            href={
-              kind === "calendar"
-                ? "/downloads/boiler-calendar-helper.zip"
-                : "/downloads/boilerplate-focus-extension.zip"
-            }
+            href="/downloads/boilerplate-focus-extension.zip"
             download
             variant="secondary"
             className="self-start"
@@ -83,16 +71,10 @@ export function ExtensionStep({
         </>
       )}
       <p className="m-0 text-sm leading-relaxed text-muted">
-        {kind === "calendar"
-          ? "The extension only scans a school page when you ask. Passwords and hidden fields are skipped. A download alone does not confirm installation."
-          : "Only your chosen focus sessions turn blocking on. Ending a session restores access to those sites."}
+        A download alone does not confirm installation. This page waits for Pip to reply from this browser. For an update, replace the unpacked files, reload Pip in Extensions, then refresh this page. Your answers are saved.
       </p>
-      {extension.state === "installed" && kind === "calendar" && (
-        <p className="m-0 text-sm text-body">
-          Next time you open a school calendar, choose{" "}
-          <strong>Scan this page</strong> from Calendar Finder. You can connect
-          a feed in the next step.
-        </p>
+      {extension.state === "installed" && (
+        <p className="m-0 text-sm text-body">Open your school calendar, choose Pip at the top right, then Find calendar links on this page. Choose Use in onboarding beside the link you want to review.</p>
       )}
     </div>
   );

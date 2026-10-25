@@ -12,8 +12,8 @@ export type StepId =
   | "reassurance"
   | "account"
   | "extension"
-  | "focus-extension"
   | "calendar"
+  | "review"
   | "milestone"
   | "deadline"
   | "status"
@@ -22,7 +22,7 @@ export type StepId =
   | "recommendation"
   | "ready";
 export interface OnboardingDraft {
-  version: 1;
+  version: 2;
   ownerId: string | null;
   role: Role | "";
   name: string;
@@ -39,7 +39,7 @@ export interface OnboardingDraft {
   finished: boolean;
 }
 export const EMPTY_DRAFT: OnboardingDraft = {
-  version: 1,
+  version: 2,
   ownerId: null,
   role: "",
   name: "",
@@ -118,8 +118,8 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "reassurance",
     "account",
     "extension",
-    ...(goal === "focus" ? ["focus-extension" as const] : []),
     "calendar",
+    ...(draft.role === "student" ? ["review" as const] : []),
     ...(goal === "deadlines"
       ? [
           "milestone" as const,
@@ -205,7 +205,6 @@ export function parseDraft(value: unknown): OnboardingDraft {
   };
   const all: StepId[] = [
     ...stepsFor(draft),
-    "focus-extension",
     "milestone",
     "deadline",
   ];
@@ -219,6 +218,11 @@ export function parseDraft(value: unknown): OnboardingDraft {
         ),
       ]
     : [];
+  if (v.version === 1) {
+    draft.finished = false;
+    draft.completed = draft.completed.filter((s) => !["extension", "calendar", "review", "recommendation", "ready"].includes(s));
+    if (v.current === "focus-extension" || ["extension", "calendar", "review", "recommendation", "ready"].includes(draft.current)) draft.current = "extension";
+  }
   return draft;
 }
 export function recommendation(draft: OnboardingDraft) {

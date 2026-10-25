@@ -25,7 +25,8 @@ export function world() {
       return { userId: user.id, name: user.name, before: before.score, after: after.score, zoneBefore: before.zone, zoneAfter: after.zone };
     }), hidden: { count: 0, intoRedline: 0 }, noRecentData: [], recipients: team.members.filter(m => m.role === 'member').length,
   });
-  async function connect(context: BrowserContext, actor = 'lead') {
+  async function connect(context: BrowserContext, actor = 'lead', pipInstalled = true) {
+    if (pipInstalled) await context.addInitScript(() => window.addEventListener('message', event => { if (event.data?.type === 'bp-extension:ping' && event.data.extension === 'focus') window.postMessage({ type: 'bp-extension:pong', extension: 'focus', nonce: event.data.nonce, version: '0.3.2' }, location.origin); }));
     const user = users.find(u => u.key === actor)!;
     // The floating companion now owns chat. Supply a local, synthetic browser
     // session as well as the service fixtures; no test auth reaches Supabase.
@@ -44,8 +45,10 @@ export function world() {
       }
       const body = request.postData() ? request.postDataJSON() : {};
       const reply = (json: unknown, status = 200) => route.fulfill({ status, json });
+      if (path === '/api/me/onboarding/check') return reply({ boiler: { ...snapshot(user), sources: [{ id: 'fixture-school', kind: 'ics', label: 'Fictional school calendar', coursework: true, status: 'ok', error: null, lastSyncedAt: new Date().toISOString() }] }, reviewReceipt: 'fixture-review' });
       if (path === '/api/me/onboarding') {
         if (method === 'PATCH') {
+          if (body.draft?.finished && (body.extensionVersion !== '0.3.2' || (body.draft.role === 'student' && (body.reviewReceipt !== 'fixture-review' || body.deadlinesReviewed !== true)))) return reply({ error: 'Verify Pip and review coursework first' }, 400);
           user.onboarding = { ...parseDraft(body.draft), ownerId: user.id };
           if (user.onboarding.finished) {
             user.name = user.onboarding.name;

@@ -66,20 +66,16 @@ test('Signed-in onboarding through a persisted completed task', { annotation: { 
       await page.getByRole('button', { name: 'Understand my workload', exact: false }).click(); await continueOnboarding(page);
       await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await continueOnboarding(page);
       await continueOnboarding(page); await continueOnboarding(page);
-      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Bring your week into view.', exact: true })).toBeVisible();
-      // Synthetic identities have no Google grant, so unavailable is a supported state.
-      await continueOnboarding(page);
+      await expect(page.getByRole('heading', { name: 'Meet Pip in your browser.', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeDisabled();
+      await page.getByRole('button', { name: 'Finish later', exact: true }).click();
+      await expect(page).toHaveURL(/\/boiler$/);
+      const saved = await (await request.get('/api/me/onboarding')).json();
+      expect(saved.draft.finished).toBe(false);
     });
-    await step('Save an onboarding note', async () => { await note(page).fill(draft); await continueOnboarding(page); });
+    await step('Save an onboarding note', async () => { await note(page).fill(draft); await note(page).press('Enter'); await expect.poll(async () => (await (await request.get('/api/me/boiler')).json()).status.note).toBe(draft); });
     await step('Continue to the personal workload', async () => {
-      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Have a team invite?', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
-      await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Open my boiler', exact: true }).click();
-      await expect(page).toHaveURL(/\/boiler$/); await expect(note(page)).toHaveValue(draft);
+      page = await reopen(page); await expect(note(page)).toHaveValue(draft);
     });
     await step('Create a dated task', async () => {
       const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
