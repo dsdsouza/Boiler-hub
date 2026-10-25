@@ -356,10 +356,7 @@ export function TaskList({
       )}
       <div role="tabpanel" id="tasks-panel" aria-labelledby={`tasks-tab-${tab}`}>
       {overdue > 0 && onClearOverdue && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2.5">
-          <p className="m-0 text-[13px] text-muted">
-            {overdue} overdue from your feeds. Review them before marking them complete.
-          </p>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line py-2.5">
           <Button ref={clearReviewRef} variant="ghost" onClick={() => !clearing && setConfirmClear(true)} aria-disabled={clearing}>
             Review overdue assignments
           </Button>
