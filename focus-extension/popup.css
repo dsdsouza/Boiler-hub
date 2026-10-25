@@ -1,0 +1,27 @@
+body { width: 380px; min-width: 320px; max-height: 600px; overflow-y: auto; scrollbar-color: #84725b #15120e; }
+main { padding: 20px; }
+header { display: flex; align-items: center; gap: 12px; }
+.brand { display: inline-flex; align-items: center; font-size: 25px; min-height: 44px; }
+.focus-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; margin-bottom: 22px; border-bottom: 1px solid #6b5a44; }
+.focus-summary p { margin: 0; font-size: 12px; line-height: 1.5; max-width: 220px; }
+a { color: #e3be74; text-underline-offset: 3px; }
+a:hover { color: #f1e7d3; }
+.focus-summary a { flex-shrink: 0; font-size: 13px; padding: 10px 0; }
+h1 { font-size: 32px; text-align: left; margin: 0 0 8px; }
+.intro { margin: 0 0 20px; font-size: 13px; line-height: 1.6; }
+label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 8px; }
+select { width: 100%; min-height: 44px; border: 1px solid #84725b; border-radius: 8px; padding: 10px 12px; background: #1f1a14; color: #f1e7d3; font: 14px Inter, system-ui, sans-serif; }
+select:focus-visible { outline: 2px solid #e3be74; outline-offset: 3px; }
+#steps { font-size: 12px; line-height: 1.7; margin: 12px 0 16px; }
+button { width: 100%; margin: 12px 0 0; text-align: center; }
+.primary { display: block; min-height: 44px; padding: 12px; border: 1px solid #d1a85a; }
+.primary:hover { background: #e3be74; }
+button:hover:not(:disabled) { border-color: #e3be74; }
+#status { color: #d9ccb5; line-height: 1.65; margin: 12px 0 0; }
+.result { border-top: 1px solid #6b5a44; padding-top: 16px; margin-top: 18px; }
+.result h2 { margin: 0; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; }
+.result p { margin: 6px 0 0; font-size: 12px; }
+footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid #6b5a44; }
+footer a { display: inline-block; font-size: 12px; line-height: 1.6; min-height: 40px; }
+footer p { margin: 8px 0 0; font-size: 11px; line-height: 1.65; color: #b3a48c; }
+@media (max-width: 379px) { body { width: 320px; } main { padding: 18px; } }
