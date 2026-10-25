@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { Boiler } from "@/components/boiler/Boiler";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
@@ -13,6 +14,10 @@ import { SignInToast } from "@/components/ui/SignInToast";
 const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 
 const display = "m-0 font-display font-normal tracking-[0.02em]";
+
+export const metadata: Metadata = {
+  description: "Manage homework, exams and study time with Pip. Plan your next step, block distracting websites with the focus extension and stay below the red line.",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +55,11 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         <section className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-14 px-4 pt-12 pb-16 sm:px-8 sm:pt-14 sm:pb-20">
           <div className="flex flex-col gap-6">
             <h1 className={`${display} bp-arrive text-[clamp(48px,6.4vw,80px)] leading-[0.98] tracking-[0.01em]`}>
-              You can see everyone’s calendar. You can’t see their pressure.
+              Deadlines pile up. Distractions push you to the red line.
             </h1>
             <p className="bp-arrive bp-arrive-next m-0 max-w-[560px] text-[17px] leading-relaxed text-body sm:text-[19px]">
-              Boilerplate turns each person’s calendar and tasks into a live boiler. Meetings, deadlines and homework add pressure; finishing work
-              lowers it. Teams see who is near the red line, only with their permission.
+              Boilerplate helps you manage homework, exams and study time before the pressure builds. Pip turns what’s due into a plan and nudges you
+              to start. With the focus extension, distracting websites stay blocked while you work.
             </p>
             <div className="bp-arrive bp-arrive-last flex flex-wrap gap-3.5 pt-2">
               <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
@@ -74,22 +79,22 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
         <section id="how" className="border-t border-line bg-bg-2">
           <div className="mx-auto flex max-w-[1240px] flex-col gap-9 px-4 py-16 sm:px-8 sm:py-[72px]">
-            <h2 className={`${display} text-[44px] sm:text-[52px]`}>How the pressure moves</h2>
+            <h2 className={`${display} text-[44px] sm:text-[52px]`}>Make a plan. Protect your focus.</h2>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-5">
               <Step
-                title="Pressure in"
+                title="Know what needs doing"
                 icon={<path d="M20 34V8M11 17l9-9 9 9" />}
                 color="#F0913A"
-                text="Connect Google Calendar and add tasks. Meetings over the next week and deadlines over two weeks build the score from 0 to 100."
+                text="Bring your calendar and coursework together. See which assignments and exams need attention before they push your boiler into the red line."
               />
               <Step
-                title="Steam out"
+                title="Make time with Pip"
                 icon={<path d="M10 28c0-6 6-6 6-12M20 28c0-6 6-6 6-12M30 28c0-6-4-6-4-10" />}
                 color="#7FB3D5"
-                text="Complete a task and its load leaves your boiler. The work still due keeps its weight."
+                text="Pick one assignment, find a study window with Pip and start small. Finish the task to release its pressure and bring your boiler down."
               />
               <Step
-                title="Shared on your terms"
+                title="Keep distractions out"
                 icon={
                   <>
                     <rect x="9" y="18" width="22" height="16" rx="3" />
@@ -97,7 +102,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
                   </>
                 }
                 color="#D1A85A"
-                text="Join a class or work team and choose who sees your gauge: Hidden, Lead only, or Everyone. Hidden is the default."
+                text="Start a focus session with the browser extension to block distracting websites. Pip stays available when you need help taking the next step."
               />
             </div>
           </div>
