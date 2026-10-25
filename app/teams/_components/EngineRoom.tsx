@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { AssignmentPreview, Status, Zone } from "@/lib/types";
@@ -90,14 +91,9 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
         )}
       </div>
 
-      <details className="rounded-xl px-4 py-3" style={{ backgroundColor: C.surface, border: `1px solid ${C.line}` }}>
-        <summary className="min-h-11 cursor-pointer content-center text-sm font-semibold" style={{ color: C.text2 }}>
-          Your visibility on this team
-        </summary>
-        <div className="pt-3">
-          <VisibilityPicker teamId={room.team.id} value={room.myVisibility} leadLabel={l.lead} />
-        </div>
-      </details>
+      <Disclosure label="Your visibility on this team">
+        <VisibilityPicker teamId={room.team.id} value={room.myVisibility} leadLabel={l.lead} />
+      </Disclosure>
 
       <div className="flex flex-col gap-2">
         <div role="group" aria-label="Filter by zone" className="flex flex-wrap gap-2">
