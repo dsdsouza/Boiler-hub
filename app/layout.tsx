@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "Boilerplate",
     description: "See who is near the red line before anyone blows.",
     images: [{
-      url: "/social/boilerplate-v1.png",
+      url: "/social/boilerplate-v2.png",
       width: 1200,
       height: 630,
       type: "image/png",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "Boilerplate",
     description: "See who is near the red line before anyone blows.",
     images: [{
-      url: "/social/boilerplate-v1.png",
+      url: "/social/boilerplate-v2.png",
       alt: "Boilerplate — See who is near the red line before anyone blows. Pip, the boiler companion, waves beside the tagline.",
     }],
   },
