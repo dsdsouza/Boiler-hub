@@ -11,29 +11,21 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://boilerplate.select"),
   title: "Boilerplate",
   description: "ARE YOU NEAR THE RED LINE?",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Boilerplate",
-    url: "https://boilerplate.select/",
-    title: "Boilerplate",
-    description: "ARE YOU NEAR THE RED LINE?",
-    images: [{
-      url: "/social/boilerplate-v4.png",
-      width: 1200,
-      height: 630,
-      type: "image/png",
-      alt: "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
-    }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Boilerplate",
-    description: "ARE YOU NEAR THE RED LINE?",
-    images: [{
-      url: "/social/boilerplate-v4.png",
-      alt: "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
-    }],
+  // Discord's photo layout shows only the image. Emit these tags explicitly:
+  // Next's Open Graph/Twitter helpers otherwise refill omitted titles and descriptions.
+  // https://docs.discord.com/developers/link-previews/overview#preview-layouts
+  other: {
+    "og:type": "website",
+    "og:locale": "en_US",
+    "og:url": "https://boilerplate.select/",
+    "og:image": "https://boilerplate.select/social/boilerplate-v4.png",
+    "og:image:width": 1200,
+    "og:image:height": 630,
+    "og:image:type": "image/png",
+    "og:image:alt": "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
+    "twitter:card": "photo",
+    "twitter:image": "https://boilerplate.select/social/boilerplate-v4.png",
+    "twitter:image:alt": "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
   },
 };
 
