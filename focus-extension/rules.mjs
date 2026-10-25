@@ -39,12 +39,19 @@ export function shouldBlock(session, now = Date.now()) {
     now < session.endAt
   );
 }
-export function createRules() {
+export function createRules(focusPage) {
   return DOMAINS.map((domain, index) => ({
     id: index + 1,
     priority: 1,
-    action: { type: "redirect", redirect: { extensionPath: "/focus.html" } },
-    condition: { urlFilter: `||${domain}^`, resourceTypes: ["main_frame"] },
+    action: {
+      type: "redirect",
+      redirect: { regexSubstitution: `${focusPage}#\\0` },
+    },
+    condition: {
+      regexFilter: "^https?://.*",
+      requestDomains: [domain],
+      resourceTypes: ["main_frame"],
+    },
   }));
 }
 export function isDistracting(url) {
