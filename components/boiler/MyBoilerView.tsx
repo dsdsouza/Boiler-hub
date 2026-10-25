@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FlameLoader } from "@/components/ui/FlameLoader";
-import { StatusPill } from "@/components/ui/StatusPill";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK } from "@/components/ui/zones";
 import { SourcesBanner } from "@/components/sources/SourcesBanner";
@@ -16,7 +15,6 @@ import { usePipUser } from "@/components/mascot/PipConversation";
 import { Boiler } from "./Boiler";
 import { usePipAccessory } from "@/components/mascot/useAccessory";
 import { Breakdown } from "./Breakdown";
-import { ClassSchedule } from "./ClassSchedule";
 import { ForecastDayPanel } from "./ForecastDayPanel";
 import { ForecastStrip, forecastCaption } from "./ForecastStrip";
 import { CalendarUnavailableBanner, ReconnectBanner } from "./ReconnectBanner";
@@ -78,8 +76,8 @@ export function RefreshIcon({ spinning }: { spinning?: boolean }) {
 
 /**
  * The full My Boiler screen body (MyBoiler.dc.html / Phone.dc.html).
- * Desktop: gauge plate on the left, forecast / schedule / breakdown / tasks on the right.
- * Phone: hero row, forecast, schedule, tasks, breakdown, status, in that order.
+ * Desktop: gauge plate on the left, forecast / tasks / breakdown on the right.
+ * Phone: hero row, forecast, tasks, breakdown, status, in that order.
  */
 export function MyBoilerView({
   boiler,
@@ -166,8 +164,8 @@ export function MyBoilerView({
 
       {/*
         DOM order is the reading order at each width, so Tab follows what is on screen:
-        phone: hero, counts, forecast, tasks, schedule, breakdown, status; desktop: gauge plate (hero, status), then
-        forecast, tasks, schedule, calendar subscription, breakdown. Status renders twice, one copy per breakpoint;
+        phone: hero with counts, forecast, tasks, breakdown, status; desktop: gauge plate (hero, status), then
+        forecast, tasks, calendar subscription, breakdown. Status renders twice, one copy per breakpoint;
         display:none keeps the hidden copy out of the Tab order and the accessibility tree.
       */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
@@ -180,23 +178,21 @@ export function MyBoilerView({
               {pipUserId ? <PipHero score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} accessory={accessory} /> : <Boiler score={result.score} zone={result.zone} status={data.status} width="fluid" fire={fire} vent={vent.key} />}
               <VentLabel vent={vent} />
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
-              <span className={`font-mono text-[56px] leading-none font-bold sm:text-[64px] ${ZONE_INK[result.zone]}`}>
-                <span className="sr-only">Pressure </span>
-                {result.score}
-              </span>
-              <div className="flex flex-col items-start gap-1.5 sm:items-stretch">
-                <ZoneBadge zone={result.zone} size="lg" className="max-sm:text-[22px]" />
-                {result.zone === "redline" && (
-                  <span className="text-center font-mono text-xs font-bold tracking-[0.12em] text-redline-ink">WHISTLE BLOWING</span>
-                )}
-                <StatusPill status={data.status} className="sm:hidden" />
+            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-none sm:items-center">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
+                <span className={`font-mono text-[56px] leading-none font-bold sm:text-[64px] ${ZONE_INK[result.zone]}`}>
+                  <span className="sr-only">Pressure </span>
+                  {result.score}
+                </span>
+                <div className="flex flex-col items-start gap-1.5 sm:items-stretch">
+                  <ZoneBadge zone={result.zone} size="lg" className="max-sm:text-[22px]" />
+                  {result.zone === "redline" && (
+                    <span className="text-center font-mono text-xs font-bold tracking-[0.12em] text-redline-ink">WHISTLE BLOWING</span>
+                  )}
+                </div>
               </div>
+              <CountBadges counts={result.counts} />
             </div>
-          </div>
-
-          <div className="max-sm:-mt-2 lg:w-full">
-            <CountBadges counts={result.counts} />
           </div>
 
           <div className="hidden lg:block lg:w-full">
@@ -251,7 +247,6 @@ export function MyBoilerView({
             sourcesHref={boiler.source === "api" ? "/settings/sources" : undefined}
           />
 
-          <ClassSchedule items={data.items} sources={data.sources} demo={boiler.source === "fixture"} onImported={() => void boiler.refresh()} />
           {boiler.source === "api" && <CalendarSubscription />}
 
           <Breakdown
