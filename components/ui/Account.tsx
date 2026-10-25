@@ -35,7 +35,7 @@ export function AccountControls({ viewer: me }: { viewer: Viewer }) {
       <form action="/auth/signout" method="post">
         <button
           type="submit"
-          className="min-h-11 cursor-pointer rounded-lg border-0 bg-transparent px-2 text-sm font-medium text-muted hover:text-fg"
+          className="min-h-11 cursor-pointer rounded-lg border-0 bg-transparent px-2 text-sm font-medium text-muted hover:bg-surface-2 hover:text-fg"
         >
           Sign out
         </button>

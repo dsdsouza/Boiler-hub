@@ -2,7 +2,11 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { addTask, gauge, noOverflow, openBoilerFixture, score } from '../e2e/helpers';
 
-test.beforeEach(async ({ page }) => { await openBoilerFixture(page); });
+test.beforeEach(async ({ page }) => {
+  // Compare pressure edits at one instant; real timers still run size debounces.
+  await page.clock.setFixedTime(Date.now());
+  await openBoilerFixture(page);
+});
 
 test('demo loads without browser exceptions and fits the viewport', async ({ page }) => {
   const errors: string[] = [];
