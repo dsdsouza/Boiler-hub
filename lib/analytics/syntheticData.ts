@@ -1,6 +1,6 @@
 import type { LoadItem } from "@/lib/types";
 
-// Clearly synthetic sample week for /what-if-preview. Not a real user, school or calendar.
+// Clearly synthetic sample week for the what-if simulator and its tests. Not a real user, school or calendar.
 // A fixed evaluation time keeps the preview deterministic. Monday 10:00 Eastern; the forecast
 // week crosses the 1 Nov 2026 daylight-saving change on purpose.
 
