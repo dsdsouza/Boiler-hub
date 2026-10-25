@@ -13,8 +13,12 @@ export const PIP_HIDDEN_KEY = "bp-pip-hidden";
 /**
  * dance: a short victory dance. think: waiting on an answer. boil: the gauge just crossed into Redline.
  * greet: a hop and wave when the chat opens. talk: the mouth moves while a reply streams in.
+ * listen: leans in while you type. nod: you sent a message. bounce: a reply just landed.
+ * doze: the open chat has been quiet for a while.
  */
-export type Reaction = "idle" | "wave" | "celebrate" | "attentive" | "dance" | "think" | "boil" | "greet" | "talk";
+export type Reaction =
+  | "idle" | "wave" | "celebrate" | "attentive" | "dance" | "think" | "boil" | "greet" | "talk"
+  | "listen" | "nod" | "bounce" | "doze";
 
 /** A representative score in the middle of each zone, from the engine's thresholds. */
 export const ZONE_PRESET = Object.fromEntries(
