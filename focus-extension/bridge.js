@@ -24,3 +24,13 @@ window.addEventListener("message", async (event) => {
     );
   }
 });
+
+// Installation check used during onboarding. No focus session is started here.
+window.addEventListener("message", (event) => {
+  const data = event.data;
+  if (event.source !== window || event.origin !== location.origin || data?.type !== "bp-extension:ping" || data.extension !== "focus" || typeof data.nonce !== "string" || data.nonce.length > 80) return;
+  try {
+    if (!chrome.runtime.id) return;
+    window.postMessage({ type: "bp-extension:pong", extension: "focus", nonce: data.nonce, version: chrome.runtime.getManifest().version }, location.origin);
+  } catch { /* Removed or updated extensions must not report as installed. */ }
+});

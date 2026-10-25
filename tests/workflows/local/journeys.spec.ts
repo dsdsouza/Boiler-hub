@@ -38,8 +38,33 @@ test('Onboarding through a completed and restored task', plan([
 ]), async ({ page, context }) => {
   const service = world(); await service.connect(context);
   try {
-    await step('Read the first synced gauge', async () => { await open(page); await expect(noteField(page)).toBeVisible(); await page.getByRole('navigation', { name: 'Workflow pages' }).getByRole('link', { name: 'onboarding', exact: true }).click(); await expect(page.getByText('Connected.', { exact: true })).toBeVisible(); });
-    await step('Save an onboarding status note', async () => { await noteField(page).fill('Ready for the workflow'); await noteField(page).press('Enter'); await expect(page.getByText('Saved', { exact: true })).toBeVisible(); });
+    await step('Read the first synced gauge', async () => {
+      await open(page, 'onboarding');
+      await page.getByRole('button', { name: 'I’m a student', exact: false }).click();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByLabel('Your name', { exact: true }).fill('Workflow lead');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'Understand my workload', exact: false }).click();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'I already use a calendar', exact: false }).click();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await expect(page.getByText('Signed in as Workflow lead', { exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    });
+    await step('Save an onboarding status note', async () => {
+      await noteField(page).fill('Ready for the workflow');
+      await noteField(page).press('Enter');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+      expect(service.users[0].status.note).toBe('Ready for the workflow');
+    });
     await step('Open the personal workload', async () => { await page.getByRole('navigation', { name: 'Workflow pages' }).getByRole('link', { name: 'boiler', exact: true }).click(); await expect(noteField(page)).toHaveValue('Ready for the workflow'); });
     await step('Create a dated task', async () => { await page.getByRole('textbox', { name: 'New task', exact: true }).fill('Workflow deliverable'); await page.getByRole('button', { name: 'Add task', exact: true }).click(); await expect(taskButton(page, 'Workflow deliverable')).toBeEnabled(); });
     await step('Resize and persist the task', async () => { await page.getByRole('combobox', { name: 'Size: Workflow deliverable', exact: true }).selectOption('L'); await expect.poll(() => service.users[0].tasks[0].size).toBe('L'); page = await reopen(page); await expect(page.getByRole('combobox', { name: 'Size: Workflow deliverable', exact: true })).toHaveValue('L'); });
@@ -140,4 +165,40 @@ test('Pip help through a failed request and a fresh conversation', plan([
     await step('Start a new conversation', async () => { await page.getByRole('dialog', { name: 'Chat with Pip', exact: true }).getByRole('button', { name: 'New conversation', exact: true }).click(); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toHaveValue(''); });
     await step('Verify the previous conversation is cleared', async () => { const log = page.getByRole('log', { name: 'Conversation with Pip', exact: true }); await expect(log).not.toContainText('And after that?'); await expect(log).not.toContainText('Workflow: start with the dated deliverable.'); await expect(page.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeEnabled(); });
   } finally { await step('Restore test data', async () => { service.reset(); }); }
+});
+
+test('A dated first task and revised answers survive reopening onboarding', plan(['Set up and revise the first task']), async ({ page, context }) => {
+  const service = world(); await service.connect(context);
+  try {
+    await step('Set up and revise the first task', async () => {
+    await page.goto('/qa-workflows?view=onboarding');
+    const next = page.getByRole('button', { name: 'Continue', exact: true });
+    await expect(next).toBeDisabled();
+    await page.getByRole('button', { name: 'I’m a student', exact: false }).click(); await next.click();
+    await page.getByLabel('Your name', { exact: true }).fill('First task tester'); await next.click();
+    await page.getByRole('button', { name: 'Stay ahead of coursework', exact: false }).click(); await next.click();
+    await page.getByRole('button', { name: 'I’m starting fresh', exact: false }).click(); await next.click();
+    await next.click(); await next.click();
+    await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+    await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible(); await next.click();
+    await page.getByLabel('Your first task', { exact: true }).fill('Finish the onboarding test'); await next.click();
+    await page.getByLabel('Target date (optional)', { exact: true }).fill('2026-10-30');
+    await next.click();
+    await page.getByRole('button', { name: 'Step 10: When would you like to finish it?', exact: true }).click();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'When would you like to finish it?', exact: true })).toBeVisible();
+    await expect(page.getByLabel('Target date (optional)', { exact: true })).toHaveValue('2026-10-30');
+    await page.getByLabel('Target date (optional)', { exact: true }).fill('2026-11-02'); await next.click();
+    await next.click();
+    await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Have a team invite?', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+    await expect(page.getByText(/First task: Finish the onboarding test/)).toContainText('Nov 2, 2026');
+    await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+    expect(service.users[0].tasks).toHaveLength(1);
+    expect(service.users[0].tasks[0].title).toBe('Finish the onboarding test');
+    expect(service.users[0].tasks[0].dueAt).toBe('2026-11-03T04:59:00.000Z');
+    });
+  } finally { await step('Restore test data', async () => { service.reset(); expect(service.users[0].tasks).toEqual([]); }); }
 });

@@ -35,7 +35,7 @@ export default function Harness() {
   {mode === 'visibility' && <VisibilityPicker teamId={team.id} value="everyone" leadLabel="Lead" />}
   {mode === 'forms' && <div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>}
   {mode === 'engine' && <EngineRoom room={{team, myRole:'member', myUserId:'qa', myVisibility:'hidden', memberCount:0, hiddenCount:0, boilers:[]}} />}
-  {mode === 'onboarding' && <OnboardingClient />}
+  {mode === 'onboarding' && <OnboardingClient signedIn accountName="Workflow lead" />}
   {mode === 'pip-preview' && <><h1>Pip movement preview</h1><FloatingPip snapshot={null} now={0} pathname="/" /></>}
   {mode === 'pip' && <section><h1>Pip movement check</h1><a href="/qa-components?mode=pip&next=1">Next screen</a><p>Only the signed-in companion should float above this page.</p></section>}
  </main>;

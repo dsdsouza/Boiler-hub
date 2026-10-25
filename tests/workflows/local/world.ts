@@ -1,13 +1,14 @@
 import type { BrowserContext } from '@playwright/test';
 import type { BoilerResponse, Task, SourceInfo } from '../../../lib/pressure/api-types';
 import type { Status, Visibility } from '../../../lib/types';
+import { parseDraft, resolvedGoal, type OnboardingDraft } from "../../../app/onboarding/model";
 import { computePressure } from '../../../lib/pressure/compute';
 
 // Resettable service model, shared by two independent browser contexts.
 // No requests, credentials or state from this fixture can reach a live backend.
 export function world() {
   const users = ['lead', 'member'].map((key, i) => ({ key, id: `00000000-0000-4000-a000-${String(i + 1).padStart(12, '0')}`, name: `Workflow ${key}`,
-    status: { status: 'open' as Status, note: '' }, tasks: [] as Task[], sources: [] as SourceInfo[], feedPath: null as string | null }));
+    status: { status: 'open' as Status, note: '' }, tasks: [] as Task[], sources: [] as SourceInfo[], feedPath: null as string | null, onboarding: null as OnboardingDraft | null }));
   type User = typeof users[number];
   const teams: { id: string; name: string; type: 'class' | 'work'; inviteCode: string; members: { user: User; role: 'lead' | 'member'; visibility: Visibility }[] }[] = [];
   let sequence = 10;
@@ -43,7 +44,23 @@ export function world() {
       }
       const body = request.postData() ? request.postDataJSON() : {};
       const reply = (json: unknown, status = 200) => route.fulfill({ status, json });
-      if (path === '/api/me/boiler' || path === '/api/sync') return reply(snapshot(user));
+      if (path === '/api/me/onboarding') {
+        if (method === 'PATCH') {
+          user.onboarding = { ...parseDraft(body.draft), ownerId: user.id };
+          if (user.onboarding.finished) {
+            user.name = user.onboarding.name;
+            user.status = { status: user.onboarding.status, note: user.onboarding.note };
+            if (resolvedGoal(user.onboarding) === 'deadlines' && user.onboarding.milestone.trim()) {
+              const existing = user.tasks.find(task => task.id === `${user.id}-onboarding`);
+              const task: Task = { id: `${user.id}-onboarding`, title: user.onboarding.milestone, dueAt: body.deadlineAt, size: 'M', doneAt: null, source: 'manual', assignmentId: null };
+              if (existing) Object.assign(existing, task); else user.tasks.push(task);
+            }
+          }
+          return reply({ saved: true });
+        }
+        return reply({ userId: user.id, draft: user.onboarding });
+      }
+      if (path === '/api/me/boiler'  || path === '/api/sync') return reply(snapshot(user));
       if (path === '/api/me/status') { user.status = { ...user.status, ...body }; return reply(user.status); }
       if (path === '/api/pip/chat') return route.fulfill({ contentType: 'application/x-ndjson',
         body: JSON.stringify({ type: 'delta', text: 'Workflow: start with the dated deliverable.' }) + '\n' + JSON.stringify({ type: 'done', asOf: new Date().toISOString() }) + '\n' });

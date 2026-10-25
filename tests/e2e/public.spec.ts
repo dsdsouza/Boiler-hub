@@ -84,8 +84,8 @@ test('signed-out private APIs reject reads and writes', async ({ request }) => {
 
 test('sign-in return path cannot point at another site', async ({ page }) => {
   await page.goto('/?next=https://example.com');
-  const links = page.getByRole('link', { name: 'Sign in with Google', exact: true });
-  await expect(links.first()).toBeVisible();
+  const links = page.getByRole('link', { name: 'Sign in with Google', exact: true, includeHidden: true });
+  await expect(page.getByRole('link', { name: 'Set up my boiler', exact: true })).toHaveAttribute('href', '/onboarding');
   const hrefs = await links.evaluateAll((elements) => elements.map((el) => el.getAttribute('href')));
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) expect(href).toBe('/auth/signin?next=%2Fonboarding');
@@ -94,7 +94,7 @@ test('sign-in return path cannot point at another site', async ({ page }) => {
 test('public routes load their assets without missing chunks or runtime errors', async ({ context }) => {
   const failures: { path: string; status: number }[] = [];
   const errors: string[] = [];
-  for (const path of ['/', '/demo', '/how', '/calendar-helper', '/privacy']) {
+  for (const path of ['/', '/demo', '/how', '/calendar-helper', '/onboarding', '/privacy']) {
     // Each route gets a cold document. Closing it after inspection avoids
     // attributing a departing document's cancelled prefetch to the next route.
     const page = await context.newPage();

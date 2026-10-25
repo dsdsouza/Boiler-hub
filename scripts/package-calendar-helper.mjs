@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const FILES = ["manifest.json", "popup.html", "popup.css", "popup.js", "protocol.js", "scan.js"];
+export const FILES = ["manifest.json", "popup.html", "popup.css", "popup.js", "protocol.js", "scan.js", "bridge.js"];
 function crc32(bytes) {
   let crc = 0xffffffff;
   for (const byte of bytes) {

@@ -38,8 +38,8 @@ for (const [name, view] of [['Workload', 'boiler'], ['Team forms', 'teams'], ['S
     const service = world(); await service.connect(context);
     await test.step('Load synthetic signed-in components', async () => {
       await page.goto(`/qa-workflows?view=${view}`);
-      if (view !== 'onboarding') await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
-      if (view === 'boiler' || view === 'onboarding') await expect(page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+      if (view === 'boiler') await expect(page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true })).toBeVisible();
     });
     const focusFindings = await test.step('Check keyboard focus remains visible', () => inspectKeyboardFocus(page));
     await test.step('Capture and inspect the rendered UI', () => check(page, info, focusFindings));

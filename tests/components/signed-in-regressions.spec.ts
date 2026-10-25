@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { EMPTY_DRAFT, stepsFor } from '../../app/onboarding/model';
 import { computePressure } from '../../lib/pressure/compute';
 import type { BoilerResponse } from '../../lib/pressure/api-types';
 
@@ -87,7 +88,7 @@ test('an allowed unbroken team name fits the engine room on a phone', async ({ p
   if (info.project.name === 'narrow') await info.attach('verified-team-name.png', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
-for (const mode of ['boiler', 'onboarding']) test(`status does not claim Saved until accepted in ${mode}`, async ({ page }, info) => {
+for (const mode of ['boiler']) test(`status does not claim Saved until accepted in ${mode}`, async ({ page }, info) => {
   const release = deferred(); let writes = 0;
   await page.route('**/api/me/status', async (r) => { writes++; await release.promise; await r.fulfill({ status: 503, json: { error: 'Status could not be saved' } }); });
   await open(page, mode);
@@ -170,4 +171,26 @@ test('an expired session clears the retained private boiler during refresh', asy
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: /^Not signed in$/ })).toBeVisible();
   await expect(gauge).toHaveCount(0);
+});
+
+
+test('onboarding retains its note when Continue cannot save the draft', async ({ page }) => {
+  const release = deferred(); let writes = 0;
+  const draft = { ...EMPTY_DRAFT, ownerId: teamId, role: 'student' as const, name: 'Workflow lead', goal: 'balance' as const, starting: 'fresh', current: 'status' as const };
+  draft.completed = stepsFor(draft).slice(0, stepsFor(draft).indexOf('status'));
+  await page.route('**/api/me/onboarding', async (route) => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: { userId: teamId, draft } });
+    writes++; await release.promise;
+    await route.fulfill({ status: 503, json: { error: 'Setup could not be saved' } });
+  });
+  await open(page, 'onboarding');
+  const note = page.getByRole('textbox', { name: 'Status note (shown to your teams)', exact: true });
+  await note.fill('Keep this note'); await note.press('Enter');
+  await expect(page.getByText('Saved', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  try { await expect.poll(() => writes).toBe(1); await expect(page.getByText('Saved', { exact: true })).toHaveCount(0); }
+  finally { release.resolve(); }
+  await expect(page.getByRole('alert').filter({ hasText: 'Setup could not be saved' })).toBeVisible();
+  await expect(note).toHaveValue('Keep this note');
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeEnabled();
 });
