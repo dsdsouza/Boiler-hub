@@ -52,27 +52,27 @@ export function ExtensionStep({
           >
             Download {name}
           </LinkButton>
-          <ol className="m-0 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-body">
-            <li>Unzip the download.</li>
-            <li>
-              Open <code className="text-brass-ink">chrome://extensions</code>{" "}
-              or <code className="text-brass-ink">edge://extensions</code> and
-              turn on <strong>Developer mode</strong>.
-            </li>
-            <li>
-              Choose <strong>Load unpacked</strong> and select the unzipped
-              extension folder.
-            </li>
-            <li>
-              Come back and choose <strong>Check again</strong>. If you just
-              installed it, refresh this page first. Your answers are saved.
-            </li>
-          </ol>
+          <details className="border-t border-line pt-4 text-sm text-body">
+            <summary className="cursor-pointer font-semibold text-brass-ink">Installation steps</summary>
+            <ol className="mt-4 mb-0 list-decimal space-y-3 pl-5 leading-relaxed">
+              <li>Unzip the download.</li>
+              <li>
+                Open <code className="text-brass-ink">chrome://extensions</code>{" "}
+                or <code className="text-brass-ink">edge://extensions</code> and
+                turn on <strong>Developer mode</strong>.
+              </li>
+              <li>
+                Choose <strong>Load unpacked</strong> and select the unzipped
+                extension folder.
+              </li>
+              <li>
+                Come back and choose <strong>Check again</strong>. If you just
+                installed it, refresh this page first. Your answers are saved.
+              </li>
+            </ol>
+          </details>
         </>
       )}
-      <p className="m-0 text-sm leading-relaxed text-muted">
-        A download alone does not confirm installation. This page waits for Pip to reply from this browser. For an update, replace the unpacked files, reload Pip in Extensions, then refresh this page. Your answers are saved.
-      </p>
       {extension.state === "installed" && (
         <p className="m-0 text-sm text-body">Open your school calendar, choose Pip at the top right, then Find calendar links on this page. Choose Use in onboarding beside the link you want to review.</p>
       )}
