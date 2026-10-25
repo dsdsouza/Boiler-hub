@@ -63,6 +63,16 @@ jobs:
         env:
           QA_WORKFLOW_REPORT_DIR: qa-runs/ci-workflows
           QA_WORKFLOW_RUN_ID: ci-${{ matrix.shard }}
+      - name: Inspect UI consistency across screens and states
+        run: pnpm test:ui --workers=2 --shard=${{ matrix.shard }}/3
+        env:
+          QA_UI_REPORT_DIR: qa-runs/ci-ui-consistency
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-consistency-${{ matrix.shard }}
+          path: qa-runs/ci-ui-consistency
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:

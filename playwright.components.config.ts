@@ -9,8 +9,8 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${port}`, reducedMotion: 'reduce', trace: 'off', video: 'off', screenshot: 'only-on-failure' },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'firefox', grepInvert: /@chromium-touch/, use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', grepInvert: /@chromium-touch/, use: { ...devices['Desktop Safari'] } },
     { name: 'narrow', use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 740 } } },
   ],
   webServer: { command: 'node scripts/qa/component-server.mjs', url: `http://localhost:${port}/qa-components`,

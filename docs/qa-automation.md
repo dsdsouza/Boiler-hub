@@ -231,3 +231,22 @@ QA_WORKFLOW_PROBE=1 QA_WORKFLOW_REPORT_DIR=qa-runs/workflow-probe pnpm test:work
 ```
 
 This command is **supposed to fail** at “Wait for the stuck task save,” block “Complete the task,” and complete cleanup. It is excluded from regular product checks and does not represent an app bug.
+
+## UI consistency and screen evidence
+
+Open **Check UI Consistency.command**, or run:
+
+```bash
+pnpm test:ui
+QA_UI_REPORT_DIR=qa-runs/my-ui-check pnpm test:ui --workers=2
+```
+
+This runs 60 cases across desktop Chromium, Firefox and WebKit, a phone, a tablet and a narrow 320px viewport. It inspects the landing page, demo, help and calendar helper, plus the actual workload, team, source and onboarding components in the disposable local harness. It also checks long unbroken team names and visible validation/recovery states. The signed-in components use resettable fictional services; these checks do not claim live account, backend or provider coverage.
+
+The checks flag horizontal overflow, off-page controls, clipped control labels, drift from shared field/card radii, smaller field text, short shared controls, the page background/font and missing keyboard focus indicators on enabled app controls and links. Focus inspection accepts a visible outline or a painted border change on the control or its surrounding group. The 44px control height is a project convention. Simple text contrast is measured against composited ancestor backgrounds. Gradients, images, translucent groups and unsupported paint formats are counted as unmeasured, rather than declared passing. A separate detector self-check injects broken styles and verifies that repairing them clears the findings.
+
+Each inspected screen saves a full-page screenshot and element-level findings in `qa-runs/ui-latest/index.html` by default. The report records the stopping step if a screen fails to load or an inspection is interrupted. A failed, skipped, retried or incomplete case cannot pass the army stage. Screenshots contain only public fixture content and synthetic harness data: the UI configuration never accepts live authentication state. These checks do not replace human screenshot review, a complete accessibility audit or pixel-baseline comparisons.
+
+Full `pnpm qa:army`, `pnpm qa:explore` and `pnpm qa:check` runs include this stage; `--quick` omits it. GitHub's blocking browser shards run the same cases and upload `ui-consistency-1`, `ui-consistency-2` and `ui-consistency-3` reports with screenshots for 14 days. Existing complete workflow and authenticated checks remain separate.
+
+The component suite also checks the movable Pip companion. Its native touch cases are registered only in the Chromium projects, which support the required touch protocol; the other movement, boundary, cancellation and chat checks run in all four component configurations. Unsupported touch cases are not registered as skipped work, so a complete local army run can still require zero skipped cases.
