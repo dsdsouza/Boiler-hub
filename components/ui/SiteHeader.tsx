@@ -15,10 +15,11 @@ export function Logo({ size = 30 }: { size?: number }) {
   );
 }
 
-export type NavKey = "boiler" | "teams" | "sources" | "how" | "demo";
+export type NavKey = "boiler" | "calendar" | "teams" | "sources" | "how" | "demo";
 
 const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },
+  { key: "calendar", href: "/calendar", label: "Calendar" },
   { key: "teams", href: "/teams", label: "Teams" },
   { key: "sources", href: "/settings/sources", label: "Sources" },
   { key: "how", href: "/how", label: "Help" },
@@ -139,6 +140,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
         </>
       ),
     },
+    { key: "calendar", href: "/calendar", label: "Calendar", icon: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></> },
     {
       key: "teams",
       href: "/teams",
@@ -176,7 +178,7 @@ export function MobileTabBar({ current }: { current?: NavKey }) {
   return (
     <nav
       aria-label="App"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-bg-2 pb-[max(env(safe-area-inset-bottom),8px)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-bg-2 pb-[max(env(safe-area-inset-bottom),8px)] sm:hidden"
     >
       {tabs.map((t) => (
         <Link

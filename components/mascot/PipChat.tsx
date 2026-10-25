@@ -46,7 +46,6 @@ export function PipChat({ autoFocus = false, studyContext, draftRequest, enabled
       {hasReply && <p className="m-0 max-w-[95%] self-start rounded-2xl rounded-bl-sm bg-surface-2 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere text-body"><span className="sr-only">Pip: </span>{streamingReply}<span aria-hidden="true" className="ml-1 inline-block h-3 w-1 rounded-sm bg-brass-ink motion-safe:animate-pulse" /></p>}
       {busy && !hasReply && <PipThinking />}
     </div>
-    {!messages.length && enabled && <div className="flex shrink-0 flex-wrap gap-2 [@media(max-height:600px)]:hidden">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => { submitted.current = true; followReply.current = true; void send(suggestion); }} disabled={busy || !enabled} className="bp-button min-h-11 cursor-pointer rounded-lg border border-line bg-transparent px-3 py-2 text-left text-xs text-body hover:border-rivet hover:text-fg">{suggestion}</button>)}</div>}
     <form onSubmit={(event) => { event.preventDefault(); submitted.current = true; followReply.current = true; void send(); }} className="flex shrink-0 flex-col gap-2">
       <label htmlFor={field} className="sr-only">Message Pip</label>
       <div className="flex items-end gap-2 rounded-xl border border-control bg-field p-2 focus-within:border-brass">
@@ -59,8 +58,8 @@ export function PipChat({ autoFocus = false, studyContext, draftRequest, enabled
         </button>
       </div>
       {error && <p role="alert" className="m-0 text-sm leading-relaxed text-hot-ink">{error}</p>}
-      <p className="m-0 text-[11px] leading-relaxed text-muted">Messages, open assignments, calendar availability and any course text you add go to Gemini. Conversation stays in memory until reload or sign-out.</p>
     </form>
+    {enabled && <div aria-label="Pip shortcuts" className="grid shrink-0 grid-cols-2 gap-1.5">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => { submitted.current = true; followReply.current = true; void send(suggestion); }} disabled={busy} className="bp-control min-h-8 min-w-0 cursor-pointer rounded-md border border-line bg-transparent px-2 py-1 text-left text-[11px] leading-snug text-body hover:border-rivet hover:text-fg disabled:cursor-wait disabled:opacity-50">{suggestion}</button>)}</div>}
     {proposal && <PipStudyPlan key={`${proposal.taskId}:${proposal.startAt}`} proposal={proposal} ready={remindersReady} replacing={replacing} onAccept={onAcceptProposal} onDismiss={dismissProposal} />}
   </div>;
 }

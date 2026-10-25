@@ -49,5 +49,5 @@ export function PipDock() {
 
   if (!userId) return null;
   const ownReading = reading?.userId === userId ? reading : null;
-  return <FloatingPip key={userId} snapshot={ownReading?.snapshot ?? null} now={ownReading?.now ?? 0} pathname={pathname} />;
+  return <FloatingPip key={userId} userId={userId} snapshot={ownReading?.snapshot ?? null} now={ownReading?.now ?? 0} pathname={pathname} />;
 }

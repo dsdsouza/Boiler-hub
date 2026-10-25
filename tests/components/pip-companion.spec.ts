@@ -43,6 +43,7 @@ test('dragging carries Pip without opening chat and remembers his place across n
   await expect.poll(async () => Math.round((await pip(page).boundingBox())!.x)).toBe(Math.round(box.x));
   await page.reload(); await expect.poll(async () => Math.round((await pip(page).boundingBox())!.y)).toBe(Math.round(box.y));
   await pip(page).click(); await expect(companion(page).getByRole('dialog')).toBeVisible();
+  if (process.env.CALENDAR_SCREENSHOTS) { await mkdir(process.env.CALENDAR_SCREENSHOTS, { recursive: true }); await page.screenshot({ path: `${process.env.CALENDAR_SCREENSHOTS}/chat-${test.info().project.name}.png` }); }
   await page.keyboard.press('Escape'); await expect(pip(page)).toBeFocused();
 });
 
@@ -60,8 +61,9 @@ test('keyboard movement, screen boundaries and resizing keep both Pip and chat r
   const form = panel.getByRole('textbox', { name: 'Message Pip', exact: true });
   await form.fill('A local draft');
   const formBox = (await form.boundingBox())!;
-  const linkBox = (await panel.getByRole('link', { name: 'Get started', exact: true }).boundingBox())!;
-  expect(formBox.y + formBox.height).toBeLessThan(linkBox.y);
+  const shortcutBox = (await panel.getByRole('button', { name: 'What’s due next?', exact: true }).boundingBox())!;
+  expect(formBox.y + formBox.height).toBeLessThan(shortcutBox.y);
+  await expect(panel.getByRole('link', { name: 'Open My Boiler', exact: true })).toHaveCount(0);
   await panel.getByRole('button', { name: 'Close Pip chat' }).click(); await expect(pip(page)).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 });

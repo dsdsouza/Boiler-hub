@@ -9,13 +9,14 @@ import type { StudyProposal } from "@/lib/pip/planning";
 
 type Conversation = { messages: PipMessage[]; draft: string; busy: boolean; streamingReply: string; error: string | null; proposal: StudyProposal | null };
 const empty = (): Conversation => ({ messages: [], draft: "", busy: false, streamingReply: "", error: null, proposal: null });
-type Session = Conversation & { sources: CourseMaterial[]; setSources: Dispatch<SetStateAction<CourseMaterial[]>>; setDraft: (value: string) => void; send: (question?: string, study?: StudyContext) => Promise<void>; clear: () => void; dismissProposal: () => void };
+type Session = Conversation & { openRequest: number; openChat: (question: string) => void; sources: CourseMaterial[]; setSources: Dispatch<SetStateAction<CourseMaterial[]>>; setDraft: (value: string) => void; send: (question?: string, study?: StudyContext) => Promise<void>; clear: () => void; dismissProposal: () => void };
 const Context = createContext<Session | null>(null);
 
 /** One in-memory conversation across pages and dock/inline views. Sign-out or a different account clears it. */
 export function PipConversationProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Conversation>(empty);
   const [sources, setSources] = useState<CourseMaterial[]>([]);
+  const [openRequest, setOpenRequest] = useState(0);
   const current = useRef(state);
   current.current = state;
   const material = useRef(sources);
@@ -29,7 +30,7 @@ export function PipConversationProvider({ children }: { children: ReactNode }) {
     const identify = (id: string | null) => {
       if (identity.current === id) return;
       identity.current = id;
-      clear(); setSources([]);
+      clear(); setSources([]); setOpenRequest(0);
     };
     let mounted = true;
     void client.auth.getSession().then(({ data }) => { if (mounted) identify(data.session?.user.id ?? null); }).catch(() => { if (mounted) identify(null); });
@@ -37,6 +38,7 @@ export function PipConversationProvider({ children }: { children: ReactNode }) {
     return () => { mounted = false; data.subscription.unsubscribe(); active.current?.abort(); };
   }, [clear]);
   const setDraft = useCallback((draft: string) => setState((s) => ({ ...s, draft: draft.slice(0, MAX_CHAT_MESSAGE) })), []);
+  const openChat = useCallback((question: string) => { setDraft(question); setOpenRequest((value) => value + 1); }, [setDraft]);
   const dismissProposal = useCallback(() => setState((s) => ({ ...s, proposal: null })), []);
   const send = useCallback(async (question?: string, supplied?: StudyContext) => {
     const text = (question ?? current.current.draft).trim();
@@ -61,7 +63,7 @@ export function PipConversationProvider({ children }: { children: ReactNode }) {
       if (active.current === controller) { active.current = null; setState((s) => ({ ...s, busy: false, streamingReply: "" })); }
     }
   }, []);
-  return <Context.Provider value={{ ...state, sources, setSources, setDraft, send, clear, dismissProposal }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...state, openRequest, openChat, sources, setSources, setDraft, send, clear, dismissProposal }}>{children}</Context.Provider>;
 }
 
 export function usePipConversation() {

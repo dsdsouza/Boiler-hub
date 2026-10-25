@@ -22,12 +22,15 @@ import { CreateTeamForm, JoinTeamForm } from '@/app/teams/_components/TeamForms'
 import { EngineRoom } from '@/app/teams/_components/EngineRoom';
 import { OnboardingClient } from '@/app/onboarding/OnboardingClient';
 import { FloatingPip } from '@/components/mascot/FloatingPip';
+import { CalendarClient } from '@/app/calendar/CalendarClient';
+import { SiteHeader, MobileTabBar } from '@/components/ui/SiteHeader';
 export default function Harness() {
  const boiler = useMyBoiler('api', '00000000-0000-4000-a000-000000000001');
  const [mode, setMode] = useState('boiler');
  useEffect(() => setMode(new URLSearchParams(location.search).get('mode') || 'boiler'), []);
  const team = {id:'00000000-0000-4000-a000-000000000001', name:'x'.repeat(80), type:'work' as const};
- return <main className="mx-auto max-w-[1240px] px-4 py-8">
+ return <main className="mx-auto max-w-[1240px] px-4 pt-8 pb-24">
+  {mode === 'calendar' && <><SiteHeader variant="app" current="calendar" /><CalendarClient userId="00000000-0000-4000-a000-000000000001" /><MobileTabBar current="calendar" /></>}
   {mode === 'boiler' && <MyBoilerView boiler={boiler} />}
   {mode === 'visibility' && <VisibilityPicker teamId={team.id} value="everyone" leadLabel="Lead" />}
   {mode === 'forms' && <div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>}

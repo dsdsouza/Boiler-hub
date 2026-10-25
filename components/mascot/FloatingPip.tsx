@@ -2,15 +2,16 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
-import { LinkButton } from "@/components/ui/Button";
 import { dockMessage, type Snapshot } from "./dockMessage";
 import { Mascot } from "./Mascot";
 import { PipChat } from "./PipChat";
+import { PipAccountChat } from "./PipAccountChat";
+import { usePipConversation } from "./PipConversation";
 import { usePipAccessory } from "./useAccessory";
 import { usePipPosition } from "./usePipPosition";
 import { pipPanel } from "./pip-position";
 
-export function FloatingPip({ snapshot, now, pathname }: { snapshot: Snapshot | null; now: number; pathname: string }) {
+export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Snapshot | null; now: number; pathname: string; userId?: string }) {
   const [open, setOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -21,6 +22,8 @@ export function FloatingPip({ snapshot, now, pathname }: { snapshot: Snapshot | 
   const position = usePipPosition(button, /^\/teams\/[^/]+/.test(pathname), () => setOpen(false));
   const accessory = usePipAccessory();
   const message = dockMessage(snapshot, now);
+  const { openRequest, clear } = usePipConversation();
+  useEffect(() => { if (openRequest) setOpen(true); }, [openRequest]);
 
   useEffect(() => {
     if (previousPath.current !== pathname) { setOpen(false); previousPath.current = pathname; }
@@ -30,7 +33,7 @@ export function FloatingPip({ snapshot, now, pathname }: { snapshot: Snapshot | 
     visibility(); document.addEventListener("visibilitychange", visibility);
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);
-  useEffect(() => { if (open) heading.current?.focus(); }, [open]);
+  useEffect(() => { if (open) { if (openRequest) root.current?.querySelector("textarea")?.focus(); else heading.current?.focus(); } }, [open, openRequest]);
   useEffect(() => {
     if (!open) return;
     const pointer = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
@@ -61,14 +64,15 @@ export function FloatingPip({ snapshot, now, pathname }: { snapshot: Snapshot | 
       className="mp-pop pointer-events-auto absolute overflow-y-auto overscroll-contain rounded-[14px] bg-surface px-4 pt-3 pb-4 shadow-xl ring-1 ring-rivet">
       <div className="flex shrink-0 items-center justify-between gap-2">
         <h2 ref={heading} id={headingId} tabIndex={-1} className="m-0 text-base leading-snug font-semibold text-fg outline-none">Chat with Pip</h2>
+        <button type="button" onClick={clear} aria-label="New conversation" title="New conversation" className="ml-auto inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11a9 9 0 1 1 3 7M3 4v7h7" /></svg>
+        </button>
         <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Pip chat"
           className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted hover:text-fg">
           <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
       </div>
-      <PipChat />
-      <div className="mt-3 shrink-0"><LinkButton href={message.action.href} variant={message.action.href === "/boiler" ? "primary" : "ghost"}
-        className={message.action.href === "/boiler" ? "bp-button-striped" : undefined} onClick={() => setOpen(false)}>{message.action.label}</LinkButton></div>
+      {userId ? <PipAccountChat userId={userId} /> : <PipChat />}
     </section>}
   </div>;
 }
