@@ -80,8 +80,8 @@
 }
 @keyframes mp-boil {
   0%, 100% { transform: translateX(0) rotate(0deg); }
-  25% { transform: translateX(-1.6px) rotate(-1.2deg); }
-  75% { transform: translateX(1.6px) rotate(1.2deg); }
+  25% { transform: translateX(-0.8px) rotate(-0.5deg); }
+  75% { transform: translateX(0.8px) rotate(0.5deg); }
 }
 @keyframes mp-thought {
   0% { transform: scale(0.5); opacity: 0; }
@@ -96,7 +96,7 @@
 .mp-dance { transform-box: view-box; transform-origin: 60px 126px; animation: mp-dance 1s ease-in-out 3; }
 .mp-arm-l { transform-box: view-box; transform-origin: 28px 80px; animation: mp-arm-l 0.5s ease-in-out 6; }
 .mp-arm-r { transform-box: view-box; transform-origin: 92px 80px; animation: mp-arm-r 0.5s ease-in-out 6; }
-.mp-boil { transform-box: view-box; transform-origin: 60px 126px; animation: mp-boil 0.2s linear 10; }
+.mp-boil { transform-box: view-box; transform-origin: 60px 126px; animation: mp-boil 0.4s ease-in-out 5; }
 .mp-thought { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-thought 1.8s ease-in-out infinite; animation-delay: var(--delay, 0s); }
 .mp-ponder { animation: mp-ponder 0.9s ease-in-out infinite alternate; }
 
