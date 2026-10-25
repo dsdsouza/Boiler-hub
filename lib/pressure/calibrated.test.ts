@@ -19,7 +19,7 @@ describe("calibrated shared model", () => {
 
   it("recognizes academic tests without turning sync tests and sample essays into exams", () => {
     for (const title of ["Physics Test 2", "Test 1", "Final Exam", "Midterm 2"]) expect(isMajorExam(title)).toBe(true);
-    for (const title of ["Apple Calendar sync test", "Test notification", "Test Essay", "Final project", "Final presentation", "Flaky-test issue", "Quiz 2", "Reading"]) expect(isMajorExam(title)).toBe(false);
+    for (const title of ["Apple Calendar sync test", "Test notification", "Test Essay", "Final project", "Final presentation", "Practice Problem(s) for Midterm 2", "Midterm review", "Exam study guide", "Mock exam", "Flaky-test issue", "Quiz 2", "Reading"]) expect(isMajorExam(title)).toBe(false);
   });
 
   it("uses identical exam math for previews, posts, optimistic updates and completion", () => {

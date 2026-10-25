@@ -68,6 +68,7 @@ export function smoothTaper(days: number, horizon: number, width: number): numbe
 
 /** Shared title heuristic for imports, forecasts, optimistic edits and team previews. */
 export function isMajorExam(title = ""): boolean {
+  if (/\b(?:practice|prep(?:aration)?|reviews?|study\s+guides?|mock)\b/i.test(title)) return false;
   if (/\bexams?\b/i.test(title)) return true;
   if (/\b(midterms?|finals?)\b/i.test(title) && !/\b(?:projects?|papers?|essays?|reports?|presentations?|drafts?)\b/i.test(title)) return true;
   return /\btests?\b/i.test(title) && !/\b(?:sync|smoke|integration|notification|connection|import|essay|paper|project|report|presentation|draft|case|plan|quiz|flaky|software|issue|bug)s?\b/i.test(title);

@@ -19,6 +19,8 @@ score = round(100 * (1 - exp(-(E/8.5 + T/26))))
 Exam preparation applies only to recognized major exam titles with a due date.
 The shared title heuristic recognizes exam, midterm, final and academic test titles;
 sample essays, sync tests and notification tests are excluded from test matching.
+Practice problems, preparation, review and study-guide tasks keep normal deadline
+weight rather than duplicating the actual exam's preparation floor.
 An undated task is treated as seven days away, without invented exam preparation.
 `taper(d,h,w)` is 1 through h-w, `(1+cos(pi*(d-h+w)/w))/2` in the final w days,
 and 0 at/after h. Source titles remain effort guesses that owners can resize.
