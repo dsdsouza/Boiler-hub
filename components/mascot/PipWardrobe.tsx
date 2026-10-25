@@ -24,7 +24,6 @@ export function PipWardrobe({ score, onDone, autoFocus }: { score: number; onDon
         <Mascot score={score} size={64} reaction="wave" accessory={current} />
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-fg">Dress up {MASCOT_NAME}</span>
-          <span className="text-xs text-muted">Just for looks, one at a time. Saved in this browser.</span>
         </div>
       </div>
       <fieldset ref={groupRef} className="m-0 min-w-0 border-0 p-0">

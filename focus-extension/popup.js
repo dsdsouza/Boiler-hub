@@ -21,10 +21,9 @@ function showFocus() {
   if (!connected) return;
   const now = Date.now();
   const active = session && !session.outcome && session.endAt > now;
-  const text = active
-    ? `${session.title} · ${session.startAt > now ? "starts in" : "ends in"} ${Math.max(1, Math.ceil(((session.startAt > now ? session.startAt : session.endAt) - now) / 60000))} min`
-    : "No study block running.";
-  const message = `${text} ${remindersEnabled ? "Laptop reminders on." : "Enable laptop reminders in Pip."}`;
+  const message = active
+    ? `${session.title} · ${session.startAt > now ? "starts in" : "ends in"} ${Math.max(1, Math.ceil(((session.startAt > now ? session.startAt : session.endAt) - now) / 60000))} min ${remindersEnabled ? "Laptop reminders on." : "Enable laptop reminders in Pip."}`
+    : "";
   const focusStatus = element("focus-status");
   if (focusStatus.textContent !== message) focusStatus.textContent = message;
 }
@@ -82,7 +81,6 @@ void (async () => {
   try {
     ({ appUrl: savedAppUrl } = await chrome.storage.local.get("appUrl"));
     for (const id of ["home", "open-pip"]) element(id).href = appDestination(savedAppUrl);
-    element("sources").href = appDestination(savedAppUrl, "/settings/sources");
     const result = await chrome.runtime.sendMessage({ type: "read" });
     connected = Boolean(result.status?.connected);
     if (!connected) throw new Error("disconnected");
