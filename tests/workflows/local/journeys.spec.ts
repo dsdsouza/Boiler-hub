@@ -75,11 +75,14 @@ test('Onboarding through a completed and restored task', plan([
       await expect(page.getByRole('button', { name: 'Open my boiler', exact: true })).toBeEnabled();
     });
     await step('Open the personal workload', async () => {
-      const writes = service.writes.length;
+      // A background coursework check may settle after the completed page appears.
+      // Opening the boiler must not save setup again; that read is not a setup write.
+      const setupWrites = () => service.writes.filter(write => !write.endsWith(' POST /api/me/onboarding/check'));
+      const writes = setupWrites();
       await page.getByRole('button', { name: 'Open my boiler', exact: true }).click();
       await expect(page).toHaveURL(/\/boiler$/);
       await expect(page.getByRole('heading', { name: 'Personal workload destination' })).toBeVisible();
-      expect(service.writes).toHaveLength(writes);
+      expect(setupWrites()).toEqual(writes);
       await page.unroute('**/boiler');
       await open(page);
       await expect(noteField(page)).toHaveValue('Ready for the workflow');
