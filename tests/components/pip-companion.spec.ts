@@ -25,11 +25,19 @@ async function drag(page: Page, target: { x: number; y: number }) {
 }
 
 test('the bare larger companion survives failed readings and stays absent when signed out', async ({ page, context }) => {
-  await page.goto('/qa-components?mode=pip'); await expect(companion(page)).toHaveCount(0);
+  await page.goto('/qa-components?mode=pip');
+  // Absence also passes during the loading fallback. Finish the first document
+  // and its Link preloads before changing cookies and navigating again in WebKit.
+  await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await expect(companion(page)).toHaveCount(0);
   await open(page, context);
   const style = await pip(page).evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, border: s.borderWidth, width: el.getBoundingClientRect().width }; });
   expect(style.background).toBe('rgba(0, 0, 0, 0)'); expect(style.border).toBe('0px'); expect(style.width).toBeGreaterThanOrEqual(112);
-  await context.clearCookies(); await page.reload(); await expect(companion(page)).toHaveCount(0);
+  await context.clearCookies(); await page.reload();
+  await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await expect(companion(page)).toHaveCount(0);
 });
 
 test('dragging carries Pip without opening chat and remembers his place across navigation and reload', async ({ page, context }) => {
