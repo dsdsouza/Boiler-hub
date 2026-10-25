@@ -16,7 +16,9 @@ const SAMPLE_SCORE = { cool: 22, working: 55, hot: 80, redline: 95 } as const;
 const display = "m-0 font-display font-normal tracking-[0.02em]";
 
 export const metadata: Metadata = {
-  description: "Manage homework, exams and study time with Pip. Plan your next step, block distracting websites with the focus extension and stay below the red line.",
+  // Discord falls back to the browser title/description pair when social text is absent.
+  // Clear the inherited description so its photo preview contains only the image.
+  description: null,
 };
 
 export const dynamic = "force-dynamic";
