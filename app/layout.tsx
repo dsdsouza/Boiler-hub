@@ -10,29 +10,29 @@ import { PipConversationProvider } from "@/components/mascot/PipConversation";
 export const metadata: Metadata = {
   metadataBase: new URL("https://boilerplate.select"),
   title: "Boilerplate",
-  description: "See who is near the red line before anyone blows.",
+  description: "ARE YOU NEAR THE RED LINE?",
   openGraph: {
     type: "website",
     locale: "en_US",
     siteName: "Boilerplate",
     url: "https://boilerplate.select/",
     title: "Boilerplate",
-    description: "See who is near the red line before anyone blows.",
+    description: "ARE YOU NEAR THE RED LINE?",
     images: [{
-      url: "/social/boilerplate-v3.png",
+      url: "/social/boilerplate-v4.png",
       width: 1200,
       height: 630,
       type: "image/png",
-      alt: "Boilerplate — See who is near the red line before anyone blows. Pip, the boiler companion, waves beside the tagline.",
+      alt: "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
     }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Boilerplate",
-    description: "See who is near the red line before anyone blows.",
+    description: "ARE YOU NEAR THE RED LINE?",
     images: [{
-      url: "/social/boilerplate-v3.png",
-      alt: "Boilerplate — See who is near the red line before anyone blows. Pip, the boiler companion, waves beside the tagline.",
+      url: "/social/boilerplate-v4.png",
+      alt: "Boilerplate — ARE YOU NEAR THE RED LINE? Pip, the boiler companion, waves beside the headline.",
     }],
   },
 };
