@@ -4,6 +4,7 @@ import type { Zone } from "@/lib/types";
 // SVG coordinates use viewBox "0 -40 240 340".
 
 export const VIEW = { x: 0, y: -40, w: 240, h: 340 } as const;
+export const HOT_VALVE_CYCLE_SECONDS = 0.35;
 
 /** Inner tank outline; liquid and bubbles are clipped to it. */
 export const TANK_PATH = "M47 82 V228 Q47 263 82 263 H158 Q193 263 193 228 V82 Z";
@@ -70,7 +71,7 @@ export function boilerVisuals(score: number, zone: Zone): BoilerVisuals {
     bobDur: Math.max(0.45, 2.4 - s * 0.019),
     lift: s * 0.07,
     flutter: red ? -3 : hot ? -1.5 : 0,
-    flutterDur: red ? 0.22 : 0.35,
+    flutterDur: red ? 0.22 : HOT_VALVE_CYCLE_SECONDS,
     // A low rumble, not a rattle: the gauge should read as pressure without alarming the owner.
     shake: red
       ? { x: [0, 0.8, -0.8, 0.4, 0], y: [0, -0.25, 0.25, 0, 0], dur: 0.36 }

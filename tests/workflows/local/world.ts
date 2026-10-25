@@ -53,11 +53,12 @@ export function world() {
           if ((body.autosave || body.expectedUserId !== undefined) && body.expectedUserId !== user.id) return reply({ error: 'Your account changed. Reload onboarding before saving more answers.' }, 409);
           if (body.autosave && body.draft?.finished) return reply({ error: 'Use Finish setup to complete onboarding.' }, 400);
           if (body.draft?.finished && ((body.extensionVersion !== '0.3.2' && body.draft.extensionDeferred !== true) || (body.draft.role === 'student' && (body.reviewReceipt !== 'fixture-review' || body.deadlinesReviewed !== true)))) return reply({ error: 'Verify Pip and review coursework first' }, 400);
+          if (body.draft?.finished && body.draft.extensionDeferred && !body.draft.milestone?.trim()) return reply({ error: 'Add your first task before finishing setup.' }, 400);
           user.onboarding = { ...parseDraft(body.draft), ownerId: user.id };
           if (user.onboarding.finished) {
             user.name = user.onboarding.name;
             user.status = { status: user.onboarding.status, note: user.onboarding.note };
-            if (resolvedGoal(user.onboarding) === 'deadlines' && user.onboarding.milestone.trim()) {
+            if ((resolvedGoal(user.onboarding) === 'deadlines' || user.onboarding.extensionDeferred) && user.onboarding.milestone.trim()) {
               const existing = user.tasks.find(task => task.id === `${user.id}-onboarding`);
               const task: Task = { id: `${user.id}-onboarding`, title: user.onboarding.milestone, dueAt: body.deadlineAt, size: 'M', doneAt: null, source: 'manual', assignmentId: null };
               if (existing) Object.assign(existing, task); else user.tasks.push(task);

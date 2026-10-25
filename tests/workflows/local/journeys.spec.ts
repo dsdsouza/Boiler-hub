@@ -65,16 +65,17 @@ test('Onboarding through a completed and restored task', plan([
       await noteField(page).press('Enter');
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.route('**/boiler', route => route.fulfill({ contentType: 'text/html', body: '<h1>Personal workload destination</h1>' }));
       await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+      await expect(page).toHaveURL(/\/boiler$/);
+      await expect(page.getByRole('heading', { name: 'Personal workload destination', exact: true })).toBeVisible();
       expect(service.users[0].status.note).toBe('Ready for the workflow');
-      await page.reload();
-      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+      await open(page, 'onboarding');
+      await expect(page.getByRole('heading', { name: 'A starting point, just for you.', exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Open my boiler', exact: true })).toBeEnabled();
     });
     await step('Open the personal workload', async () => {
       const writes = service.writes.length;
-      await page.route('**/boiler', route => route.fulfill({ contentType: 'text/html', body: '<h1>Personal workload destination</h1>' }));
       await page.getByRole('button', { name: 'Open my boiler', exact: true }).click();
       await expect(page).toHaveURL(/\/boiler$/);
       await expect(page.getByRole('heading', { name: 'Personal workload destination' })).toBeVisible();
@@ -215,8 +216,10 @@ test('A dated first task and revised answers survive reopening onboarding', plan
     await page.getByRole('button', { name: 'Review deadlines', exact: true }).click();
     await page.getByRole('checkbox', { name: /I checked my school calendar/ }).check();
     await page.getByRole('button', { name: /^Step \d+: A starting point, just for you\.$/ }).click();
+    await page.route('**/boiler', route => route.fulfill({ contentType: 'text/html', body: '<h1>Personal workload destination</h1>' }));
     await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/boiler$/);
+    await expect(page.getByRole('heading', { name: 'Personal workload destination', exact: true })).toBeVisible();
     expect(service.users[0].tasks).toHaveLength(1);
     expect(service.users[0].tasks[0].title).toBe('Finish the onboarding test');
     expect(service.users[0].tasks[0].dueAt).toBe('2026-11-03T04:59:00.000Z');
