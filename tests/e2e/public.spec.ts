@@ -91,37 +91,44 @@ test('sign-in return path cannot point at another site', async ({ page }) => {
   for (const href of hrefs) expect(href).toBe('/auth/signin?next=%2Fonboarding');
 });
 
-test('public routes load their assets without missing chunks or runtime errors', async ({ page }) => {
+test('public routes load their assets without missing chunks or runtime errors', async ({ context }) => {
   const failures: { path: string; status: number }[] = [];
   const errors: string[] = [];
-  page.on('response', (response) => {
-    const path = new URL(response.url()).pathname;
-    if ((path.startsWith('/_next/static/') || path.startsWith('/fonts/')) && response.status() >= 400) failures.push({ path, status: response.status() });
-  });
-  page.on('pageerror', (error) => errors.push(error.message));
-  for (const path of ['/', '/demo', '/how', '/calendar-helper']) {
-    const response = await page.goto(path);
-    expect(response?.status()).toBe(200);
-    await expect(page.getByRole('main')).toBeVisible();
-    await expect(page.getByRole('contentinfo')).toHaveCount(0);
-    const fontsLoaded = await page.evaluate(async () => {
-      const faces = await Promise.all([
-        document.fonts.load('400 16px "Bebas Neue"'),
-        document.fonts.load('400 16px "Inter"'),
-        document.fonts.load('500 16px "JetBrains Mono"'),
-        document.fonts.load('700 16px "JetBrains Mono"'),
-      ]);
-      return faces.every((family) => family.length > 0 && family.every((face) => face.status === 'loaded'));
+  for (const path of ['/', '/demo', '/how', '/calendar-helper', '/privacy']) {
+    // Each route gets a cold document. Closing it after inspection avoids
+    // attributing a departing document's cancelled prefetch to the next route.
+    const page = await context.newPage();
+    const onError = (error: Error) => errors.push(`${path}: ${error.message}`);
+    page.on('response', (response) => {
+      const path = new URL(response.url()).pathname;
+      if ((path.startsWith('/_next/static/') || path.startsWith('/fonts/')) && response.status() >= 400) failures.push({ path, status: response.status() });
     });
-    expect(fontsLoaded, 'All bundled font families must load on each public route').toBe(true);
-    // Finish Link preloads before the next hard navigation. WebKit otherwise
-    // reports the navigation's cancelled fetches as page errors on the old page.
-    // Genuine loading errors still reach the listeners and fail this assertion.
-    await page.waitForLoadState('networkidle');
+    page.on('pageerror', onError);
+    try {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(path === '/privacy' ? 404 : 200);
+      if (path === '/privacy') {
+        await expect(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
+      } else {
+        await expect(page.getByRole('main')).toBeVisible();
+        await expect(page.getByRole('contentinfo')).toHaveCount(0);
+        const fontsLoaded = await page.evaluate(async () => {
+          const faces = await Promise.all([
+            document.fonts.load('400 16px "Bebas Neue"'),
+            document.fonts.load('400 16px "Inter"'),
+            document.fonts.load('500 16px "JetBrains Mono"'),
+            document.fonts.load('700 16px "JetBrains Mono"'),
+          ]);
+          return faces.every((family) => family.length > 0 && family.every((face) => face.status === 'loaded'));
+        });
+        expect(fontsLoaded, 'All bundled font families must load on each public route').toBe(true);
+      }
+      await page.waitForLoadState('networkidle');
+    } finally {
+      page.off('pageerror', onError);
+      await page.close();
+    }
   }
-  const removed = await page.goto('/privacy');
-  expect(removed?.status()).toBe(404);
-  await expect(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
   expect(failures, 'HTML must reference assets available on the same deployment').toEqual([]);
   expect(errors).toEqual([]);
 });

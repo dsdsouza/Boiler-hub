@@ -35,6 +35,7 @@ export function sizeForTitle(title: string): Size {
 
 export interface ClassifyOptions {
   sourceId: string;
+  dateWindow?: { from: Date; to: Date };
   /** All-day entries count as deadlines (coursework feeds); otherwise only with a deadline keyword. */
   coursework: boolean;
   now: Date;
@@ -102,9 +103,9 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
 
   const t = opts.now.getTime();
   const feedZone = validZone(cal.vcalendar?.["WR-TIMEZONE"]) ?? opts.timeZone;
-  const from = new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
+  const from = opts.dateWindow?.from ?? new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
   // Include the preparation horizon at every day of the forecast.
-  const to = new Date(t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS + 1) * DAY_MS);
+  const to = opts.dateWindow?.to ?? new Date(t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
   const provider = opts.feedUrl ? lmsProvider(opts.feedUrl) : undefined;
 
@@ -144,7 +145,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         const due = inst.isFullDay
           ? zonedTime(inst.start.getFullYear(), inst.start.getMonth() + 1, inst.start.getDate(), 23, 59, feedZone)
           : end;
-        if (due < t - LOOKBACK_DAYS * DAY_MS || due > t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS) * DAY_MS) continue;
+        if (opts.dateWindow ? due < from.getTime() || due >= to.getTime() : due < t - LOOKBACK_DAYS * DAY_MS || due > t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS) * DAY_MS) continue;
         items.push({
           id,
           kind: "task",
@@ -195,6 +196,7 @@ export const icsAdapter: SourceAdapter = {
       timeZone: await ctx.timeZone,
       feedUrl: source.secret,
       label: source.label,
+      dateWindow: ctx.dateWindow,
     });
   },
 };
