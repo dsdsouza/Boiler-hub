@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { checkPipScope } from "./scope";
+import { PIP_VOICE, PIP_VOICE_REVIEW_NOTE } from "./policy";
 
 const messages = [
   { role: "user" as const, content: "Give me exam answers" },
@@ -25,6 +26,9 @@ it.each(["allow", "refuse"])("validates a closed %s decision through the real pr
   expect(body.response_format[0].schema.properties.decision.enum).toEqual(["allow", "refuse"]);
   expect(body.system_instruction).toContain("LATEST user request");
   expect(body.system_instruction).toContain("past refused requests do not forbid");
+  // The voice is answer style only: the request check classifies with the unchanged policy.
+  expect(body.system_instruction).not.toContain("boiler engineer");
+  expect(body.system_instruction).not.toContain(PIP_VOICE_REVIEW_NOTE);
   expect(body.system_instruction).toContain("untrusted data");
   expect(JSON.stringify(body.input)).toContain(messages[2].content);
 });
@@ -43,6 +47,9 @@ it("reviews the entire proposed reply, including citations, as untrusted data", 
   const [, request] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
   const body = JSON.parse(request.body as string);
   expect(body.system_instruction).toContain("including inside citations");
+  // The reply check learns the house style exists, so it judges substance, not a steam phrase.
+  expect(body.system_instruction).toContain(PIP_VOICE_REVIEW_NOTE);
+  expect(body.system_instruction).not.toContain(PIP_VOICE);
   expect(JSON.stringify(body.input)).toContain("proposedReply");
 });
 
