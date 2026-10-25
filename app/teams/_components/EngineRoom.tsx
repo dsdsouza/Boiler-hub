@@ -2,7 +2,7 @@
 
 import { Disclosure } from "@/components/ui/Disclosure";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/Button";
 import type { AssignmentPreview, Status, Zone } from "@/lib/types";
 import type { EngineRoomView } from "@/lib/data/teams";
 import { movedUp } from "@/app/api/teams/_lib/assignment";
@@ -55,9 +55,12 @@ export function EngineRoom({ room }: { room: EngineRoomView }) {
 
   return (
     <main className="mx-auto flex max-w-[1320px] flex-col gap-[22px] px-4 pb-24 pt-7 sm:px-8 sm:pb-16">
-      <Link href="/teams" className="inline-flex min-h-11 items-center self-start text-sm" style={{ color: C.brassLight }}>
-        ← My Teams
-      </Link>
+      <LinkButton href="/teams" variant="ghost" className="self-start">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="rotate-180">
+          <path d="M5 12h14m-5-5 5 5-5 5" />
+        </svg>
+        My Teams
+      </LinkButton>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
