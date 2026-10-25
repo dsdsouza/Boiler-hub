@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pip · Boilerplate</title>
+    <link rel="stylesheet" href="focus.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icon128.png" width="44" height="44" alt="" />
+        <a class="brand" id="home" href="https://boilerplate.zhomander.workers.dev/boiler" target="_blank" rel="noopener">Pip · Boilerplate</a>
+      </header>
+      <div class="focus-summary">
+        <p id="focus-status" role="status">Checking your study commitment…</p>
+        <a id="open-pip" href="https://boilerplate.zhomander.workers.dev/boiler" target="_blank" rel="noopener">Open Pip</a>
+      </div>
+      <h1>Import your coursework?</h1>
+      <p class="intro">Bring your calendar and deadlines into Boilerplate so Pip can plan with them.</p>
+      <label for="provider">School calendar</label>
+      <select id="provider">
+        <option>Brightspace</option><option>Canvas</option><option>Moodle</option><option>Blackboard</option><option value="Other">Another calendar</option>
+      </select>
+      <p id="steps"></p>
+      <button class="primary" id="scan" type="button">Find calendar links on this page</button>
+      <p id="status" role="status" aria-live="polite">Scans this page only. Review a link in Boilerplate before connecting it.</p>
+      <div id="navigation"></div>
+      <div id="results"></div>
+      <footer>
+        <a id="sources" href="https://boilerplate.zhomander.workers.dev/settings/sources" target="_blank" rel="noopener">Connect Google Calendar, Apple Calendar or GitHub</a>
+        <p>Only the page you choose is scanned, after you click Find. Review the link in Boilerplate before connecting it. Calendar feeds don’t include grades or course files.</p>
+      </footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
