@@ -63,8 +63,8 @@ test('cancelled asset requests do not reload a healthy page', async ({ page }) =
     document.head.append(script);
   });
   await expect.poll(() => probes).toBe(1);
-  await page.goto('/demo');
-  await expect(page.getByRole('region', { name: 'Gauge and status', exact: true }).getByRole('img')).toBeVisible();
+  await page.goto('/how');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(documents).toBe(2);
   expect(page.url()).not.toContain('__boiler_reload');
 });

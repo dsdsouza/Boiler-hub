@@ -8,7 +8,7 @@ const base =
   "bp-button inline-flex items-center justify-center gap-2 rounded-[10px] cursor-pointer no-underline disabled:cursor-not-allowed disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
-  // Brass plate with a pressed lip (Main.dc.html "Try the demo").
+  // Brass primary button with a pressed lip.
   primary:
     "bg-brass text-soot hover:bg-brass-light hover:text-soot font-display tracking-[0.05em] shadow-[inset_0_-3px_0_var(--color-brass-dark)]",
   secondary: "bg-surface-2 text-fg hover:text-fg border border-control font-semibold hover:border-brass",
