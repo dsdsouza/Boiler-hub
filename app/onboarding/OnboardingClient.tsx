@@ -517,7 +517,7 @@ export function OnboardingClient({
         content = (
           <>
             {signedIn ? (
-              <div className={styles.connection} role="status">
+              <div className={`${styles.connection} ${styles.connectionSuccess}`} role="status">
                 <Check />
                 <strong>Sign in complete, {draft.name.trim()}!</strong>
               </div>
@@ -570,7 +570,7 @@ export function OnboardingClient({
               </div>
             )}
             {boiler?.calendar === "ok" && (
-              <div className={`${styles.connection} ${styles.calendarConnected}`}>
+              <div className={`${styles.connection} ${styles.connectionSuccess}`}>
                 <Check />
                 <span>Google Calendar connected</span>
               </div>
