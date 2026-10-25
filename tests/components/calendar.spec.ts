@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
+test.use({ timezoneId: 'America/New_York' });
+
 test('month navigation, day selection, midnight zones and keyboard use retain the full month', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-10-24T16:00:00Z') });
   await page.route('**/api/me/boiler', route => route.fulfill({ status: 401, json: { error: 'fixture' } }));

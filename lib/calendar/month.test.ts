@@ -16,6 +16,8 @@ describe("month deadline dates", () => {
     expect(parseMonth("2026-2")).toBeNull();
   });
   it("places near-midnight deadlines on the displayed civil day through DST", () => {
+    expect(calendarDay("2026-10-26T00:30:00Z", "UTC")).toBe("2026-10-26");
+    expect(calendarDay("2026-10-26T00:30:00Z", "America/New_York")).toBe("2026-10-25");
     expect(calendarDay("2026-11-01T03:59:00Z", "America/New_York")).toBe("2026-10-31");
     expect(calendarDay("2026-11-02T04:59:00Z", "America/New_York")).toBe("2026-11-01");
     const groups = groupDeadlines([
