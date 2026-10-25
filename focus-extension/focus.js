@@ -35,8 +35,8 @@ async function render() {
   element("goal").textContent = active || scheduled ? session?.goal || "" : "";
   element("release").hidden = !active && !scheduled;
   element("status").textContent = active
-    ? "Five distracting websites paused in this browser."
-    : "You can return to your original site.";
+    ? "Five distracting websites paused. Your tabs return when focus ends."
+    : "Your paused tabs return to their original sites automatically.";
   if (appUrl) {
     element("home").href = appUrl;
     element("assistant").href = appUrl;
