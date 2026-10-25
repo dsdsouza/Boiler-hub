@@ -413,3 +413,8 @@ body:has([data-onboarding]) [data-pip-companion] {
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
+@media (forced-colors: active) {
+  .pip-speech-bubble { color: CanvasText; }
+  .pip-cloud-shape { color: Canvas; }
+  .pip-cloud-shape path { stroke: CanvasText; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+}
