@@ -1,0 +1,20 @@
+.promotionDialog {
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100svh - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--control);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.promotionDialog::backdrop {
+  background: rgb(21 18 14 / 80%);
+}
+
+:global(body):has(.promotionDialog[open]) {
+  overflow: hidden;
+}
