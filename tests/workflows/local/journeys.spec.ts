@@ -66,8 +66,21 @@ test('Onboarding through a completed and restored task', plan([
       await page.getByRole('button', { name: 'Finish setup', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
       expect(service.users[0].status.note).toBe('Ready for the workflow');
+      await page.reload();
+      await expect(page.getByRole('heading', { name: 'Your boiler is ready.', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Open my boiler', exact: true })).toBeEnabled();
     });
-    await step('Open the personal workload', async () => { await page.getByRole('navigation', { name: 'Workflow pages' }).getByRole('link', { name: 'boiler', exact: true }).click(); await expect(noteField(page)).toHaveValue('Ready for the workflow'); });
+    await step('Open the personal workload', async () => {
+      const writes = service.writes.length;
+      await page.route('**/boiler', route => route.fulfill({ contentType: 'text/html', body: '<h1>Personal workload destination</h1>' }));
+      await page.getByRole('button', { name: 'Open my boiler', exact: true }).click();
+      await expect(page).toHaveURL(/\/boiler$/);
+      await expect(page.getByRole('heading', { name: 'Personal workload destination' })).toBeVisible();
+      expect(service.writes).toHaveLength(writes);
+      await page.unroute('**/boiler');
+      await open(page);
+      await expect(noteField(page)).toHaveValue('Ready for the workflow');
+    });
     await step('Create a dated task', async () => { await page.getByRole('textbox', { name: 'New task', exact: true }).fill('Workflow deliverable'); await page.getByRole('button', { name: 'Add task', exact: true }).click(); await expect(taskButton(page, 'Workflow deliverable')).toBeEnabled(); });
     await step('Resize and persist the task', async () => { await page.getByRole('combobox', { name: 'Size: Workflow deliverable', exact: true }).selectOption('L'); await expect.poll(() => service.users[0].tasks[0].size).toBe('L'); page = await reopen(page); await expect(page.getByRole('combobox', { name: 'Size: Workflow deliverable', exact: true })).toHaveValue('L'); });
     await step('Complete the task', async () => { await taskButton(page, 'Workflow deliverable').click(); await showCompleted(page, 'Workflow deliverable'); });

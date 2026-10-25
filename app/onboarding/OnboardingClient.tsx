@@ -308,6 +308,15 @@ export function OnboardingClient({
   }
   const setupReady = pip.state === "installed" &&
     (draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
+  const valid =
+    isStepValid(step, draft, signedIn) &&
+    (step !== "extension" || pip.state === "installed") &&
+    (step !== "calendar" || draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt)) &&
+    (step !== "review" || (!!reviewReceipt && reviewed)) &&
+    (step !== "recommendation" || setupReady) &&
+    // Opening the app after saved completion does not submit setup again.
+    // Review receipts intentionally stay in memory and disappear on reload.
+    (step !== "ready" || draft.finished);
   const canSkip = OPTIONAL.includes(step) && !(draft.role === "student" && step === "calendar");
   async function finishLater() {
     if (!loaded || loadFailed || busy || sourceBusy) return;
@@ -325,12 +334,7 @@ export function OnboardingClient({
       busy ||
       sourceBusy ||
       (skip && !canSkip) ||
-      (!skip &&
-        (!isStepValid(step, draft, signedIn) ||
-          (step === "extension" && pip.state !== "installed") ||
-          (step === "calendar" && draft.role === "student" && (!courseworkReady(boiler) || !reviewReceipt)) ||
-          (step === "review" && (!reviewReceipt || !reviewed)) ||
-          (["recommendation", "ready"].includes(step) && !setupReady)))
+      (!skip && !valid)
     )
       return;
     if (step === "ready") {
@@ -886,12 +890,6 @@ export function OnboardingClient({
     }
     return content;
   }
-  const valid =
-    isStepValid(step, draft, signedIn) &&
-    (step !== "extension" || pip.state === "installed") &&
-    (step !== "calendar" || draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt)) &&
-    (step !== "review" || (!!reviewReceipt && reviewed)) &&
-    (!["recommendation", "ready"].includes(step) || setupReady);
   return (
     <div className={styles.shell} data-onboarding>
       <header className={styles.header}>
