@@ -30,7 +30,12 @@ it("only blocks opted-in active time and always releases at the deadline", () =>
   );
 });
 it("matches intended domains without blocking school sites, the app, or lookalikes", () => {
-  expect(createRules()).toHaveLength(5);
+  const rules = createRules("chrome-extension://pip/focus.html");
+  expect(rules).toHaveLength(5);
+  expect(rules[0].action.redirect.regexSubstitution).toBe(
+    "chrome-extension://pip/focus.html#\\0",
+  );
+  expect(rules[0].condition.requestDomains).toEqual(["youtube.com"]);
   expect(isDistracting("https://www.youtube.com/watch?v=demo")).toBe(true);
   expect(isDistracting("https://youtube.com.attacker.example")).toBe(false);
   expect(isDistracting("https://boilerhub.work/boiler")).toBe(false);

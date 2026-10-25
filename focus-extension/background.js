@@ -2,10 +2,10 @@
 import {
   createRules,
   isApp,
-  isDistracting,
   shouldBlock,
   validateSession,
 } from "./rules.mjs";
+import { pauseOpenTabs, restorePausedTabs, returnUrl } from "./tabs.mjs";
 import { enableReminders, reminderStatus, synchronizeReminders, testNotification } from "./notifications.js";
 
 let queue = Promise.resolve();
@@ -19,11 +19,14 @@ async function synchronize() {
   const { session = null } = await chrome.storage.local.get("session");
   const block = shouldBlock(session);
   const rules = await chrome.declarativeNetRequest.getDynamicRules();
-  const wasBlocked = rules.length > 0;
-  if (block && rules.length !== 5)
+  const focusPage = chrome.runtime.getURL("focus.html");
+  const expectedRules = createRules(focusPage);
+  if (block && (rules.length !== expectedRules.length || rules.some(
+    (rule) => rule.action.redirect?.regexSubstitution !== expectedRules[0].action.redirect.regexSubstitution,
+  )))
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: rules.map((rule) => rule.id),
-      addRules: createRules(),
+      addRules: expectedRules,
     });
   else if (!block && rules.length)
     await chrome.declarativeNetRequest.updateDynamicRules({
@@ -39,18 +42,8 @@ async function synchronize() {
   }
   await chrome.action.setBadgeText({ text: block ? "FOCUS" : "" });
   await chrome.action.setBadgeBackgroundColor({ color: "#8c6a35" });
-  if (block && !wasBlocked) {
-    const tabs = await chrome.tabs.query({});
-    await Promise.all(
-      tabs
-        .filter((tab) => tab.id && isDistracting(tab.url))
-        .map((tab) =>
-          chrome.tabs
-            .update(tab.id, { url: chrome.runtime.getURL("focus.html") })
-            .catch(() => {}),
-        ),
-    );
-  }
+  if (block) await pauseOpenTabs(chrome.tabs, focusPage);
+  else await restorePausedTabs(chrome.tabs, focusPage);
   const reminders = await synchronizeReminders(validateSession(session) ? session : null).catch(() => ({ remindersSupported: true, remindersEnabled: false, reminderError: "Allow Chrome notifications to hear from Pip." }));
   return { connected: true, enforced: block, session, ...reminders };
 }
@@ -128,6 +121,11 @@ chrome.notifications.onClicked.addListener((id) => { if (id.startsWith("pip-")) 
 chrome.notifications.onButtonClicked.addListener((id) => { if (id.startsWith("pip-")) void openPip(); });
 chrome.alarms.onAlarm.addListener(() => {
   void enqueue(synchronize);
+});
+// Catch a redirected navigation finishing just after the end alarm, too.
+chrome.tabs.onUpdated.addListener((_id, change) => {
+  if (returnUrl(chrome.runtime.getURL("focus.html"), change.url))
+    void enqueue(synchronize);
 });
 chrome.runtime.onStartup.addListener(() => {
   void chrome.alarms.create("focus-watchdog", { periodInMinutes: 0.5 });
