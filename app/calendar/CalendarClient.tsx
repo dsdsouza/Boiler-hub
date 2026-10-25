@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/browser";
 import { DeadlineCalendar } from "@/components/calendar/DeadlineCalendar";
 import { calendarDay, type MonthCalendar } from "@/lib/calendar/month";
 
@@ -9,9 +10,20 @@ const EMPTY: MonthCalendar = { deadlines: [], unavailableSources: 0, truncated: 
 export function CalendarClient({ userId }: { userId: string }) {
   const [calendar, setCalendar] = useState<{ month: string; selected: string; today: string; timeZone: string } | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [accessLost, setAccessLost] = useState(false);
+  const pending = useRef<AbortController | null>(null);
   const [result, setResult] = useState<{ key: string; data: MonthCalendar; error: string; loading: boolean } | null>(null);
   const month = calendar?.month, timeZone = calendar?.timeZone;
   const key = `${userId}:${month}:${timeZone}`;
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    const { data } = createClient().auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || session && session.user.id !== userId) {
+        pending.current?.abort(); setResult(null); setAccessLost(true);
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [userId]);
   useEffect(() => {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const today = calendarDay(new Date(), zone);
@@ -22,8 +34,9 @@ export function CalendarClient({ userId }: { userId: string }) {
     return () => { window.removeEventListener("focus", changed); window.removeEventListener("boiler:data-changed", changed); };
   }, []);
   useEffect(() => {
-    if (!month || !timeZone) return;
+    if (!month || !timeZone || accessLost) return;
     const controller = new AbortController();
+    pending.current = controller;
     setResult({ key, data: EMPTY, error: "", loading: true });
     void (async () => {
       try {
@@ -36,7 +49,8 @@ export function CalendarClient({ userId }: { userId: string }) {
       }
     })();
     return () => controller.abort();
-  }, [key, month, timeZone, refresh]);
+  }, [key, month, timeZone, refresh, accessLost]);
+  if (accessLost) return <p role="status" className="py-16 text-center text-body"><a href="/auth/signin?next=/calendar" className="underline underline-offset-4">Sign in again</a> to see your deadlines.</p>;
   if (!calendar) return <p role="status" className="py-16 text-center text-muted">Loading your calendar…</p>;
   const current = result?.key === key ? result : null;
   return <DeadlineCalendar {...calendar} data={current?.data ?? EMPTY} loading={current?.loading ?? true} error={current?.error ?? ""}
