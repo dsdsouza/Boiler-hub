@@ -46,7 +46,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
       <main>
         {!viewer && failed && (
           <p role="alert" className="mx-auto mt-6 max-w-[1240px] px-4 text-sm text-redline-ink sm:px-8">
-            Sign-in did not finish. Try again, or take the demo without signing in.
+            Sign-in did not finish. Please try again.
           </p>
         )}
         {!viewer && typeof params.next === "string" && !failed && (
@@ -63,9 +63,6 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
               to start. With the focus extension, distracting websites stay blocked while you work.
             </p>
             <div className="bp-arrive bp-arrive-last flex flex-wrap gap-3.5 pt-2">
-              <LinkButton href="/demo" variant="primary" size="lg" className="max-sm:w-full">
-                Try the demo
-              </LinkButton>
               {viewer ? (
                 <LinkButton href="/boiler" variant="primary" size="lg" className="bp-button-striped max-sm:w-full">
                   Open My Boiler
