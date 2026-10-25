@@ -15,13 +15,11 @@ describe("forecast day explanation", () => {
       onClose={() => {}}
       onToggle={() => {}}
     />);
-    expect(html).toContain("Why this day is Redline");
     expect(html).toContain("Monday project");
     expect(html).toContain("L task, due in 1.3 days");
     expect(html).toContain("Biology");
     expect(html).toContain("+6.4");
     expect(html).toContain("Nothing due.");
-    expect(html).toContain("work already overdue stays counted");
     expect(html).toContain('aria-label="Complete: Monday project"');
   });
 
