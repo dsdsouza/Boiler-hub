@@ -64,6 +64,12 @@ describe("onboarding paths and retained progress", () => {
     expect(finished.finished).toBe(true);
     expect(stepsFor(finished)[unlockedIndex(finished, true)]).toBe("ready");
   });
+  it("reopens the merged calendar step for a saved sources page without losing answers", () => {
+    const draft = parseDraft({ version: 2, role: "student", name: "Josh", goal: "deadlines", starting: "calendar", milestone: "Lab report", deadline: "2026-11-02", current: "sources", completed: ["identity", "name", "goal", "starting", "reassurance", "account", "extension", "calendar", "reading", "review", "milestone", "deadline", "status"] });
+    expect(stepsFor(draft)).not.toContain("sources");
+    expect(draft).toMatchObject({ current: "calendar", name: "Josh", milestone: "Lab report", deadline: "2026-11-02" });
+    expect(draft.completed).toContain("status");
+  });
   it("asks only goal-relevant details, while retaining answers when paths change", () => {
     const d = parseDraft({
       role: "student",
