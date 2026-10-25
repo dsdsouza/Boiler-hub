@@ -239,7 +239,7 @@ test('completing a forecast contributor updates its day and the main gauge, and 
   await tomorrow.click();
   const panel = page.locator('#forecast-day-panel');
   const causes = panel.getByRole('list', { name: 'Pressure contributors', exact: true });
-  await causes.getByRole('button', { name: 'Complete: Finish onboarding v2 spec', exact: true }).click();
+  await causes.getByRole('button', { name: 'Complete: Finish onboarding v2 spec', exact: true }).press('Space');
   await expect(panel).toBeVisible();
   await expect.poll(forecastScore).toBeLessThan(beforeDay);
   await expect.poll(() => score(page)).toBeLessThan(beforeGauge);
