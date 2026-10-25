@@ -11,6 +11,7 @@ import { CourseChip } from "./TaskList";
 import { WEIGHT_LABEL, formatPoints } from "./format";
 import { bucketDay } from "./taskView";
 import type { TaskMeta } from "./boilerState";
+import { ContributionReason } from "./ContributionReason";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -227,7 +228,7 @@ export function ForecastDayPanel({
               {byId.get(c.itemId)?.kind === "task" && taskToggle(byId.get(c.itemId)!, true)}
               <div className="min-w-0 flex-1">
                 <div className="break-words text-[15px] font-semibold text-fg">{c.title}</div>
-                <div className="text-[13px] text-muted">{c.reason}</div>
+                <ContributionReason reason={c.reason} />
                 <CourseChip course={courses[c.itemId]} />
               </div>
               {pts(c.itemId)}
