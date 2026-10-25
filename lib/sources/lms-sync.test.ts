@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncUser } from "@/lib/google/sync";
 import { toMyBoilerData } from "@/components/boiler/fromApi";
-import { forgetSource } from "./load";
+import { forgetSource, loadSources } from "./load";
 
 const live = vi.hoisted(() => ({ text: "", downloads: 0 }));
 vi.mock("server-only", () => ({}));
@@ -50,6 +50,16 @@ function database() {
 afterEach(() => { forgetSource(SOURCE); live.downloads = 0; });
 
 describe("LMS feed → live sync → owner UI", () => {
+  it("loads a distant full month without reading or replacing the pressure cache", async () => {
+    const db = database(); live.text = feed(1);
+    const original = await syncUser(db.admin, USER, NOW);
+    live.text = live.text.replace("END:VCALENDAR", "BEGIN:VEVENT\nUID:december-task\nDTSTART:20261230T170000Z\nSUMMARY:December assignment due\nEND:VEVENT\nEND:VCALENDAR");
+    const month = await loadSources(db.admin, USER, NOW, "America/New_York", { dateWindow: { from: new Date("2026-12-01T00:00:00Z"), to: new Date("2027-01-01T00:00:00Z") } });
+    expect(month.items.map((item) => item.title)).toEqual(["December assignment due"]);
+    const pressure = await syncUser(db.admin, USER, NOW);
+    expect(pressure.tasks).toEqual(original.tasks);
+    expect(live.downloads).toBe(2);
+  });
   it("bypasses the source cache on Refresh, reconciles changes, and preserves owner overrides", async () => {
     const db = database();
     live.text = feed(1);

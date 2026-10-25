@@ -22,12 +22,15 @@ import { CreateTeamForm, JoinTeamForm } from '@/app/teams/_components/TeamForms'
 import { EngineRoom } from '@/app/teams/_components/EngineRoom';
 import { OnboardingClient } from '@/app/onboarding/OnboardingClient';
 import { FloatingPip } from '@/components/mascot/FloatingPip';
+import { CalendarClient } from '@/app/calendar/CalendarClient';
+import { SiteHeader, MobileTabBar } from '@/components/ui/SiteHeader';
 export default function Harness() {
  const boiler = useMyBoiler('api', '00000000-0000-4000-a000-000000000001');
  const [mode, setMode] = useState('boiler');
  useEffect(() => setMode(new URLSearchParams(location.search).get('mode') || 'boiler'), []);
  const team = {id:'00000000-0000-4000-a000-000000000001', name:'x'.repeat(80), type:'work' as const};
- return <main className="mx-auto max-w-[1240px] px-4 py-8">
+ return <main className="mx-auto max-w-[1240px] px-4 pt-8 pb-24">
+  {mode === 'calendar' && <><SiteHeader variant="app" current="calendar" /><CalendarClient userId="00000000-0000-4000-a000-000000000001" /><MobileTabBar current="calendar" /></>}
   {mode === 'boiler' && <MyBoilerView boiler={boiler} />}
   {mode === 'visibility' && <VisibilityPicker teamId={team.id} value="everyone" leadLabel="Lead" />}
   {mode === 'forms' && <div className="flex flex-wrap gap-6"><CreateTeamForm /><JoinTeamForm /></div>}
@@ -41,22 +44,23 @@ export default function Harness() {
 const workflowRoute = join(directory, 'app', 'qa-workflows');
 await mkdir(workflowRoute, { recursive: true });
 await cp(resolve(root, 'tests/workflows/harness.tsx'), join(workflowRoute, 'page.tsx'));
-const options = {
-  cwd: directory, stdio: 'inherit', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' },
-};
-const production = process.env.PLAYWRIGHT_PRODUCTION === '1';
+const next = resolve(root, 'node_modules/.bin/next');
+const env = { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://qa-project.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'qa-anon-placeholder' };
 let child;
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { if (!stopping) { stopping = true; child?.kill(signal); } });
 async function run(args) {
-  child = spawn(resolve(root, 'node_modules/.bin/next'), args, options);
+  child = spawn(next, args, { cwd: directory, stdio: 'inherit', env });
   return new Promise((ok) => { child.on('error', () => ok(1)); child.on('exit', (code) => ok(code ?? (stopping ? 0 : 1))); });
 }
-// CI exercises emitted assets, without dev-server Fast Refresh reloading pages
-// while a test changes its session or another worker compiles a route.
-let code = production ? await run(['build']) : 0;
-if (code === 0 && !stopping) {
-  code = await run([production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219']);
+let code = 0;
+try {
+  // CI already requests production mode. Honor it for this disposable app too:
+  // dev-mode Fast Refresh can replace a document during an auth/navigation check.
+  const production = process.env.PLAYWRIGHT_PRODUCTION === '1';
+  if (production) code = await run(['build']);
+  if (code === 0 && !stopping) code = await run([production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', process.env.QA_COMPONENT_PORT || '3219']);
+} finally {
+  await rm(directory, { recursive: true, force: true });
 }
-await rm(directory, { recursive: true, force: true });
 process.exitCode = code;

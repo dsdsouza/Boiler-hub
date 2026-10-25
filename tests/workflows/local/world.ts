@@ -26,6 +26,13 @@ export function world() {
   });
   async function connect(context: BrowserContext, actor = 'lead') {
     const user = users.find(u => u.key === actor)!;
+    // The floating companion now owns chat. Supply a local, synthetic browser
+    // session as well as the service fixtures; no test auth reaches Supabase.
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    const token = `${Buffer.from('{"alg":"HS256"}').toString('base64url')}.${Buffer.from(JSON.stringify({ sub: user.id, exp: expires })).toString('base64url')}.fixture`;
+    const session = { access_token: token, refresh_token: 'fixture-only', token_type: 'bearer', expires_in: 3600, expires_at: expires, user: { id: user.id, aud: 'authenticated', role: 'authenticated', email: `${actor}@example.test`, app_metadata: {}, user_metadata: {} } };
+    await context.addCookies([{ name: 'sb-qa-project-auth-token', value: 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64url'), url: `http://localhost:${process.env.QA_COMPONENT_PORT || '3219'}`, sameSite: 'Lax' }]);
+    await context.route('https://qa-project.supabase.co/**', route => route.fulfill({ status: 503, json: { error: 'Reading unavailable' } }));
     await context.route('**/api/**', async route => {
       const request = route.request(), path = new URL(request.url()).pathname, method = request.method();
       if (method !== 'GET') writes.push(`${actor} ${method} ${path}`);

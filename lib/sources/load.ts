@@ -35,6 +35,7 @@ export interface LoadedSources {
 }
 
 export interface LoadOptions {
+  dateWindow?: FetchContext["dateWindow"];
   /** Skip the in-memory cache (Refresh button, adding a source, Test). */
   fresh?: boolean;
   /** Keep the result in the cache (default true). Off when the time zone is only a guess. */
@@ -68,7 +69,7 @@ export async function fetchSource(
   opts: LoadOptions = {},
 ): Promise<{ items: SourceItem[]; cached: boolean }> {
   const hit = cache.get(row.id);
-  if (!opts.fresh && hit && ctx.now.getTime() - hit.at < CACHE_TTL_MS[row.kind]) return { items: hit.items, cached: true };
+  if (!ctx.dateWindow && !opts.fresh && hit && ctx.now.getTime() - hit.at < CACHE_TTL_MS[row.kind]) return { items: hit.items, cached: true };
   const adapter = ADAPTERS[row.kind];
   if (!adapter) throw new SourceError(`${row.kind} sources are not supported yet`);
   let secret: string;
@@ -79,7 +80,7 @@ export async function fetchSource(
   }
   const source: AdapterSource = { id: row.id, kind: row.kind, label: row.label, coursework: row.coursework, secret };
   const items = await adapter.fetchItems(source, ctx);
-  if (opts.store !== false) cache.set(row.id, { at: ctx.now.getTime(), items });
+  if (!ctx.dateWindow && opts.store !== false) cache.set(row.id, { at: ctx.now.getTime(), items });
   return { items, cached: false };
 }
 
@@ -158,7 +159,7 @@ export async function loadSources(
   if (stateRes.error) console.error("[sources] source_item_state read failed", stateRes.error.message);
   const state = [...(stateRes.data ?? [])];
 
-  const ctx: FetchContext = { now, timeZone, fetchImpl: opts.fetchImpl };
+  const ctx: FetchContext = { now, timeZone, fetchImpl: opts.fetchImpl, dateWindow: opts.dateWindow };
   const results = await Promise.all(
     rows.map(async (row) => {
       try {
