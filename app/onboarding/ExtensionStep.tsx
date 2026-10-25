@@ -1,12 +1,16 @@
 "use client";
 
+import type { ReactEventHandler } from "react";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { useExtension } from "./useExtension";
 
 export function ExtensionStep({
   extension,
+  onToggle,
 }: {
   extension: ReturnType<typeof useExtension>;
+  onToggle?: ReactEventHandler<HTMLDetailsElement>;
 }) {
   const name = "Pip";
   return (
@@ -52,9 +56,8 @@ export function ExtensionStep({
           >
             Download {name}
           </LinkButton>
-          <details className="border-t border-line pt-4 text-sm text-body">
-            <summary className="cursor-pointer font-semibold text-brass-ink">Installation steps</summary>
-            <ol className="mt-4 mb-0 list-decimal space-y-3 pl-5 leading-relaxed">
+          <Disclosure label="Installation steps" onToggle={onToggle}>
+            <ol className="m-0 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-body">
               <li>Unzip the download.</li>
               <li>
                 Open <code className="text-brass-ink">chrome://extensions</code>{" "}
@@ -70,7 +73,7 @@ export function ExtensionStep({
                 installed it, refresh this page first. Your answers are saved.
               </li>
             </ol>
-          </details>
+          </Disclosure>
         </>
       )}
       {extension.state === "installed" && (

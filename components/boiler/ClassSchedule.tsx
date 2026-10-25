@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import { useState } from "react";
 import type { LoadItem } from "@/lib/types";
 import type { SourceInfo } from "@/lib/pressure/api-types";
@@ -76,12 +77,9 @@ export function ClassSchedule({ items, sources = NO_SOURCES, demo = false, onImp
       </>}
 
       {demo ? <LinkButton plain href="/auth/signin?next=/boiler" variant="ghost">Sign in to import your schedule</LinkButton> : <>
-        <details className={hasFeed ? "border-t border-line pt-2" : ""}>
-          <summary className="bp-summary flex min-h-11 cursor-pointer items-center text-sm font-semibold text-fg">Import from Brightspace</summary>
-          <div className="pt-2">
-            <CalendarFeedForm initialProvider="brightspace" showProvider={false} idPrefix="schedule-feed" onAdded={onImported} />
-          </div>
-        </details>
+        <Disclosure className={hasFeed ? "mt-4" : undefined} label="Import from Brightspace">
+          <CalendarFeedForm initialProvider="brightspace" showProvider={false} idPrefix="schedule-feed" onAdded={onImported} />
+        </Disclosure>
         {hasFeed && <a href="/settings/sources#class-schedule" className="mt-2 inline-flex min-h-11 items-center text-sm underline underline-offset-2">Manage schedule sources</a>}
       </>}
     </Card>

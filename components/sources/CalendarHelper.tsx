@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/ui/Disclosure";
 import { useEffect, useRef, useState } from "react";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -90,7 +91,7 @@ export function CalendarHelper({ signedIn, guide = "calendar" }: { signedIn: boo
           <p className="mt-0 mb-5 max-w-[65ch] text-sm leading-relaxed text-muted">Class times posted to that calendar appear in your schedule. Assignment deadlines appear in Tasks. If class times are missing, check your school’s official timetable for a calendar subscription.</p>
         </> : <p className="mt-0 mb-5 max-w-[65ch] text-base leading-relaxed text-body">You can connect your calendar without installing anything. Copy the subscription link from your school’s calendar, then paste it into Connect.</p>}
         <LinkButton href={guide === "schedule" ? "/settings/sources#class-schedule" : "/settings/sources"} variant="primary">Open Connect</LinkButton>
-        {guide === "calendar" && <div className="mt-6 flex flex-col border-y border-line">
+        {guide === "calendar" && <div className="mt-6 flex flex-col gap-2">
           {[
             ["Brightspace (D2L)", "Open Calendar → Settings and enable Calendar Feeds. Choose Subscribe → All Calendars and Tasks, then copy the subscription link."],
             ["Canvas", "Open Calendar, choose Calendar Feed in the sidebar, then copy the feed URL."],
@@ -98,10 +99,9 @@ export function CalendarHelper({ signedIn, guide = "calendar" }: { signedIn: boo
             ["Blackboard", "Open Calendar and its settings. Choose Share calendar (Ultra) or Get External Calendar Link (Original), then copy the iCalendar link."],
             ["Outlook", "In Outlook on the web, open Settings → Calendar → Shared calendars → Publish a calendar. Choose Can view all details, publish, then copy the ICS link."],
             ["Apple Calendar (iCloud)", "On iPhone or iPad, open Calendar → Calendars, tap the info button beside an iCloud calendar, turn on Public Calendar, then choose Share Link → Copy. On Mac, show the calendar list, choose the share button beside an iCloud calendar, select Public Calendar and copy the link. Anyone with the link can read a public calendar."],
-          ].map(([name, instructions]) => <details key={name} className="border-b border-line last:border-0">
-            <summary className="bp-summary flex min-h-11 cursor-pointer items-center py-2 text-sm font-semibold text-fg">{name}</summary>
-            <p className="mt-0 mb-4 max-w-[65ch] pl-4 text-sm leading-relaxed text-body">{instructions}</p>
-          </details>)}
+          ].map(([name, instructions]) => <Disclosure key={name} label={name}>
+            <p className="m-0 max-w-[65ch] text-sm leading-relaxed text-body">{instructions}</p>
+          </Disclosure>)}
         </div>}
       </section>
     </div>
