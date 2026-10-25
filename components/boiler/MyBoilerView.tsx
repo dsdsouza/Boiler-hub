@@ -24,6 +24,7 @@ import { CountBadges } from "./CountBadges";
 import { TaskList } from "./TaskList";
 import { fireFromForecast } from "./geometry";
 import { browserZone } from "./taskView";
+import { forecastBreakdown } from "@/lib/pressure";
 import type { MyBoiler } from "./useMyBoiler";
 import { StudyAccountability } from "./StudyAccountability";
 import { useStudyAccountability } from "./useStudyAccountability";
@@ -132,6 +133,9 @@ export function MyBoilerView({
   // After a sync the open day may have rolled off the strip; the panel then just closes.
   const dayIndex = openDay ? result.forecast.findIndex((d) => d.date === openDay) : -1;
   const shownDay = dayIndex >= 0 ? result.forecast[dayIndex]! : null;
+  const dayContributions = shownDay && dayIndex > 0
+    ? forecastBreakdown(data.items, new Date(data.pressureComputedAt ?? data.syncedAt), shownDay.date, { timeZone })?.contributions ?? []
+    : result.contributions;
   const strip = { items: data.items, timeZone, openDate: shownDay?.date ?? null, onOpen: toggleDay };
 
   return (
@@ -211,6 +215,7 @@ export function MyBoilerView({
               </h2>
               <span className="text-[13px] text-muted">{forecastCaption(result.forecast)}</span>
             </div>
+            <p className="mt-0 mb-3 text-sm text-muted">Select a day to see what’s adding pressure.</p>
             <div className="sm:hidden">
               <ForecastStrip days={result.forecast} compact {...strip} />
             </div>
@@ -222,7 +227,7 @@ export function MyBoilerView({
                 day={shownDay}
                 isToday={dayIndex === 0}
                 items={data.items}
-                contributions={result.contributions}
+                contributions={dayContributions}
                 courses={data.courses}
                 timeZone={timeZone}
                 sheet={!wide}
