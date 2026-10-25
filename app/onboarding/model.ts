@@ -34,6 +34,7 @@ export interface OnboardingDraft {
   inviteCode: string;
   joinedTeam: string;
   extensionDeferred: boolean;
+  courseworkDeferred: boolean;
   current: StepId;
   completed: StepId[];
   finished: boolean;
@@ -52,6 +53,7 @@ export const EMPTY_DRAFT: OnboardingDraft = {
   inviteCode: "",
   joinedTeam: "",
   extensionDeferred: false,
+  courseworkDeferred: false,
   current: "identity",
   completed: [],
   finished: false,
@@ -121,7 +123,7 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "extension",
     "calendar",
     ...(!draft.extensionDeferred ? ["reading" as const] : []),
-    ...(draft.role === "student" ? ["review" as const] : []),
+    ...(draft.role === "student" && !draft.courseworkDeferred ? ["review" as const] : []),
     ...(goal === "deadlines" && !draft.extensionDeferred
       ? [
           "milestone" as const,
@@ -132,6 +134,9 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "team",
     "recommendation",
   ];
+}
+export function needsManualTask(draft: OnboardingDraft): boolean {
+  return draft.role !== "lead" && draft.extensionDeferred;
 }
 export function isStepValid(
   step: StepId,
@@ -154,7 +159,7 @@ export function isStepValid(
     case "team":
       return !draft.inviteCode || /^[A-Z0-9]{6}$/.test(draft.inviteCode);
     case "recommendation":
-      return !draft.extensionDeferred || (draft.milestone.trim().length > 0 &&
+      return !needsManualTask(draft) || (draft.milestone.trim().length > 0 &&
         (!draft.deadline || isDate(draft.deadline)));
     default:
       return true;
@@ -203,6 +208,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
       .replace(/[^A-Z0-9]/g, ""),
     joinedTeam: str("joinedTeam", 80),
     extensionDeferred: v.extensionDeferred === true,
+    courseworkDeferred: v.courseworkDeferred === true,
     completed: [],
     current: "identity",
     finished: v.finished === true,
@@ -238,7 +244,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
 }
 export function recommendation(draft: OnboardingDraft) {
   const goal = resolvedGoal(draft);
-  if (draft.extensionDeferred)
+  if (needsManualTask(draft))
     return {
       body: draft.finished ? "Your tasks are ready in My Boiler." : "Add your first task to start your boiler.",
       href: "/boiler",
