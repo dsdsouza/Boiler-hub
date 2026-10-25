@@ -107,7 +107,7 @@ describe("contributor factors reproduce the engine's points", () => {
   it("task factors multiply to its points", () => {
     for (let i = 0; i < WINDOW_DAYS; i++) {
       for (const c of explain(i).contributors.filter((c): c is TaskContributor => c.kind === "task")) {
-        expect(c.sizePoints * c.urgency).toBeCloseTo(c.points, 1);
+        expect(c.sizePoints * c.urgency * c.scaleFactor).toBeCloseTo(c.points, 1);
       }
     }
   });
@@ -118,7 +118,7 @@ describe("contributor factors reproduce the engine's points", () => {
     expect(group.organizerFactor).toBe(ORGANIZER_FACTOR);
     for (let i = 0; i < WINDOW_DAYS; i++) {
       for (const c of explain(i).contributors.filter((c): c is EventContributor => c.kind === "event")) {
-        expect(c.hours * c.weightFactor * c.attendeeFactor * c.organizerFactor * c.proximity).toBeCloseTo(c.points, 1);
+        expect(c.hours * c.weightFactor * c.attendeeFactor * c.organizerFactor * c.proximity * c.windowFactor).toBeCloseTo(c.points, 1);
       }
     }
   });
@@ -165,7 +165,7 @@ describe("wording", () => {
   it("writes units without calling points hours", () => {
     const thu = explain(3);
     const lab = thu.contributors.find((c) => c.id === "lab") as TaskContributor;
-    expect(taskFormula(lab)).toMatch(/^L task: 8 size pts × [\d.]+ deadline$/);
+    expect(taskFormula(lab)).toMatch(/^L task: 8 size pts × [\d.]+ deadline\/preparation × [\d.]+ scale$/);
     const midtermEvent = thu.contributors.find((c) => c.id === "midterm") as EventContributor;
     expect(eventFormula(midtermEvent)).toMatch(/^2 h × Heavy 1.6 × 40 people 1.3 × distance [\d.]+$/);
     for (const line of assumptionLines(thu, midterm.timeZone)) expect(line).not.toMatch(/\d+(\.\d+)? (pts|points) of (work|hours)/);

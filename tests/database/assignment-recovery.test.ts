@@ -4,6 +4,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { createAssignment, type TargetWithCounts } from '../../lib/data/teams';
 import { computeTargets } from '../../app/api/teams/_lib/assignment';
 import { createDatabase } from './database';
+import { PRESSURE_MODEL_VERSION } from '../../lib/pressure/config';
 import { uuidFor } from '../../scripts/qa/accounts.mjs';
 
 const lead = uuidFor('post-lead'), member = uuidFor('post-member');
@@ -16,7 +17,7 @@ const targets: TargetWithCounts[] = [member, hidden, never].map((userId) => ({
   raw: userId === never ? null : 8, score: userId === never ? null : 61,
   zone: userId === never ? null : 'working', updatedAt: userId === never ? null : now.toISOString(),
   snapshotRevision: userId === never ? undefined : 0,
-  counts: userId === never ? null : { meetings: 1, meetingHours: 2, tasksDue: 3, overdue: 0 },
+  counts: userId === never ? null : { ...{ pressureModel: PRESSURE_MODEL_VERSION }, meetings: 1, meetingHours: 2, tasksDue: 3, overdue: 0 },
 }));
 let db: PGlite;
 // Transport adapter only: the real helper's payload executes the shipped SQL

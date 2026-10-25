@@ -17,6 +17,9 @@ import {
   WEIGHTS,
   WINDOW_DAYS,
   ZONE_MIN,
+  TASK_K, URGENCY_EXPONENT, TASK_TAPER_DAYS, EXAM_LOOKAHEAD_DAYS, EXAM_TAPER_DAYS,
+  EXAM_PREPARATION_WEIGHT, EXAM_PREPARATION_DAYS, EXAM_DECAY_DAYS,
+  EVENT_TAPER_DAYS, OVERDUE_GRACE_DAYS, OVERDUE_DECAY_DAYS, PRESSURE_MODEL_VERSION,
 } from "./config";
 
 // Pure pressure engine. No I/O. See docs/PRD.md "Pressure engine".
@@ -55,21 +58,44 @@ export function isStaleOverdue(due: string | undefined, now: Date): boolean {
 }
 
 /**
- * Reciprocal deadline urgency, capped at 3. Older backlog keeps a reduced positive weight.
- * A missing due date counts as NO_DUE_DAYS out.
+ * Smooth taper to zero at each horizon. The same kernels are used by forecasts and previews.
  */
-export function urgency(due: string | undefined, now: Date): number {
-  if (!due) return 1 / NO_DUE_DAYS;
-  if (isStaleOverdue(due, now)) return OVERDUE_BACKLOG_URGENCY;
-  const days = (Date.parse(due) - now.getTime()) / DAY_MS;
-  if (!Number.isFinite(days) || days > TASK_LOOKAHEAD_DAYS) return 0;
-  if (days < 0) return URGENCY_CAP;
-  return Math.min(1 / Math.max(days, URGENCY_MIN_DAYS), URGENCY_CAP);
+export function smoothTaper(days: number, horizon: number, width: number): number {
+  if (days >= horizon) return 0;
+  if (days <= horizon - width) return 1;
+  return (1 + Math.cos(Math.PI * (days - horizon + width) / width)) / 2;
+}
+
+/** Shared title heuristic for imports, forecasts, optimistic edits and team previews. */
+export function isMajorExam(title = ""): boolean {
+  if (/\bexams?\b/i.test(title)) return true;
+  if (/\b(midterms?|finals?)\b/i.test(title) && !/\b(?:projects?|papers?|essays?|reports?|presentations?|drafts?)\b/i.test(title)) return true;
+  return /\btests?\b/i.test(title) && !/\b(?:sync|smoke|integration|notification|connection|import|essay|paper|project|report|presentation|draft|case|plan|quiz|flaky|software|issue|bug)s?\b/i.test(title);
+}
+
+export function taskHorizonDays(title?: string): number {
+  return isMajorExam(title) ? EXAM_LOOKAHEAD_DAYS : TASK_LOOKAHEAD_DAYS;
+}
+
+export function snapshotUsesCurrentModel(counts: unknown): boolean {
+  return !!counts && typeof counts === "object" && "pressureModel" in counts && counts.pressureModel === PRESSURE_MODEL_VERSION;
+}
+
+export function urgency(due: string | undefined, now: Date, title?: string): number {
+  const days = due ? (Date.parse(due) - now.getTime()) / DAY_MS : NO_DUE_DAYS;
+  if (!Number.isFinite(days)) return 0;
+  const exam = isMajorExam(title);
+  const peak = Math.max(Math.min(URGENCY_CAP, (1 / URGENCY_MIN_DAYS) ** URGENCY_EXPONENT), exam ? EXAM_PREPARATION_WEIGHT : 0);
+  if (days < 0) return OVERDUE_BACKLOG_URGENCY + (peak - OVERDUE_BACKLOG_URGENCY) * Math.exp(-Math.max(-days - OVERDUE_GRACE_DAYS, 0) / OVERDUE_DECAY_DAYS);
+  const normal = Math.min(URGENCY_CAP, (1 / Math.max(days, URGENCY_MIN_DAYS)) ** URGENCY_EXPONENT) * smoothTaper(days, TASK_LOOKAHEAD_DAYS, TASK_TAPER_DAYS);
+  const preparation = exam && due ? EXAM_PREPARATION_WEIGHT * Math.exp(-Math.max(days - EXAM_PREPARATION_DAYS, 0) / EXAM_DECAY_DAYS) * smoothTaper(days, EXAM_LOOKAHEAD_DAYS, EXAM_TAPER_DAYS) : 0;
+  return Math.max(normal, preparation);
 }
 
 /** Pressure an open task adds right now. Shared with preview.ts so previews match real results. */
-export function taskPoints(task: { due?: string; size: Size }, now: Date): number {
-  return SIZE_POINTS[task.size] * urgency(task.due, now);
+export function taskPoints(task: { due?: string; size: Size; title?: string }, now: Date): number {
+  // Keep one additive raw unit and the existing score inverse for stored/team snapshots.
+  return SIZE_POINTS[task.size] * urgency(task.due, now, task.title) * K / TASK_K;
 }
 
 export function attendeeFactor(attendees: number | undefined): number {
@@ -110,7 +136,7 @@ function scoreEvent(item: LoadItem, now: Date): Scored | null {
 
   const weight = resolveWeight(item);
   const points =
-    hours * WEIGHTS[weight] * attendeeFactor(item.attendees) * (item.isOrganizer ? ORGANIZER_FACTOR : 1) * prox;
+    hours * WEIGHTS[weight] * attendeeFactor(item.attendees) * (item.isOrganizer ? ORGANIZER_FACTOR : 1) * prox * smoothTaper(Math.max((start - t) / DAY_MS, 0), WINDOW_DAYS, EVENT_TAPER_DAYS);
   const parts = [`${fmtHours(hours)} ${item.title}`];
   if ((item.attendees ?? 0) > 1) parts.push(`${item.attendees} people`);
   if (item.isOrganizer) parts.push("you organize");
@@ -128,15 +154,16 @@ function scoreTask(item: LoadItem, now: Date): Scored | null {
     if (doneAt <= t) return null;
   }
 
-  if (item.due && (!Number.isFinite(Date.parse(item.due)) || Date.parse(item.due) > t + TASK_LOOKAHEAD_DAYS * DAY_MS)) return null;
-  const points = taskPoints({ due: item.due, size }, now);
+  if (item.due && (!Number.isFinite(Date.parse(item.due)) || Date.parse(item.due) > t + taskHorizonDays(item.title) * DAY_MS)) return null;
+  const points = taskPoints({ due: item.due, size, title: item.title }, now);
+  const preparation = isMajorExam(item.title) ? ", exam preparation" : "";
   if (!item.due) return { points, reason: `${size} task, no due date` };
   const days = (Date.parse(item.due) - t) / DAY_MS;
   if (days < 0) return { points, reason: `${size} task, ${isStaleOverdue(item.due, now) ? "older overdue backlog" : "overdue"}`, overdue: true };
   return {
     points,
-    reason: `${size} task, due ${fmtDays(days)}`,
-    dueSoon: days <= TASK_LOOKAHEAD_DAYS,
+    reason: `${size} task, due ${fmtDays(days)}${preparation}`,
+    dueSoon: days <= taskHorizonDays(item.title),
   };
 }
 

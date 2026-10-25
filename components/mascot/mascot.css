@@ -97,6 +97,39 @@
 .mp-arm-l { transform-box: view-box; transform-origin: 28px 80px; animation: mp-arm-l 0.5s ease-in-out 6; }
 .mp-arm-r { transform-box: view-box; transform-origin: 92px 80px; animation: mp-arm-r 0.5s ease-in-out 6; }
 .mp-boil { transform-box: view-box; transform-origin: 60px 126px; animation: mp-boil 0.4s ease-in-out 5; }
+/* The big My Boiler Pip: an HTML wrapper, so the bounce is in % of its own size. */
+@keyframes mp-hero-dance {
+  0%, 50%, 100% { transform: translateY(0) rotate(0deg) scale(1.03, 0.97); }
+  25% { transform: translateY(-4%) rotate(-4deg) scale(0.99, 1.02); }
+  75% { transform: translateY(-4%) rotate(4deg) scale(0.99, 1.02); }
+}
+.mp-hero-dance { transform-origin: 50% 100%; animation: mp-hero-dance 1s ease-in-out 3; }
+.mp-hero-arm-l { transform-box: view-box; transform-origin: 45px 188px; animation: mp-arm-l 0.5s ease-in-out 6; }
+.mp-hero-arm-r { transform-box: view-box; transform-origin: 195px 188px; animation: mp-arm-r 0.5s ease-in-out 6; }
+
+/* A quick hello when the pointer rests on the floating Pip. */
+@keyframes mp-greet {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-6deg); }
+  65% { transform: rotate(4deg); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pip-grab:not([data-dragging="true"]):hover svg { transform-origin: 50% 85%; animation: mp-greet 0.6s ease-in-out 1; }
+}
+
+/* Pressing Pip squishes him like a button. `scale` composes with the hover wiggle's transform. */
+@media (prefers-reduced-motion: no-preference) {
+  .pip-grab svg { transform-origin: 50% 85%; transition: scale 160ms ease-out; }
+  .pip-grab:not([data-dragging="true"]):active svg { scale: 1.05 0.92; transition-duration: 80ms; }
+}
+
+/* Talking while a reply streams in: the mouth opens and closes about three times a second. */
+@keyframes mp-talk {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1.15); }
+}
+.mp-talk { transform-box: fill-box; transform-origin: center; animation: mp-talk 0.34s ease-in-out infinite; }
+
 .mp-thought { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-thought 1.8s ease-in-out infinite; animation-delay: var(--delay, 0s); }
 .mp-ponder { animation: mp-ponder 0.9s ease-in-out infinite alternate; }
 
@@ -104,13 +137,17 @@
 [data-still] .mp-arm-l,
 [data-still] .mp-arm-r,
 [data-still] .mp-boil,
-[data-still] .mp-ponder {
+[data-still] .mp-ponder,
+[data-still] .mp-hero-dance,
+[data-still] .mp-hero-arm-l,
+[data-still] .mp-hero-arm-r,
+[data-still] .mp-talk {
   animation: none;
 }
 [data-still] .mp-thought { animation: none; opacity: 0.85; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder { animation: none; }
+  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder, .mp-hero-dance, .mp-hero-arm-l, .mp-hero-arm-r, .mp-talk { animation: none; }
   .mp-thought { animation: none; opacity: 0.85; }
 }
 

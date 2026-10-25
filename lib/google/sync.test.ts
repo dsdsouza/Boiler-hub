@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { computePressure } from "@/lib/pressure/compute";
+import { PRESSURE_MODEL_VERSION } from "@/lib/pressure/config";
 import { toMyBoilerData } from "@/components/boiler/fromApi";
 import type { GoogleEvent } from "./calendar";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -84,6 +85,15 @@ const source = (id: string, url: string, extra: Record<string, unknown> = {}) =>
 });
 
 describe("syncUser with sources", () => {
+  it("replaces a recent snapshot from an older model and stamps the shared formula version", async () => {
+    for (const counts of [{}, { pressureModel: PRESSURE_MODEL_VERSION }]) {
+      const { admin, writes } = fakeAdmin({ pressure_snapshots: [{ computed_at: NOW.toISOString(), counts }] });
+      await syncUser(admin, USER, NOW, { persist: "ifStale" });
+      const saved = writes.find(w => w.table === "pressure_snapshots");
+      if ("pressureModel" in counts) expect(saved).toBeUndefined();
+      else expect(saved?.payload).toMatchObject({ counts: { pressureModel: PRESSURE_MODEL_VERSION } });
+    }
+  });
   it("preserves every event factor and the forecast zone through the owner response", async () => {
     calendar.events = [{ id: "meeting", summary: "Organized review", start: { dateTime: "2026-10-27T12:00:00Z" }, end: { dateTime: "2026-10-27T14:00:00Z" }, organizer: { self: true }, attendees: Array.from({ length: 5 }, () => ({ responseStatus: "accepted" as const })) }];
     try {

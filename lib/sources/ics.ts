@@ -1,6 +1,7 @@
 import ical, { type VEvent } from "node-ical";
 import type { Size } from "@/lib/types";
-import { TASK_LOOKAHEAD_DAYS, WINDOW_DAYS } from "@/lib/pressure/config";
+import { SOURCE_LOOKAHEAD_DAYS, CALENDAR_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
+import { isMajorExam } from "@/lib/pressure/compute";
 import { sha256 } from "@/lib/google/normalize";
 import { safeFetchText } from "./fetch";
 import { calendarText, courseworkMetadata } from "./ics-metadata";
@@ -19,16 +20,15 @@ export const LOOKBACK_DAYS = 60;
 // Brightspace's "Quiz 4 - Available" / "- Availability Starts|Ends" entries mark when an item opens
 // or closes for viewing, not a deadline (the "- Due" entry is). They are skipped entirely.
 const AVAILABILITY_RE = /\s[-–—]\s*Availab(?:le|ility)(?:\s+(?:Starts?|Ends?|Opens?|Closes?))?\s*$/i;
-const DEADLINE_RE = /\b(due|assignments?|homework|problem sets?|quiz(?:zes)?|exams?|midterms?|finals?|projects?|labs?|essays?|papers?|reports?|presentations?|readings?|discussions?)\b/i;
+const DEADLINE_RE = /\b(due|assignments?|homework|problem sets?|quiz(?:zes)?|exams?|midterms?|finals?|tests?|projects?|labs?|essays?|papers?|reports?|presentations?|readings?|discussions?)\b/i;
 const CLASS_MEETING_RE = /\b(lectures?|seminars?|tutorials?|recitations?|laborator(?:y|ies)|labs?)\b/i;
-const EXPLICIT_DEADLINE_RE = /\b(due|deadlines?|submissions?|assignments?|homework|problem sets?|essays?|papers?|reports?|presentations?|readings?|discussions?|quiz(?:zes)?|exams?|midterms?|finals?|projects?)\b/i;
+const EXPLICIT_DEADLINE_RE = /\b(due|deadlines?|submissions?|assignments?|homework|problem sets?|essays?|papers?|reports?|presentations?|readings?|discussions?|quiz(?:zes)?|exams?|midterms?|finals?|tests?|projects?)\b/i;
 // Size by title, first match wins: L, then M; everything else (homework, assignment, discussion,
 // reading, and any other deadline) is S.
-const LARGE_RE = /\b(exams?|midterms?|finals?)\b/i;
 const MEDIUM_RE = /\b(quiz(?:zes)?|projects?|labs?|papers?|essays?|reports?|presentations?)\b/i;
 
 export function sizeForTitle(title: string): Size {
-  if (LARGE_RE.test(title)) return "L";
+  if (isMajorExam(title) || /\b(midterms?|finals?)\b/i.test(title)) return "L";
   if (MEDIUM_RE.test(title)) return "M";
   return "S";
 }
@@ -113,7 +113,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
   const importFrom = zonedTime(importDay.year, importDay.month, importDay.day, 0, 0, feedZone);
   const from = opts.dateWindow?.from ?? new Date(t - (LOOKBACK_DAYS + 1) * DAY_MS);
   // Include the preparation horizon at every day of the forecast.
-  const to = opts.dateWindow?.to ?? new Date(t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS + 1) * DAY_MS);
+  const to = opts.dateWindow?.to ?? new Date(t + (SOURCE_LOOKAHEAD_DAYS + 1) * DAY_MS);
   const items: SourceItem[] = [];
   const provider = opts.feedUrl ? lmsProvider(opts.feedUrl) : undefined;
 
@@ -156,7 +156,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
         // Do not bring historical submissions into a new connection as unfinished work.
         // The boundary stays on the connection day so later missed deadlines remain tracked.
         if (due < importFrom) continue;
-        if (opts.dateWindow ? due < from.getTime() || due >= to.getTime() : due < t - LOOKBACK_DAYS * DAY_MS || due > t + (TASK_LOOKAHEAD_DAYS + WINDOW_DAYS) * DAY_MS) continue;
+        if (opts.dateWindow ? due < from.getTime() || due >= to.getTime() : due < t - LOOKBACK_DAYS * DAY_MS || due > t + SOURCE_LOOKAHEAD_DAYS * DAY_MS) continue;
         items.push({
           id,
           kind: "task",
@@ -176,7 +176,7 @@ export function classifyIcs(text: string, opts: ClassifyOptions): SourceItem[] {
 
       // Events: timed, busy, and overlapping the next 7 days. All-day and Free entries add nothing.
       if (inst.isFullDay || entry.transparency === "TRANSPARENT") continue;
-      if (end <= t || start >= t + WINDOW_DAYS * DAY_MS) continue;
+      if (end <= t || start >= t + CALENDAR_LOOKAHEAD_DAYS * DAY_MS) continue;
       items.push({
         id,
         kind: "event",

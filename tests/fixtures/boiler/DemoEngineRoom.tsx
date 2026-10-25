@@ -83,10 +83,10 @@ export function DemoEngineRoom({ personal, onAssign }: { personal: MyBoilerData 
 
   const preview = useMemo(() => {
     const at = now ?? new Date(0);
-    const members = team.boilers.map((b) => ({ b, after: applyTaskToRaw(b.raw, { due, size }, at) }));
-    const hidden = team.hiddenRaw.map((raw) => ({ before: zoneOf(scoreFromRaw(raw)), after: applyTaskToRaw(raw, { due, size }, at).zone }));
+    const members = team.boilers.map((b) => ({ b, after: applyTaskToRaw(b.raw, { due, size, title }, at) }));
+    const hidden = team.hiddenRaw.map((raw) => ({ before: zoneOf(scoreFromRaw(raw)), after: applyTaskToRaw(raw, { due, size, title }, at).zone }));
     return { members, hidden };
-  }, [team, due, size, now]);
+  }, [team, due, size, title, now]);
 
   const afterById = new Map(preview.members.map((m) => [m.b.userId, m.after.score]));
   const shownScore = (id: string, score: number) => (previewing ? afterById.get(id)! : score);
@@ -116,7 +116,7 @@ export function DemoEngineRoom({ personal, onAssign }: { personal: MyBoilerData 
 
   const post = () => {
     const at = new Date();
-    const add = (raw: number) => raw + taskPoints({ due, size }, at);
+    const add = (raw: number) => raw + taskPoints({ due, size, title }, at);
     if (team.boilers.some((b) => b.userId === mayaUserId)) onAssign({ title: title.trim(), due, size });
     setTeams((all) =>
       all.map((t, i) =>

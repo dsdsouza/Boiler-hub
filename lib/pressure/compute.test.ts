@@ -98,19 +98,20 @@ describe("computePressure", () => {
     expect(one({}, 2)).toBeCloseTo(1 / (1 + 0.35 * (2 + 1 / 24)));
   });
 
-  it("task urgency: overdue and same-day cap at 3, no due date counts as 7 days out", () => {
-    expect(computePressure([task("late", "S", -1)], NOW).raw).toBe(6);
-    expect(computePressure([task("now", "S", 0, 9)], NOW).raw).toBe(6); // 1h away → floor 0.25 → 4 → cap 3
-    expect(computePressure([task("2d", "M", 2, 8)], NOW).raw).toBeCloseTo(2);
-    expect(computePressure([{ ...task("someday", "L", 0), due: undefined }], NOW).raw).toBeCloseTo(8 / 7);
+  it("uses the calibrated assignment scale without a jump at the deadline", () => {
+    expect(computePressure([task("late", "S", -1)], NOW).raw).toBeCloseTo(1.263147507);
+    expect(computePressure([task("now", "S", 0, 9)], NOW).raw).toBeCloseTo(1.263147507);
+    expect(computePressure([task("2d", "M", 2, 8)], NOW).score).toBe(10);
+    expect(computePressure([{ ...task("someday", "L", 0), due: undefined }], NOW).score).toBe(11);
     const r = computePressure([task("late", "S", -1), task("soon", "M", 3)], NOW);
     expect(r.counts).toMatchObject({ tasksDue: 1, overdue: 1 });
   });
 
   it("older overdue tasks keep a reduced backlog weight and remain counted", () => {
-    expect(computePressure([task("13d late", "L", -13)], NOW).raw).toBe(24);
+    const recent = computePressure([task("recent", "L", -1)], NOW);
     const stale = computePressure([task("15d late", "L", -15)], NOW);
-    expect(stale.raw).toBe(4);
+    expect(stale.raw).toBeGreaterThan(0);
+    expect(stale.raw).toBeLessThan(recent.raw);
     expect(stale.contributions[0]?.reason).toContain("older overdue backlog");
     expect(stale.counts.overdue).toBe(1);
   });
@@ -118,7 +119,7 @@ describe("computePressure", () => {
   it("a task due right now says so", () => {
     const r = computePressure([{ ...task("now", "S", 0), due: NOW.toISOString() }], NOW);
     expect(r.contributions[0]?.reason).toBe("S task, due now");
-    expect(r.raw).toBe(6); // same 3× cap as overdue
+    expect(r.raw).toBeCloseTo(1.263147507);
   });
 
   it("writes human reasons and sorts contributions by size", () => {

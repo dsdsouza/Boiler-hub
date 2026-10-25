@@ -37,7 +37,8 @@ const PLACEMENT: Record<Exclude<AccessoryId, "none">, string> = {
   goggles: "translate(120 70) scale(2) translate(-60 -32)",
   "bow-tie": "translate(120 70) scale(2) translate(-60 -32)",
 };
-const CELEBRATE_MS = 1600;
+/** The hero's dance after a completed task; matches .mp-hero-dance (1 s × 3). */
+const CELEBRATE_MS = 3000;
 
 export interface PipHeroProps {
   score: number;
@@ -86,7 +87,7 @@ export function PipHero({
 
   return (
     // A class toggle, not a key, so the boiler (gauge spring, steam canvas) never remounts.
-    <div className={`${celebrating && animate ? "mp-hop" : ""} ${className}`}>
+    <div className={`${celebrating && animate ? "mp-hero-dance" : ""} ${className}`}>
       <Boiler
         score={s}
         zone={zone}
@@ -110,9 +111,23 @@ function PipOverlay({ e, ink, accessory }: { e: Expression; ink: (y: number) => 
   return (
     <g>
       {/* Arms */}
-      <path d="M45 188 q-25 8 -29 34" {...limb} />
-      <circle cx="15.5" cy="222" r="7.5" fill={COPPER} />
-      {e.arm === "wave" ? (
+      {e.arm === "cheer" ? (
+        <g className="mp-hero-arm-l">
+          <path d="M45 188 q-23 -2 -29 -19" {...limb} />
+          <circle cx="16" cy="169" r="7.5" fill={COPPER} />
+        </g>
+      ) : (
+        <>
+          <path d="M45 188 q-25 8 -29 34" {...limb} />
+          <circle cx="15.5" cy="222" r="7.5" fill={COPPER} />
+        </>
+      )}
+      {e.arm === "cheer" ? (
+        <g className="mp-hero-arm-r">
+          <path d="M195 188 q23 -2 29 -19" {...limb} />
+          <circle cx="224" cy="169" r="7.5" fill={COPPER} />
+        </g>
+      ) : e.arm === "wave" ? (
         <g className="mp-wave" style={{ transformBox: "view-box", transformOrigin: "195px 188px" }}>
           <path d="M195 188 q25 -6 31 -36" {...limb} />
           <circle cx="226" cy="152" r="7.5" fill={COPPER} />

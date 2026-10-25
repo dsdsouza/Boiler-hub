@@ -19,6 +19,7 @@ import {
   ORGANIZER_FACTOR,
   OVERDUE_BACKLOG_URGENCY,
   OVERDUE_STALE_DAYS,
+  TASK_K, URGENCY_EXPONENT, EXAM_LOOKAHEAD_DAYS, EXAM_PREPARATION_WEIGHT, EXAM_PREPARATION_DAYS, EXAM_DECAY_DAYS, OVERDUE_GRACE_DAYS, OVERDUE_DECAY_DAYS, TASK_TAPER_DAYS, EXAM_TAPER_DAYS, EVENT_TAPER_DAYS,
   PROXIMITY_RATE,
   SIZE_POINTS,
   TASK_LOOKAHEAD_DAYS,
@@ -50,16 +51,18 @@ const WEIGHT_ROWS: [string, string][] = [
   ["You organize it", `× ${ORGANIZER_FACTOR}`],
   ["Task size points", (Object.keys(SIZE_POINTS) as Size[]).map((s) => `${s} ${SIZE_POINTS[s]}`).join(", ")],
   ["Proximity (d days from now)", `1 / (1 + ${PROXIMITY_RATE} × d)`],
-  ["Task window", `Deadlines in the next ${TASK_LOOKAHEAD_DAYS} days, plus unfinished overdue work`],
-  ["Task urgency", `1 / max(days until due, ${URGENCY_MIN_DAYS}), capped at ${URGENCY_CAP}; recent overdue = ${URGENCY_CAP}`],
-  ["Older overdue backlog", `${OVERDUE_BACKLOG_URGENCY} × size points after ${OVERDUE_STALE_DAYS} days; still counted until complete`],
+  ["Task window", `Assignments: ${TASK_LOOKAHEAD_DAYS} days; major exams: ${EXAM_LOOKAHEAD_DAYS} days; unfinished overdue work stays counted`],
+  ["Task urgency", `(1 / max(days until due, ${URGENCY_MIN_DAYS}))^${URGENCY_EXPONENT}, capped at ${URGENCY_CAP}`],
+  ["Major exam preparation", `${EXAM_PREPARATION_WEIGHT} through the next ${EXAM_PREPARATION_DAYS} days; exp(−max(days − ${EXAM_PREPARATION_DAYS}, 0) / ${EXAM_DECAY_DAYS}) decay beyond that, within ${EXAM_LOOKAHEAD_DAYS} days`],
+  ["Window taper", `Events: final ${EVENT_TAPER_DAYS} day; assignments: final ${TASK_TAPER_DAYS} days; exams: final ${EXAM_TAPER_DAYS} days`],
+  ["Overdue work", `At-deadline weight for ${OVERDUE_GRACE_DAYS} days, then gradual decay with a ${OVERDUE_DECAY_DAYS}-day time constant toward urgency ${OVERDUE_BACKLOG_URGENCY}. Review label after ${OVERDUE_STALE_DAYS} days; counted until complete`],
   ["Task with no due date", `Counted as due in ${NO_DUE_DAYS} days`],
   [
     "Completed or cleared tasks",
     "Removed from the score. No credit is subtracted from unfinished work.",
   ],
   ["Focus time or out of office", "Excluded. Calendar blocks do not complete assignments."],
-  ["Scale constant K", String(K)],
+  ["Calendar / assignment scales", `${K} / ${TASK_K}`],
 ];
 
 const SKIPPED = [
@@ -91,7 +94,7 @@ export default async function HelpPage() {
         <header className="flex flex-col gap-4">
           <h1 className="m-0 font-display text-[clamp(48px,7vw,80px)] leading-[0.95] font-normal">Pressure tracks the work still ahead.</h1>
           <p className="m-0 max-w-[680px] text-[17px] leading-relaxed text-body">
-            Meetings over {WINDOW_DAYS} days and deadlines over {TASK_LOOKAHEAD_DAYS} days add pressure. Unfinished overdue work stays counted.
+            Meetings over {WINDOW_DAYS} days, assignments over {TASK_LOOKAHEAD_DAYS} days and major exams over {EXAM_LOOKAHEAD_DAYS} days add pressure. Unfinished overdue work stays counted.
             Completing a task removes its own load, while the rest of your work keeps its weight.
           </p>
         </header>
@@ -103,15 +106,15 @@ export default async function HelpPage() {
           <Card plate role="region" aria-label="Pressure formula" tabIndex={0} className="overflow-x-auto px-6 py-7 sm:px-8">
             <pre className="m-0 font-mono text-[13px] leading-loose text-fg sm:text-[15px]">
               <code>
-                {"R = Σ events (hours × weight × attendees × organizer × proximity)\n"}
-                {"  + Σ unfinished tasks (size points × urgency)\n\n"}
-                <span className="text-brass-ink">{`score = round(100 × (1 − e^(−max(R, 0) / ${K})))`}</span>
+                {"E = Σ events (hours × weight × attendees × organizer × proximity × taper)\n"}
+                {"T = Σ unfinished tasks (size × max(deadline urgency, exam preparation))\n\n"}
+                <span className="text-brass-ink">{`score = round(100 × (1 − e^(−(E/${K} + T/${TASK_K}))))`}</span>
               </code>
             </pre>
           </Card>
           <p className="m-0 leading-relaxed text-body">
-            The curve means early load moves the needle fast, and it can never pass 100. A typical student week with five classes and three
-            assignments lands around 50; a manager with 25 meeting hours lands around 80.
+            The score stays between 0 and 100. Major exams include preparation before their due week. The weights are planning estimates,
+            calibrated against example schedules and owner feedback; they do not measure personal stress.
           </p>
         </section>
 
