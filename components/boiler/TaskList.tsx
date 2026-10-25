@@ -186,7 +186,6 @@ export function TaskList({
     }
   };
 
-  const openTasks = tasks.filter((t) => !t.doneAt);
   const completedTasks = scoped.filter((t) => !!t.doneAt);
   const renderTask = (t: LoadItem) => {
     const saving = pendingTaskIds?.has(t.id) ?? false;
@@ -306,7 +305,7 @@ export function TaskList({
   return (
     <Card as="section" aria-labelledby="tasks" className={`px-5 py-6 sm:px-7 ${className}`}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex items-center gap-3"><CardTitle id="tasks">Tasks</CardTitle><span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-muted tabular-nums">{openTasks.length} open</span></div>
+        <CardTitle id="tasks">Tasks</CardTitle>
         {sourcesHref && (
           <Link href={sourcesHref} className="text-[13px] font-medium">
             {Object.keys(meta).length > 0 ? "Manage sources" : "Connect coursework"}
