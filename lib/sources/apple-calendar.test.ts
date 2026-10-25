@@ -47,7 +47,7 @@ describe("iCloud event ingestion (synthetic Apple-format fixture)", () => {
       "2026-10-31T13:00:00.000Z",
       "2026-11-01T14:00:00.000Z",
       "2026-11-02T14:00:00.000Z",
-    ].filter((s) => Date.parse(s) < NOW.getTime() + 7 * 86_400_000));
+    ].filter((s) => Date.parse(s) < NOW.getTime() + 14 * 86_400_000));
     expect(events.find((i) => i.title === "Rescheduled check-in")?.end).toBe("2026-10-29T16:00:00.000Z");
     expect(new Set(events.map((i) => i.seriesKey)).size).toBe(1);
     expect(new Set(events.map((i) => i.itemKey)).size).toBe(events.length);

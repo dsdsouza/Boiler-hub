@@ -59,7 +59,7 @@ export function setTaskDone(data: MyBoilerData, id: string, done: boolean, now: 
   if (!item) return { data, vented: 0 };
   const doneAt = done ? item.doneAt ?? now.toISOString() : null;
   const next = recompute(data, data.items.map((i) => i.id === id ? { ...i, doneAt } : i), now);
-  const removed = done && !item.doneAt ? taskPoints({ due: item.due, size: item.size ?? "M" }, now) : 0;
+  const removed = done && !item.doneAt ? taskPoints({ due: item.due, size: item.size ?? "M", title: item.title }, now) : 0;
   return { data: next, vented: Math.round(removed * 10) / 10 };
 }
 

@@ -37,7 +37,7 @@ describe("mascot preview companion", () => {
 
   it("lowers pressure when a task is completed or moved later", () => {
     for (const t of DEMO_TASKS) expect(completeTask(74, t, NOW).after).toBeLessThan(74);
-    expect(moveTask(92, DEMO_TASKS[2]!, 7, NOW).after).toBeLessThan(92);
+    expect(moveTask(74, DEMO_TASKS[2]!, 7, NOW).after).toBeLessThan(74);
   });
 
   it("previews assignments with the same direction as the engine", () => {

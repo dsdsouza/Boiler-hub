@@ -1,6 +1,6 @@
 import type { LoadItem, Size, Weight, Zone } from "@/lib/types";
-import { ORGANIZER_FACTOR, SIZE_POINTS, WEIGHTS, WINDOW_DAYS, K } from "@/lib/pressure/config";
-import { attendeeFactor, computePressure, isStaleOverdue, proximity, resolveWeight, urgency } from "@/lib/pressure/compute";
+import { ORGANIZER_FACTOR, SIZE_POINTS, WEIGHTS, WINDOW_DAYS, K, TASK_K, EVENT_TAPER_DAYS } from "@/lib/pressure/config";
+import { attendeeFactor, computePressure, isStaleOverdue, proximity, resolveWeight, urgency, smoothTaper } from "@/lib/pressure/compute";
 import { dayKey } from "@/components/boiler/taskView";
 import { forecastInstant } from "./dayStart";
 
@@ -25,6 +25,7 @@ export interface TaskContributor {
   sizePoints: number;
   /** Deadline multiplier at the day's start. */
   urgency: number;
+  scaleFactor: number;
   /** Days from the day's start to the due time; negative when overdue; absent without a due date. */
   daysUntilDue?: number;
 }
@@ -44,6 +45,7 @@ export interface EventContributor {
   organizerFactor: number;
   /** Discount for distance from the day's start. */
   proximity: number;
+  windowFactor: number;
   daysAway: number;
 }
 
@@ -164,7 +166,7 @@ export function explainForecastDay(items: LoadItem[], now: Date, dayIndex: numbe
 
 function taskFactors(item: LoadItem, at: Date, points: number, date: string, timeZone: string): TaskContributor {
   const size = item.size ?? "M";
-  const base = { kind: "task" as const, id: item.id, title: item.title, points, size, sizePoints: SIZE_POINTS[size], urgency: urgency(item.due, at) };
+  const base = { kind: "task" as const, id: item.id, title: item.title, points, size, sizePoints: SIZE_POINTS[size], urgency: urgency(item.due, at, item.title), scaleFactor: K / TASK_K };
   if (!item.due) return { ...base, timing: "no-due" };
   const daysUntilDue = (Date.parse(item.due) - at.getTime()) / DAY_MS;
   const timing: TaskTiming =
@@ -192,6 +194,7 @@ function eventFactors(item: LoadItem, at: Date, points: number): EventContributo
     attendeeFactor: attendeeFactor(item.attendees),
     organizerFactor: item.isOrganizer ? ORGANIZER_FACTOR : 1,
     proximity: proximity((start - t) / DAY_MS),
+    windowFactor: smoothTaper(daysAway, WINDOW_DAYS, EVENT_TAPER_DAYS),
     daysAway,
   };
 }

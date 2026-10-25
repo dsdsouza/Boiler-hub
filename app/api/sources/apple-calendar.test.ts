@@ -64,7 +64,7 @@ describe("connecting an Apple Calendar through POST /api/sources", () => {
     const response = await POST(request(label ? { label } : {}));
     const json = await response.json();
     expect(response.status).toBe(201);
-    expect(json).toMatchObject({ source: { label: label ?? "Apple Calendar", kind: "ics", coursework: false }, tasks: 1, events: 7 });
+    expect(json).toMatchObject({ source: { label: label ?? "Apple Calendar", kind: "ics", coursework: false }, tasks: 1, events: 8 });
     expect(db.inserted()).toMatchObject({ user_id: USER.id, label: label ?? "Apple Calendar", kind: "ics", coursework: false });
     expect(Object.keys(db.inserted()!).sort()).toEqual(["coursework", "id", "kind", "label", "secret_encrypted", "user_id"]);
     expect(decrypt(db.inserted()!.secret_encrypted as string)).toBe(LINK.replace("webcal:", "https:"));

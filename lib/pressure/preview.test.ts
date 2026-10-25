@@ -18,7 +18,8 @@ describe("applyTaskToRaw", () => {
 
   it("raises the score and stays within 100", () => {
     const p = applyTaskToRaw(0, { due: new Date(NOW.getTime() - 1).toISOString(), size: "L" }, NOW);
-    expect(p).toEqual({ raw: 24, score: 94, zone: "redline" });
+    expect(p).toMatchObject({ score: 45, zone: "working" });
+    expect(p.raw).toBeCloseTo(5.052590028);
     expect(applyTaskToRaw(1e6, { due: NOW.toISOString(), size: "S" }, NOW).score).toBe(100);
   });
 });

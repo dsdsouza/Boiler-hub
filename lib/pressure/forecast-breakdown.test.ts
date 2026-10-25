@@ -4,6 +4,7 @@ import { computePressure, forecastBreakdown } from "./compute";
 
 const now = new Date("2026-10-31T16:00:00Z");
 const items: LoadItem[] = [
+  ...[1, 2].map((n): LoadItem => ({ id: `exam-${n}`, kind: "task", source: "manual", title: `Midterm exam ${n}`, size: "L", due: "2026-11-05T16:00:00Z" })),
   ...[1, 2, 3].map((n): LoadItem => ({ id: `project-${n}`, kind: "task", source: "manual", title: `Project ${n}`, size: "L", due: "2026-11-02T05:00:00Z" })),
   { id: "earlier", kind: "task", source: "manual", title: "Due before the forecast day", size: "M", due: "2026-11-01T02:00:00Z" },
   { id: "overdue", kind: "task", source: "manual", title: "Unfinished backlog", size: "S", due: "2026-10-30T16:00:00Z" },
