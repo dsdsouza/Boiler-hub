@@ -12,6 +12,9 @@ import { usePipPosition } from "./usePipPosition";
 import { pipPanel } from "./pip-position";
 import { usePipCue } from "./pipReactions";
 
+/** The hop-and-wave when the chat opens: mp-hop (0.7 s × 2). */
+const GREET_MS = 1400;
+
 export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Snapshot | null; now: number; pathname: string; userId?: string }) {
   const [open, setOpen] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -26,9 +29,17 @@ export function FloatingPip({ snapshot, now, pathname, userId }: { snapshot: Sna
   const { openRequest, messages, streamingReply, busy } = usePipConversation();
   const panel = position.frame ? pipPanel(position.point, position.frame) : null;
   const speaking = busy || Boolean(streamingReply) || messages.at(-1)?.role === "assistant";
-  // Thinking while a reply is on its way; otherwise a cued reaction, or the dock's own.
+  // Thinking while a reply is on its way, talking while it streams in; otherwise a cued reaction,
+  // a hello just after the chat opens, or the dock's own.
   const cue = usePipCue({ idle: !open });
-  const reaction = busy && !streamingReply ? "think" : cue ?? message.reaction;
+  const [greeting, setGreeting] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setGreeting(true);
+    const t = setTimeout(() => setGreeting(false), GREET_MS);
+    return () => clearTimeout(t);
+  }, [open]);
+  const reaction = busy && !streamingReply ? "think" : streamingReply ? "talk" : cue ?? (greeting ? "greet" : message.reaction);
   useEffect(() => { if (openRequest) setOpen(true); }, [openRequest]);
 
   useEffect(() => {

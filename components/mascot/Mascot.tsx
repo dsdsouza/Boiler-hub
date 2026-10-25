@@ -85,8 +85,9 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
   const boiling = reaction === "boil";
   const celebrating = reaction === "celebrate" || dancing;
   const attentive = reaction === "attentive" || boiling || zone === "redline";
-  const waving = reaction === "wave" || (reaction === "idle" && zone === "cool" && !empty);
-  const motion = dancing ? "mp-dance" : boiling ? "mp-boil" : celebrating ? "mp-hop" : undefined;
+  const greeting = reaction === "greet" && !carried;
+  const waving = reaction === "wave" || greeting || (reaction === "idle" && zone === "cool" && !empty);
+  const motion = dancing ? "mp-dance" : boiling ? "mp-boil" : celebrating || greeting ? "mp-hop" : undefined;
   const puffs = empty ? [] : detail ? PUFFS[zone] : PUFFS[zone].slice(0, 2);
   const stroke = detail ? 3.5 : 5;
 
@@ -279,6 +280,8 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
 
 function Mouth({ zone, reaction, attentive, empty, detail, ink }: { zone: Zone; reaction: Reaction; attentive: boolean; empty?: boolean; detail: boolean; ink: string }) {
   const w = detail ? 2.2 : 2.8;
+  if (reaction === "talk") return <ellipse className="mp-talk" cx="58.5" cy="84.5" rx="3.6" ry="2.6" fill={ink} />;
+  if (reaction === "greet") return <path d="M53 83 q5.5 5.5 11 0" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
   if (reaction === "think") return <path d="M55 85 q2 -1.2 4 -0.4 t4 0.4" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
   if (reaction === "celebrate" || reaction === "dance") return <path d="M52 82 q6.5 8 13 0 z" fill={ink} stroke={ink} strokeWidth="1.4" strokeLinejoin="round" />;
   if (attentive) return <ellipse cx="58.5" cy="85" rx="2.6" ry="3.1" fill={ink} />;
