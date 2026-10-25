@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TeamBoiler } from "@/lib/data/teams";
 import { Boiler } from "@/components/boiler/Boiler";
@@ -8,8 +8,10 @@ import { CountBadges } from "@/components/boiler/CountBadges";
 import { timeAgo } from "@/components/boiler/format";
 import { freshness } from "@/app/api/teams/_lib/assignment";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
+import { Button } from "@/components/ui/Button";
 import { C, MONO, STATUS_META, ZONE_COLOR, ZONE_LABEL, initials } from "../_theme";
 import { api } from "./api";
+import styles from "./BoilerTile.module.css";
 
 export interface TileOverlay {
   after: number;
@@ -38,6 +40,10 @@ export function BoilerTile({
 }) {
   const router = useRouter();
   const tooltipId = useId();
+  const promotionTitleId = useId();
+  const promotionDescriptionId = useId();
+  const promotionDialog = useRef<HTMLDialogElement>(null);
+  const promotionTrigger = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,11 +57,12 @@ export function BoilerTile({
   const dim = age === "dim" || age === "stale";
 
   async function promote() {
-    if (!window.confirm(`Make ${boiler.name} a co-${leadLabel.toLowerCase()}? They will see boilers set to "${leadLabel} only" and can post assignments.`)) return;
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
       await api(`/api/teams/${teamId}/membership`, "PATCH", { userId: boiler.userId, role: "lead" });
+      promotionDialog.current?.close();
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -184,20 +191,55 @@ export function BoilerTile({
       )}
 
       {canPromote && !boiler.isLead && !isMe && (
-        <button
-          type="button"
-          onClick={promote}
-          disabled={busy}
-          className="relative z-20 min-h-11 rounded-lg text-sm font-semibold disabled:opacity-50"
-          style={{ border: `1px solid ${C.rivet}`, color: C.text2, backgroundColor: "transparent" }}
-        >
-          {busy ? "Promoting…" : `Make co-${leadLabel.toLowerCase()}`}
-        </button>
-      )}
-      {error && (
-        <p role="alert" className="m-0 text-sm" style={{ color: ZONE_COLOR.redline }}>
-          {error}
-        </p>
+        <>
+          <button
+            ref={promotionTrigger}
+            type="button"
+            onClick={() => { setError(null); promotionDialog.current?.showModal(); }}
+            aria-haspopup="dialog"
+            disabled={busy}
+            className="relative z-20 min-h-11 rounded-lg text-sm font-semibold disabled:opacity-50"
+            style={{ border: `1px solid ${C.rivet}`, color: C.text2, backgroundColor: "transparent" }}
+          >
+            {busy ? "Promoting…" : `Make co-${leadLabel.toLowerCase()}`}
+          </button>
+          <dialog
+            ref={promotionDialog}
+            className={styles.promotionDialog}
+            aria-labelledby={promotionTitleId}
+            aria-describedby={promotionDescriptionId}
+            aria-busy={busy}
+            onCancel={(event) => { if (busy) event.preventDefault(); }}
+            onClose={() => { setError(null); promotionTrigger.current?.focus(); }}
+            onKeyDown={(event) => {
+              if (event.key !== "Tab") return;
+              const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+              const first = buttons[0], last = buttons[buttons.length - 1];
+              if (!first) event.preventDefault();
+              else if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+              } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
+          >
+            <h2 id={promotionTitleId} className="mt-0 mb-3 font-display text-[32px] leading-tight font-normal wrap-anywhere">
+              Make {boiler.name} a co-{leadLabel.toLowerCase()}?
+            </h2>
+            <p id={promotionDescriptionId} className="m-0 text-sm leading-relaxed text-body">
+              They’ll see boilers shared with “{leadLabel} only” and can post assignments for this team.
+            </p>
+            {error && <p role="alert" className="mt-4 mb-0 text-sm leading-relaxed text-redline-ink">{error}</p>}
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button variant="ghost" autoFocus disabled={busy} onClick={() => promotionDialog.current?.close()}>Cancel</Button>
+              <Button variant="primary" disabled={busy} onClick={() => void promote()}>
+                {busy ? "Promoting…" : `Make co-${leadLabel.toLowerCase()}`}
+              </Button>
+            </div>
+          </dialog>
+        </>
       )}
     </article>
   );
