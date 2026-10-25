@@ -63,9 +63,11 @@ export interface MascotProps {
   /** Cosmetic from the wardrobe. Purely visual. */
   accessory?: AccessoryId;
   className?: string;
+  /** Arms reach up to the grab point while the floating companion is carried. */
+  carried?: boolean;
 }
 
-export function Mascot({ score, size = 120, reaction = "idle", empty, label, accessory = "none", className = "" }: MascotProps) {
+export function Mascot({ score, size = 120, reaction = "idle", empty, label, accessory = "none", className = "", carried = false }: MascotProps) {
   const zone = zoneOf(score);
   const color = ZONE_FILL[zone];
   const detail = size >= 56;
@@ -96,7 +98,7 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
       className={`flex-none overflow-visible ${className}`}
       data-zone={zone}
     >
-      <ellipse cx="60" cy="130" rx="30" ry="4" fill="#000" opacity="0.28" />
+      <ellipse cx="60" cy="130" rx="30" ry="4" fill="#000" opacity={carried ? 0 : 0.28} />
 
       <g key={celebrating ? "hop" : "rest"} className={celebrating ? "mp-hop" : undefined}>
         {/* Steam */}
@@ -141,6 +143,12 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
         <rect x="23" y="39.5" width="74" height="3.5" rx="1.75" fill={BRASS_DARK} opacity="0.55" />
 
         {/* Arms (behind the glass) */}
+        {carried ? <g data-pip-grip fill="none" stroke={COPPER} strokeWidth="5" strokeLinecap="round">
+          <path d="M28 80 C8 47 28 7 57 4" />
+          <path d="M92 80 C112 47 92 7 63 4" />
+          <circle cx="57" cy="4" r="3.6" fill={COPPER} stroke="none" />
+          <circle cx="63" cy="4" r="3.6" fill={COPPER} stroke="none" />
+        </g> : <>
         <path d="M28 80 q-12 4 -14 16" fill="none" stroke={COPPER} strokeWidth="5" strokeLinecap="round" />
         <circle cx="14" cy="96" r="3.6" fill={COPPER} />
         {waving ? (
@@ -155,11 +163,15 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
           </>
         )}
 
+        </>}
+
         {/* Legs and feet */}
+        <g className={carried ? "mp-dangle" : undefined}>
         <rect x="45" y="110" width="7" height="12" rx="2" fill={BRASS_LIGHT} />
         <rect x="68" y="110" width="7" height="12" rx="2" fill={BRASS_LIGHT} />
         <ellipse cx="48" cy="124" rx="6.5" ry="3.6" fill={COPPER} />
         <ellipse cx="72" cy="124" rx="6.5" ry="3.6" fill={COPPER} />
+        </g>
 
         {/* Glass body */}
         <clipPath id={clip}>
