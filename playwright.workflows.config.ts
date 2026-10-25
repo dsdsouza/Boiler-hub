@@ -13,5 +13,6 @@ export default defineConfig({
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
     { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
-  webServer: { command: 'node scripts/qa/component-server.mjs', url: `http://localhost:${port}/qa-workflows`, reuseExistingServer: false, timeout: 120_000 },
+  webServer: { command: 'node scripts/qa/component-server.mjs', url: `http://localhost:${port}/qa-workflows`,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 }, reuseExistingServer: false, timeout: 120_000 },
 });

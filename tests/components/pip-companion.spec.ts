@@ -1,6 +1,10 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
+// This fixture uses invented sessions and intercepted services only; failed
+// traces help diagnose browser setup races without recording live accounts.
+test.use({ trace: 'retain-on-failure' });
+
 const userId = '00000000-0000-4000-a000-000000000099';
 const companion = (page: Page) => page.locator('[data-pip-companion]');
 const pip = (page: Page) => companion(page).getByRole('button', { name: 'Chat with Pip', exact: true });
@@ -24,20 +28,33 @@ async function drag(page: Page, target: { x: number; y: number }) {
   await page.mouse.down(); await page.mouse.move(target.x, target.y, { steps: 12 });
 }
 
-test('the bare larger companion survives failed readings and stays absent when signed out', async ({ page, context }) => {
-  await page.goto('/qa-components?mode=pip');
+test('the bare larger companion survives failed readings and stays absent when signed out', async ({ page: signedOutPage, context }) => {
+  await signedOutPage.goto('/qa-components?mode=pip');
   // Absence also passes during the loading fallback. Finish the first document
   // and its Link preloads before changing cookies and navigating again in WebKit.
-  await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
-  await page.waitForLoadState('networkidle');
-  await expect(companion(page)).toHaveCount(0);
-  await open(page, context);
-  const style = await pip(page).evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, border: s.borderWidth, width: el.getBoundingClientRect().width }; });
-  expect(style.background).toBe('rgba(0, 0, 0, 0)'); expect(style.border).toBe('0px'); expect(style.width).toBeGreaterThanOrEqual(112);
-  await context.clearCookies(); await page.reload();
-  await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
-  await page.waitForLoadState('networkidle');
-  await expect(companion(page)).toHaveCount(0);
+  await expect(signedOutPage.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
+  await signedOutPage.waitForLoadState('networkidle');
+  await expect(companion(signedOutPage)).toHaveCount(0);
+  // Install the synthetic session into a fresh document. WebKit can otherwise
+  // start a competing same-URL navigation when cookies change on a loaded page.
+  await signedOutPage.close();
+  const page = await context.newPage();
+  try {
+    const failedReading = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.hostname === 'qa-project.supabase.co' && url.pathname === '/rest/v1/pressure_snapshots' && response.status() === 503;
+    });
+    await open(page, context);
+    await failedReading;
+    await expect(pip(page)).toBeVisible();
+    const style = await pip(page).evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, border: s.borderWidth, width: el.getBoundingClientRect().width }; });
+    expect(style.background).toBe('rgba(0, 0, 0, 0)'); expect(style.border).toBe('0px'); expect(style.width).toBeGreaterThanOrEqual(112);
+    await page.waitForLoadState('networkidle');
+    await context.clearCookies(); await page.reload();
+    await expect(page.getByRole('heading', { name: 'Pip movement check', exact: true })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expect(companion(page)).toHaveCount(0);
+  } finally { await page.close(); }
 });
 
 test('dragging carries Pip without opening chat and remembers his place across navigation and reload', async ({ page, context }) => {
