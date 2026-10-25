@@ -34,7 +34,11 @@ export function world() {
     const token = `${Buffer.from('{"alg":"HS256"}').toString('base64url')}.${Buffer.from(JSON.stringify({ sub: user.id, exp: expires })).toString('base64url')}.fixture`;
     const session = { access_token: token, refresh_token: 'fixture-only', token_type: 'bearer', expires_in: 3600, expires_at: expires, user: { id: user.id, aud: 'authenticated', role: 'authenticated', email: `${actor}@example.test`, app_metadata: {}, user_metadata: {} } };
     await context.addCookies([{ name: 'sb-qa-project-auth-token', value: 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64url'), url: `http://localhost:${process.env.QA_COMPONENT_PORT || '3219'}`, sameSite: 'Lax' }]);
-    await context.route('https://qa-project.supabase.co/**', route => route.fulfill({ status: 503, json: { error: 'Reading unavailable' } }));
+    await context.route('https://qa-project.supabase.co/**', route => {
+      // The signed-in fixture verifies its invented account before showing Pip.
+      if (new URL(route.request().url()).pathname === '/auth/v1/user') return route.fulfill({ status: 200, json: session.user });
+      return route.fulfill({ status: 503, json: { error: 'Reading unavailable' } });
+    });
     await context.route('**/api/**', async route => {
       const request = route.request(), path = new URL(request.url()).pathname, method = request.method();
       if (method !== 'GET') writes.push(`${actor} ${method} ${path}`);
