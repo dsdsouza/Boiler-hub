@@ -11,12 +11,13 @@ export interface Expression {
   brows: "none" | "worried" | "raised";
   /** grin: cool, smile: working or calm, wavy: hot, o: redline, open: celebrating. */
   mouth: "grin" | "smile" | "wavy" | "o" | "open";
-  arm: "down" | "wave" | "raised";
+  /** cheer: both arms up, pumping while Pip dances after a completed task. */
+  arm: "down" | "wave" | "raised" | "cheer";
   sweat: boolean;
 }
 
 export function heroExpression(zone: Zone, { celebrating = false, face = "expressive" }: { celebrating?: boolean; face?: HeroFace } = {}): Expression {
-  if (celebrating) return { eye: "happy", brows: "none", mouth: "open", arm: "raised", sweat: false };
+  if (celebrating) return { eye: "happy", brows: "none", mouth: "open", arm: "cheer", sweat: false };
   if (face === "calm") return { eye: "open", brows: "none", mouth: "smile", arm: "down", sweat: false };
   switch (zone) {
     case "cool":

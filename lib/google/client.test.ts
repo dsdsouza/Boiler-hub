@@ -103,7 +103,7 @@ describe("fetchPrimaryEvents", () => {
     const first = new URL(fetchMock.mock.calls[0][0]);
     expect(first.pathname).toBe("/calendar/v3/calendars/primary/events");
     expect(first.searchParams.get("timeMin")).toBe("2026-10-26T08:00:00.000Z");
-    expect(first.searchParams.get("timeMax")).toBe("2026-11-02T08:00:00.000Z");
+    expect(first.searchParams.get("timeMax")).toBe("2026-11-09T08:00:00.000Z");
     expect(first.searchParams.get("singleEvents")).toBe("true");
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer tok");
     expect(new URL(fetchMock.mock.calls[1][0]).searchParams.get("pageToken")).toBe("p2");

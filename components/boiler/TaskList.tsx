@@ -8,8 +8,8 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
 import type { NewTask, TaskMeta } from "./boilerState";
-import { SIZE_POINTS, TASK_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
-import { isStaleOverdue } from "@/lib/pressure/compute";
+import { SIZE_POINTS } from "@/lib/pressure/config";
+import { isStaleOverdue, taskHorizonDays } from "@/lib/pressure/compute";
 import { sourceBadge } from "@/lib/sources/hints";
 import { dueText, formatPoints } from "./format";
 
@@ -240,12 +240,15 @@ export function TaskList({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
-            <span
-              className={`rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] uppercase ${BADGE_INK[t.source] ?? "text-muted"}`}
-            >
-              <span className="sr-only">Source: </span>
-              {sourceBadge(t.source, m?.label)}
-            </span>
+            {/* Tasks the owner typed in need no label; only imported and team work says where it came from. */}
+            {t.source !== "manual" && (
+              <span
+                className={`rounded border border-line px-1.5 font-mono text-[11px] font-bold tracking-[0.06em] uppercase ${BADGE_INK[t.source] ?? "text-muted"}`}
+              >
+                <span className="sr-only">Source: </span>
+                {sourceBadge(t.source, m?.label)}
+              </span>
+            )}
             <CourseChip course={courses[t.id]} />
             {m?.courseName && m.courseName !== courses[t.id] && <span className="break-words text-body">{m.courseName}</span>}
             {stale ? (
@@ -255,7 +258,7 @@ export function TaskList({
             ) : (
               <span>{saving ? "Saving…" : done ? completedLabel : t.due ? capitalize(dueText(t.due, now)) : "No due date"}</span>
             )}
-            {!done && t.due && Date.parse(t.due) > now.getTime() + TASK_LOOKAHEAD_DAYS * 86_400_000 && <span>Outside {TASK_LOOKAHEAD_DAYS}-day score</span>}
+            {!done && t.due && Date.parse(t.due) > now.getTime() + taskHorizonDays(t.title) * 86_400_000 && <span>Outside {taskHorizonDays(t.title)}-day score</span>}
             {removable && (
               <button
                 type="button"

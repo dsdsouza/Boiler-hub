@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest';
+import { PRESSURE_MODEL_VERSION } from '../../lib/pressure/config';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAssignment, type TargetWithCounts } from '../../lib/data/teams';
 import { computeTargets } from '../../app/api/teams/_lib/assignment';
@@ -28,14 +29,14 @@ it('re-reads and recomputes a competing snapshot, counting deadlines across the 
   const admin = { rpc, from(table: string) {
     const data = table === 'memberships' ? [{ user_id: 'recipient', visibility: 'everyone' }]
       : table === 'profiles' ? [{ id: 'recipient', name: 'Recipient' }]
-      : [{ user_id: 'recipient', raw: 12, score: 76, zone: 'hot', counts: {}, computed_at: now.toISOString() }];
+      : [{ user_id: 'recipient', raw: 12, score: 76, zone: 'hot', counts: { pressureModel: PRESSURE_MODEL_VERSION }, computed_at: now.toISOString() }];
     const chain = { eq: () => chain, in: async () => ({ data, error: null }), then: (resolve: (v: unknown) => void) => resolve({ data, error: null }) };
     return { select: () => chain };
   } } as unknown as SupabaseClient;
   const result = await createAssignment(admin, 'team', 'lead', input, [old], computeTargets([old], input, now), now, 'draft');
   expect(rpc).toHaveBeenCalledTimes(2);
   const change = rpc.mock.calls[1][1].p_changes[0];
-  expect(change.before).toMatchObject({ raw: 12, counts: {} });
+  expect(change.before).toMatchObject({ raw: 12, counts: { pressureModel: PRESSURE_MODEL_VERSION } });
   expect(change.after.raw).toBe(computeTargets([{ ...old, raw: 12 }], input, now)[0].rawAfter);
   expect(change.after.counts.tasksDue).toBe(1);
   expect(result.targets[0].raw).toBe(12);

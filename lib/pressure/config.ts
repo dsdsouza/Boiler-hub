@@ -7,6 +7,13 @@ import type { Size, Weight, Zone } from "@/lib/types";
 export const WINDOW_DAYS = 7;
 /** Deadlines need preparation time beyond the current calendar week. */
 export const TASK_LOOKAHEAD_DAYS = 14;
+export const EXAM_LOOKAHEAD_DAYS = 28;
+export const TASK_TAPER_DAYS = 2;
+export const EXAM_TAPER_DAYS = 7;
+export const EVENT_TAPER_DAYS = 1;
+/** Fetch enough live data for the full window at every forecast date. */
+export const SOURCE_LOOKAHEAD_DAYS = EXAM_LOOKAHEAD_DAYS + WINDOW_DAYS;
+export const CALENDAR_LOOKAHEAD_DAYS = WINDOW_DAYS * 2;
 
 /**
  * Event weight tag multipliers.
@@ -32,9 +39,18 @@ export const SIZE_POINTS: Record<Size, number> = { S: 2, M: 4, L: 8 };
 /** proximity = 1 / (1 + PROXIMITY_RATE × days from now) */
 export const PROXIMITY_RATE = 0.35;
 
-/** urgency = 1 / max(days until due, URGENCY_MIN_DAYS), capped at URGENCY_CAP; overdue = URGENCY_CAP. */
+/** Deadline power kernel, with a continuous at-deadline peak and gradual overdue aging. */
 export const URGENCY_MIN_DAYS = 0.25;
 export const URGENCY_CAP = 3;
+export const URGENCY_EXPONENT = 0.475;
+export const TASK_K = 26;
+export const EXAM_PREPARATION_WEIGHT = 2.75;
+export const EXAM_PREPARATION_DAYS = 7;
+export const EXAM_DECAY_DAYS = 3;
+export const OVERDUE_GRACE_DAYS = 7;
+export const OVERDUE_DECAY_DAYS = 7;
+/** Stored in the existing counts JSON; never mix raw values from different models. */
+export const PRESSURE_MODEL_VERSION = "balanced-v1";
 
 /** A task with no due date is treated as due this many days from now. */
 export const NO_DUE_DAYS = 7;
@@ -55,8 +71,8 @@ export const FOCUS_RELEASE = 0;
 
 /**
  * score = round(100 × (1 − e^(−max(R, 0) / K)))
- * Tuned: 25 → 8.5 (PRD) so the student week lands ~56 and the manager week ~78
- * (see lib/pressure/__fixtures__/weeks.ts).
+ * Calendar scale and common raw unit. Tasks are normalized by K/TASK_K before addition,
+ * equivalent to score = 100*(1-exp(-(calendarRaw/K + taskRaw/TASK_K))).
  */
 export const K = 8.5;
 

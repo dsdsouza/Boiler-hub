@@ -113,7 +113,7 @@ The MVP is six screens plus a demo mode; everything else is stretch.
 
 Tasks also come from external sources, not just manual entry. A supported source is an ICS feed (Brightspace, Canvas, Outlook, or another calendar), added at `/settings/sources` or in onboarding. Each sync fetches every supported source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
 
-**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Events in the next 7 days count. Deadlines in the next 14 days count, with another 7 days fetched for forecast preparation. New feed connections import deadlines dated today or later in the feed/owner time zone. That connection-day boundary stays fixed: imported work that later becomes overdue remains listed for up to 60 days; past 14 overdue days it keeps a reduced backlog weight and remains counted. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. A first sync never guesses that overdue work is done. Owners review overdue assignments before bulk completion, and completed or cleared feed items remain available for individual restoration while present in the feed.
+**ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Events in the next 7 days count. Ordinary deadlines in fourteen days and major exams in twenty-eight days count; fetches include seven more forecast days. New feed connections import deadlines dated today or later in the feed/owner time zone. That connection-day boundary stays fixed: imported work that later becomes overdue remains listed for up to 60 days; past 14 overdue days it keeps a reduced backlog weight and remains counted. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. A first sync never guesses that overdue work is done. Owners review overdue assignments before bulk completion, and completed or cleared feed items remain available for individual restoration while present in the feed.
 
 **Retired GitHub integration.** New GitHub connections and source tests are rejected. Sync, Pip and the deadline calendar ignore historical GitHub sources without decrypting or fetching them. Migration `20261025015300_retire_github_sources.sql` permanently removes every GitHub connection/token, its item overrides and any legacy GitHub task rows, and invalidates affected cached pressure readings. Check constraints block GitHub writes from both authenticated and service-role clients. Existing enum values remain for compatibility. Until the migration is applied, historical rows are shown disconnected and owner-removable. See [source connections](sources.md).
 
@@ -156,7 +156,7 @@ The boiler is the product, so the UI track gets the most design time: a warm, ta
 
 ## Pressure engine
 
-Pressure is a pure, deterministic function of events over the next 7 days and tasks due over the next 14 days, plus unfinished overdue work, mapped to 0 to 100. It lives in `lib/pressure`, has no I/O, and is unit tested. All constants sit in one `config.ts` so they can be tuned in minutes.
+Pressure is a pure, deterministic function of events over seven days, assignments over fourteen days and major exams over twenty-eight days, plus unfinished overdue work, mapped to 0 to 100. It lives in `lib/pressure`, has no I/O, and is unit tested. All constants sit in one `config.ts`.
 
 **Inputs.** Every source (Google events, in-app tasks, team assignments, connected ICS feeds) is normalized to one `LoadItem` shape before it reaches the engine.
 
@@ -166,35 +166,26 @@ Pressure is a pure, deterministic function of events over the next 7 days and ta
 - Exclude from pressure: `eventType: focusTime` and `outOfOffice`; calendar availability never cancels unfinished tasks.
 - Ignore: `eventType: workingLocation`.
 
-**Weights**
+**Weights and shared formula**
 
-| Factor | Value |
-| --- | --- |
-| Event weight tag | Light 0.25, Normal 1.0, Heavy 1.6 (user override, else default) |
-| Default for recurring events | Light |
-| Attendees | × (1 + 0.03 × min(attendees, 10)) |
-| User is organizer | × 1.2 |
-| Task size points | S 2, M 4, L 8 |
-| Proximity (days from now, d) | 1 / (1 + 0.35 × d) |
-| Task urgency | 1 / max(days until due, 0.25), capped at 3; overdue = 3 |
-| Task with no due date | Treated as due 7 days from now (urgency 1/7) |
-| Overdue aging | After 14 overdue days: urgency 0.5. Still counted as overdue until marked complete; manual items can also be removed |
-| Completed task | Its own load is removed. It cannot cancel other unfinished tasks |
-| Focus time or OOO | Excluded; no negative credit |
-| Scale constant K | 8.5 |
-
-These are the shipped values; `lib/pressure/config.ts` is the source of truth and every other number (UI, `/how`, teams preview) imports from it. Two were tuned from the original plan so the targets below hold: Light 0.5 → 0.25, so recurring rituals weigh well below one-off meetings, and K 25 → 8.5, so a typical student week lands near 55 and a 25-meeting-hour manager week near 78.
-
-**Formula**
+See [the calibrated model](pressure-model.md) for the full equations and limitations.
+Calendar weights remain Light 0.25, Normal 1, Heavy 1.6; attendee step 0.03 capped
+at ten; organizer factor 1.2; proximity rate 0.35. Task sizes remain S 2, M 4, L 8.
+Task urgency uses power 0.475 and scale 26; calendar scale stays 8.5. Major exams
+receive preparation weight 2.75 throughout the next seven days, decaying with a
+three-day time constant beyond that. Assignment, exam and event windows taper to
+zero at fourteen, twenty-eight and seven days. Overdue work decays gradually after
+seven days toward urgency 0.5; completed work contributes zero.
 
 ```
-R = Σ_events (hours × weight × attendeeFactor × organizerFactor × proximity)
-  + Σ_tasks  (sizePoints × urgency)
-
-score = round(100 × (1 − e^(−max(R, 0) / K)))
+score = round(100 * (1 - exp(-(calendarLoad/8.5 + taskLoad/26))))
 ```
 
-The exponential curve means early load moves the needle fast and it never exceeds 100.
+`taskPoints` normalizes tasks into the common raw unit so the inverse, preview,
+optimistic UI and assignment post remain additive. The forecast and its explanation
+use the same engine. Fetches include every forecast day's full preparation window.
+Saved snapshot counts carry a formula version; incompatible raw values are never
+used in new previews and are refreshed by the owner's next successful sync.
 
 **Zones**
 

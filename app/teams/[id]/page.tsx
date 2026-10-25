@@ -6,6 +6,9 @@ import { EngineRoom } from "../_components/EngineRoom";
 
 export const dynamic = "force-dynamic";
 
+// A fixed title: the team's name would need a second membership-checked lookup here.
+export const metadata = { title: "Engine Room · Boilerplate" };
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function EngineRoomPage({ params }: { params: Promise<{ id: string }> }) {

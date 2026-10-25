@@ -1,4 +1,4 @@
-import { TASK_LOOKAHEAD_DAYS } from "@/lib/pressure/config";
+import { taskHorizonDays, snapshotUsesCurrentModel } from "@/lib/pressure/compute";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BoilerCard, Counts, EngineRoom, Role, Status, Visibility, Zone } from "@/lib/types";
 import { computeTargets, safeHiddenCount, type AssignmentInput, type AssignmentTarget, type TargetResult } from "@/app/api/teams/_lib/assignment";
@@ -50,16 +50,16 @@ export interface TeamBoilerRow {
 export const EMPTY_COUNTS: Counts = { meetings: 0, meetingHours: 0, tasksDue: 0, overdue: 0 };
 
 export function toTeamBoiler(row: TeamBoilerRow, leadIds: Set<string>): TeamBoiler {
-  const synced = row.score !== null;
+  const synced = row.score !== null && snapshotUsesCurrentModel(row.counts);
   return {
     userId: row.user_id,
     name: row.name?.trim() || "Unnamed",
     avatarUrl: row.avatar_url ?? undefined,
-    score: row.score ?? 0,
-    zone: row.zone ?? "cool",
+    score: synced ? row.score! : 0,
+    zone: synced ? row.zone ?? "cool" : "cool",
     status: row.status,
     statusNote: row.status_note || undefined,
-    counts: { ...EMPTY_COUNTS, ...(row.counts ?? {}) },
+    counts: synced ? { ...EMPTY_COUNTS, ...(row.counts ?? {}) } : EMPTY_COUNTS,
     updatedAt: row.updated_at ?? "",
     synced,
     isLead: leadIds.has(row.user_id),
@@ -249,6 +249,7 @@ export async function loadAssignmentTargets(admin: SupabaseClient, teamId: strin
       counts: s ? { ...EMPTY_COUNTS, ...(s.counts ?? {}) } : null,
       snapshotCounts: s?.counts ?? null,
       snapshotRevision: s?.revision,
+      modelCompatible: snapshotUsesCurrentModel(s?.counts),
     };
   });
 }
@@ -267,14 +268,15 @@ export async function createAssignment(
 ): Promise<{ assignmentId: string; duplicate: boolean; targets: TargetWithCounts[]; results: TargetResult[] }> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const byId = new Map(results.map((r) => [r.userId, r]));
-    const dueWithinWindow = Date.parse(input.due) - now.getTime() <= TASK_LOOKAHEAD_DAYS * 86_400_000;
+    const dueWithinWindow = Date.parse(input.due) - now.getTime() <= taskHorizonDays(input.title) * 86_400_000;
     const changes = targets.map((t) => {
       const r = byId.get(t.userId)!;
+      const counts = t.counts ?? EMPTY_COUNTS;
       return {
         user_id: t.userId,
         before: t.raw === null ? null : { revision: t.snapshotRevision, raw: t.raw, score: t.score, zone: t.zone, counts: t.snapshotCounts === undefined ? t.counts : t.snapshotCounts, computed_at: t.updatedAt },
         after: { raw: r.rawAfter, score: r.after, zone: r.zoneAfter,
-          counts: { ...(t.counts ?? EMPTY_COUNTS), tasksDue: (t.counts ?? EMPTY_COUNTS).tasksDue + (dueWithinWindow ? 1 : 0) } },
+          counts: { ...counts, tasksDue: counts.tasksDue + (dueWithinWindow && t.modelCompatible !== false ? 1 : 0) } },
       };
     });
     const { data, error } = await admin.rpc("post_team_assignment", {

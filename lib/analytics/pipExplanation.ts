@@ -1,5 +1,5 @@
 import type { Zone } from "@/lib/types";
-import { TASK_LOOKAHEAD_DAYS } from "@/lib/pressure";
+import { taskHorizonDays } from "@/lib/pressure";
 import type { WhatIfChange, WhatIfResult } from "./whatIf";
 import { formatLocal, weekdayOfDate } from "./time";
 
@@ -32,10 +32,10 @@ export function pipWhatIfMessage(result: WhatIfResult): string {
   const lead = changePhrase(result, change);
   let first: string;
   if (task.before.state === "outside-window" && task.after.state === "outside-window") {
-    first = `${lead} wouldn't change today's score of ${baseline.score}, because the task stays more than ${TASK_LOOKAHEAD_DAYS} days out.`;
+    first = `${lead} wouldn't change today's score of ${baseline.score}, because the task stays more than ${taskHorizonDays(task.title)} days out.`;
   } else if (delta.score !== 0) {
     const zone = delta.zoneChanged ? `, ${zoneName(baseline.zone)} to ${zoneName(simulated.zone)}` : "";
-    const why = task.before.state === "counted" && task.after.state === "outside-window" ? `, because the task would sit more than ${TASK_LOOKAHEAD_DAYS} days out` : "";
+    const why = task.before.state === "counted" && task.after.state === "outside-window" ? `, because the task would sit outside its ${taskHorizonDays(task.title)}-day preparation window` : "";
     first = `${lead} would ${delta.score < 0 ? "lower" : "raise"} today's score from ${baseline.score} to ${simulated.score} (${signed(delta.score)}${zone})${why}.`;
   } else if (Math.abs(delta.raw) > 1e-9) {
     first = `${lead} would shift the load by ${Math.abs(Math.round(delta.raw * 100) / 100)} points, but today's score stays ${baseline.score}.`;

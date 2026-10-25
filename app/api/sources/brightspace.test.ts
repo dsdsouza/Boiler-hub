@@ -40,7 +40,7 @@ it("imports a Brightspace schedule through the source endpoint without persistin
   const json = await response.json();
   expect(response.status).toBe(201);
   expect(json.source).toMatchObject({ kind: "ics", label: "Brightspace", coursework: true, status: "ok" });
-  expect(json.events).toBe(4);
+  expect(json.events).toBe(7);
   expect(json.tasks).toBeGreaterThan(0);
   const saved = insert.mock.calls[0]![0];
   expect(saved.user_id).toBe(user.id);

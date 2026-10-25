@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PRESSURE_MODEL_VERSION } from "@/lib/pressure/config";
 import { sortBoilers, toTeamBoiler, type TeamBoilerRow } from "@/lib/data/teams";
 
 const row = (over: Partial<TeamBoilerRow>): TeamBoilerRow => ({
@@ -9,7 +10,7 @@ const row = (over: Partial<TeamBoilerRow>): TeamBoilerRow => ({
   zone: "hot",
   status: "heads_down",
   status_note: null,
-  counts: { meetings: 3, meetingHours: 4, tasksDue: 2, overdue: 0 },
+  counts: { ...{ pressureModel: PRESSURE_MODEL_VERSION }, meetings: 3, meetingHours: 4, tasksDue: 2, overdue: 0 },
   updated_at: "2026-10-24T09:00:00Z",
   ...over,
 });

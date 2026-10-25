@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoadItem, Size, Status, Weight } from "@/lib/types";
 import type { BoilerResponse, CalendarState, OwnerEvent, Task } from "@/lib/pressure/api-types";
-import { computePressure, resolveWeight } from "@/lib/pressure/compute";
-import { COMPLETED_RELEASE_HOURS } from "@/lib/pressure/config";
+import { computePressure, resolveWeight, snapshotUsesCurrentModel } from "@/lib/pressure/compute";
+import { COMPLETED_RELEASE_HOURS, PRESSURE_MODEL_VERSION } from "@/lib/pressure/config";
 import { loadSources, type LoadedSources } from "@/lib/sources/load";
 import type { SourceItem } from "@/lib/sources/types";
 import { fetchPrimaryEvents, type GoogleEvent } from "./calendar";
@@ -114,7 +114,7 @@ export async function syncUser(
         score: result.score,
         raw: result.raw,
         zone: result.zone,
-        counts: result.counts,
+        counts: { ...result.counts, pressureModel: PRESSURE_MODEL_VERSION },
         forecast: result.forecast,
         computed_at: computedAt,
       },
@@ -156,10 +156,10 @@ async function loadCalendar(
 async function snapshotIsStale(admin: SupabaseClient, userId: string, now: Date): Promise<boolean> {
   const { data } = await admin
     .from("pressure_snapshots")
-    .select("computed_at")
+    .select("computed_at, counts")
     .eq("user_id", userId)
-    .maybeSingle<{ computed_at: string }>();
-  return !data || now.getTime() - Date.parse(data.computed_at) > SNAPSHOT_MAX_AGE_MS;
+    .maybeSingle<{ computed_at: string; counts: unknown }>();
+  return !data || !snapshotUsesCurrentModel(data.counts) || now.getTime() - Date.parse(data.computed_at) > SNAPSHOT_MAX_AGE_MS;
 }
 
 /** A tasks row as a Task. Team tasks are labelled with their team's name, others with their own course. */

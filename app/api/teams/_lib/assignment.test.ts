@@ -33,13 +33,13 @@ describe("parseAssignmentInput", () => {
 });
 
 describe("preview", () => {
-  const input = { title: "Lab", due: inDays(1), size: "M" as const }; // urgency 1, +4 raw
+  const input = { title: "Lab", due: inDays(1), size: "M" as const }; // Calibrated medium homework due in one day.
   const targets = [
     target("a", 65),
-    target("b", 85),
+    target("b", 89),
     target("c", 20),
     target("d", 30),
-    target("h", 85, false),
+    target("h", 89, false),
     target("h2", 10, false),
     target("n", null), // never synced
     target("s", 60, true, hoursAgo(80)), // stale
@@ -66,7 +66,7 @@ describe("preview", () => {
       target("a", 65),
       target("hs", 88, false, hoursAgo(100)), // hidden, stale
       target("hn", null, false), // hidden, never synced
-      target("h", 85, false),
+      target("h", 89, false),
     ];
     const p = toPreview(mixed, computeTargets(mixed, input, now));
     expect(p.noRecentData).toEqual([]);
@@ -79,7 +79,7 @@ describe("preview", () => {
   });
 
   it("shows no hidden count below two hidden members, and no recipient total that would reveal one", () => {
-    const one = [target("a", 65), target("h", 85, false)];
+    const one = [target("a", 65), target("h", 89, false)];
     const p = toPreview(one, computeTargets(one, input, now));
     expect(p.hidden).toEqual({ count: 0, intoRedline: 0 });
     expect(p.recipients).toBeNull();
@@ -93,8 +93,8 @@ describe("preview", () => {
   });
 
   it("summarizes zone moves", () => {
-    // With K from lib/pressure/config.ts (8.5): a 65 -> 78 hot, b 85 -> 91 redline, c 20 -> 50 working, d 30 -> 56 working
-    expect(summarize(preview).text).toBe("Moves 1 into Hot, 1 into Redline, 2 into Working");
+    // The shared model moves a into Hot, b into Redline and d into Working.
+    expect(summarize(preview).text).toBe("Moves 1 into Hot, 1 into Redline, 1 into Working");
     expect(summarize({ members: [], hidden: { count: 0, intoRedline: 0 } }).text).toBe("No zone changes");
   });
 });
