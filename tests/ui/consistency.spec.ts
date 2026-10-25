@@ -23,6 +23,8 @@ async function check(page: Page, info: TestInfo, focusFindings: { rule: string; 
 for (const [name, url] of [['Landing', '/'], ['Demo', '/demo'], ['Help', '/how'], ['Calendar helper', '/calendar-helper']]) {
   test(`${name}: layout, control tokens and text contrast`, async ({ page }, info) => {
     await test.step('Load the public screen', async () => {
+      // Wider May date labels exposed clipping that October labels did not.
+      if (url === '/demo') await page.clock.setFixedTime(new Date('2028-05-21T16:00:00Z'));
       await page.goto(url);
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       if (url === '/demo') await expect(page.getByRole('region', { name: 'Tasks', exact: true })).toBeVisible();
