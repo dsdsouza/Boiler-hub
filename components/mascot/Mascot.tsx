@@ -80,9 +80,13 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
   // Features above the waterline sit on dark glass, so they switch to parchment.
   const ink = (y: number) => (y < level ? PARCHMENT : INK);
 
-  const celebrating = reaction === "celebrate";
-  const attentive = reaction === "attentive" || zone === "redline";
+  const dancing = reaction === "dance" && !carried;
+  const thinking = reaction === "think";
+  const boiling = reaction === "boil";
+  const celebrating = reaction === "celebrate" || dancing;
+  const attentive = reaction === "attentive" || boiling || zone === "redline";
   const waving = reaction === "wave" || (reaction === "idle" && zone === "cool" && !empty);
+  const motion = dancing ? "mp-dance" : boiling ? "mp-boil" : celebrating ? "mp-hop" : undefined;
   const puffs = empty ? [] : detail ? PUFFS[zone] : PUFFS[zone].slice(0, 2);
   const stroke = detail ? 3.5 : 5;
 
@@ -100,7 +104,7 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
     >
       <ellipse cx="60" cy="130" rx="30" ry="4" fill="#000" opacity={carried ? 0 : 0.28} />
 
-      <g key={celebrating ? "hop" : "rest"} className={celebrating ? "mp-hop" : undefined}>
+      <g key={motion ?? "rest"} className={motion}>
         {/* Steam */}
         {puffs.map(([x, y, r, delay, dx], i) => (
           <circle
@@ -113,7 +117,7 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
             style={{ "--delay": `${delay}s`, "--dx": `${dx}px`, "--dur": zone === "redline" ? "2s" : "3.2s", "--o": zone === "cool" ? 0.7 : 0.85 } as React.CSSProperties}
           />
         ))}
-        {celebrating &&
+        {(celebrating || boiling) &&
           [
             [52, 4, 6, -10, -16, 0],
             [68, 2, 6, 10, -18, 0.08],
@@ -129,7 +133,15 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
               style={{ "--dx": `${dx}px`, "--dy": `${dy}px`, "--delay": `${delay}s` } as React.CSSProperties}
             />
           ))}
-        {zone === "redline" && detail && !empty && (
+        {thinking && detail &&
+          [
+            [88, 34, 2.4, 0],
+            [97, 24, 3.4, 0.3],
+            [108, 10, 5, 0.6],
+          ].map(([x, y, r, delay], i) => (
+            <circle key={`t${i}`} cx={x} cy={y} r={r} fill="var(--steam)" className="mp-thought" style={{ "--delay": `${delay}s` } as React.CSSProperties} />
+          ))}
+        {(zone === "redline" || boiling) && detail && !empty && (
           <>
             <circle cx="8" cy="118" r="5" fill="var(--steam)" className="mp-steam" style={{ "--delay": "0.4s", "--dx": "-8px", "--o": 0.7 } as React.CSSProperties} />
             <circle cx="112" cy="114" r="5" fill="var(--steam)" className="mp-steam" style={{ "--delay": "1.4s", "--dx": "8px", "--o": 0.7 } as React.CSSProperties} />
@@ -148,7 +160,16 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
           <path d="M92 80 C112 47 92 7 63 4" />
           <circle cx="57" cy="4" r="3.6" fill={COPPER} stroke="none" />
           <circle cx="63" cy="4" r="3.6" fill={COPPER} stroke="none" />
-        </g> : <>
+        </g> : dancing ? <>
+        <g className="mp-arm-l">
+          <path d="M28 80 q-11 -1 -14 -9" fill="none" stroke={COPPER} strokeWidth="5" strokeLinecap="round" />
+          <circle cx="14" cy="71" r="3.6" fill={COPPER} />
+        </g>
+        <g className="mp-arm-r">
+          <path d="M92 80 q11 -1 14 -9" fill="none" stroke={COPPER} strokeWidth="5" strokeLinecap="round" />
+          <circle cx="106" cy="71" r="3.6" fill={COPPER} />
+        </g>
+        </> : <>
         <path d="M28 80 q-12 4 -14 16" fill="none" stroke={COPPER} strokeWidth="5" strokeLinecap="round" />
         <circle cx="14" cy="96" r="3.6" fill={COPPER} />
         {waving ? (
@@ -215,7 +236,7 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
         )}
         {detail && attentive && <path d="M43 60.5 L51 59.5 M64 55.5 L75 55.5" stroke={ink(58)} strokeWidth="2" strokeLinecap="round" />}
 
-        <g className="mp-blink">
+        <g className="mp-blink" transform={thinking ? "translate(1 -2.5)" : undefined}>
           {celebrating ? (
             <path d="M44.5 71 q3.5 -4 7 0" fill="none" stroke={ink(70)} strokeWidth="2.4" strokeLinecap="round" />
           ) : (
@@ -236,8 +257,8 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
           stroke={zone === "cool" ? INK : "#B3301C"}
           strokeWidth={detail ? 1.8 : 2.4}
           strokeLinecap="round"
-          className="mp-level"
-          style={{ transformBox: "view-box", transformOrigin: "70px 69px", transform: `rotate(${angle}deg)` }}
+          className={thinking ? "mp-level mp-ponder" : "mp-level"}
+          style={{ transformBox: "view-box", transformOrigin: "70px 69px", transform: `rotate(${angle}deg)`, "--a": `${angle}deg` } as React.CSSProperties}
         />
         <circle cx="70" cy="69" r={detail ? 1.7 : 2.2} fill={INK} />
         {detail && <path d="M77 74 c3 5 3 11 0 15" fill="none" stroke={BRASS} strokeWidth="1.2" strokeLinecap="round" />}
@@ -258,7 +279,8 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
 
 function Mouth({ zone, reaction, attentive, empty, detail, ink }: { zone: Zone; reaction: Reaction; attentive: boolean; empty?: boolean; detail: boolean; ink: string }) {
   const w = detail ? 2.2 : 2.8;
-  if (reaction === "celebrate") return <path d="M52 82 q6.5 8 13 0 z" fill={ink} stroke={ink} strokeWidth="1.4" strokeLinejoin="round" />;
+  if (reaction === "think") return <path d="M55 85 q2 -1.2 4 -0.4 t4 0.4" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
+  if (reaction === "celebrate" || reaction === "dance") return <path d="M52 82 q6.5 8 13 0 z" fill={ink} stroke={ink} strokeWidth="1.4" strokeLinejoin="round" />;
   if (attentive) return <ellipse cx="58.5" cy="85" rx="2.6" ry="3.1" fill={ink} />;
   if (zone === "hot") return <path d="M52.5 85 q2.6 -2.2 5.2 0 t5.2 0" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
   if (zone === "working" || empty) return <path d="M54 84 q4.5 3.6 9 0" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
