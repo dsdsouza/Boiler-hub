@@ -2,24 +2,25 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encrypt } from "@/lib/crypto";
-import { NEXT_COOKIE, safeNext } from "@/lib/auth";
+import { authFailurePath, authOrigin, NEXT_COOKIE, safeNext } from "@/lib/auth";
 
 // Google access tokens last 1 hour; Supabase does not expose Google's expires_in.
 const GOOGLE_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
-  const { origin, searchParams } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  const origin = authOrigin(request);
   const code = searchParams.get("code");
   const next = safeNext(request.cookies.get(NEXT_COOKIE)?.value);
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/?error=auth`);
+    return NextResponse.redirect(`${origin}${authFailurePath(next, "auth")}`);
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.session) {
-    return NextResponse.redirect(`${origin}/?error=auth`);
+    return NextResponse.redirect(`${origin}${authFailurePath(next, "auth")}`);
   }
 
   const { user, provider_token, provider_refresh_token } = data.session;

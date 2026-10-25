@@ -41,6 +41,11 @@ async function find() {
       const host = document.createElement("p"); host.textContent = `${item.provider === "Other" ? "Calendar feed" : item.provider} · ${new URL(item.url).hostname}`;
       const actions = document.createElement("div"); actions.className = "actions";
       actions.append(button("Review in Boilerplate", async () => { await chrome.tabs.create({ url: makeHandoffUrl(item.url) }); }, true));
+      actions.append(button("Use in onboarding", async () => {
+        const destination = new URL(makeHandoffUrl(item.url));
+        destination.pathname = "/onboarding";
+        await chrome.tabs.create({ url: destination.href });
+      }));
       actions.append(button("Copy link", async () => {
         try { await navigator.clipboard.writeText(item.url); status.textContent = "Link copied. Paste it into Sources in Boilerplate."; }
         catch {
