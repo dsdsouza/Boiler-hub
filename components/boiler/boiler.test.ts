@@ -129,6 +129,15 @@ describe("geometry", () => {
     expect(boilerVisuals(95, "redline").crack).toBe(true);
   });
 
+  it("keeps the shake a gentle rumble: under a viewBox unit, slower than three cycles a second", () => {
+    for (const [score, zone] of [[80, "hot"], [95, "redline"], [100, "redline"]] as const) {
+      const { shake, flutterDur } = boilerVisuals(score, zone);
+      expect(Math.max(...shake!.x.map(Math.abs), ...shake!.y.map(Math.abs))).toBeLessThanOrEqual(1);
+      expect(shake!.dur).toBeGreaterThanOrEqual(0.33);
+      expect(flutterDur).toBeGreaterThanOrEqual(0.2);
+    }
+  });
+
   it("steam and bubbles rise with the score", () => {
     const a = steamParams(20, "cool");
     const b = steamParams(60, "working");

@@ -46,7 +46,7 @@ describe("cuePip", () => {
 
   it("holds each cue about as long as its CSS animation", () => {
     expect(CUE_MS.dance).toBe(3000); // mp-dance: 1s × 3
-    expect(CUE_MS.boil).toBe(2000); // mp-boil: 0.2s × 10
+    expect(CUE_MS.boil).toBe(2000); // mp-boil: 0.4s × 5
   });
 });
 
