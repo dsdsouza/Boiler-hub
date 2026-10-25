@@ -55,7 +55,7 @@ export function parseOptions(argv) {
     options.url = url.origin;
   }
   if (options.accounts && !TRUSTED_ACCOUNT_ORIGINS.has(options.url)) throw new Error('Account checks require a verified Boilerplate app origin so test sessions reach only the intended app.');
-  if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public/demo tests.');
+  if (options.ui && options.accounts) throw new Error('Use a separate --accounts run; the interactive dashboard covers public page tests.');
   return options;
 }
 
@@ -121,7 +121,7 @@ export async function main(argv) {
   if (options.help) { console.log(HELP); return 0; }
   if (options.plan) {
     console.log(JSON.stringify({ ...options, target: options.url ?? 'local production build on a free port',
-      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public/demo browsers', ...(!options.quick ? ['component failure/race regressions', 'complete local workflows', 'UI consistency'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts', 'complete live personal workflows'] : [])] }, null, 2));
+      steps: [...(!options.quick ? ['types', 'lint', 'unit/database'] : []), ...(!options.url ? ['build'] : []), options.explore ? 'exploratory browser walks' : 'public page browsers', ...(!options.quick ? ['component failure/race regressions', 'complete local workflows', 'UI consistency'] : []), ...(options.accounts ? ['private QA sessions', options.explore ? 'signed-in exploration' : '32 test accounts', 'complete live personal workflows'] : [])] }, null, 2));
     return 0;
   }
   const target = options.url ?? `http://localhost:${await freePort()}`;

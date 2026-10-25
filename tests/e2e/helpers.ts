@@ -7,8 +7,8 @@ export async function score(page: Page) {
   if (value === undefined) throw new Error(`Gauge has no numeric accessible pressure: ${label}`);
   return Number(value);
 }
-export async function openDemo(page: Page) {
-  await page.goto('/demo');
+export async function openBoilerFixture(page: Page) {
+  await page.goto('/qa-boiler');
   await expect(gauge(page)).toBeVisible();
   await expect(page.getByRole('button', { name: /^Post to / })).toBeEnabled();
 }
