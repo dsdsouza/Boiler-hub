@@ -20,7 +20,7 @@ test("sign-in immediately saves the earlier anonymous answers without Continue",
   await page.goto("/qa-workflows?view=onboarding");
   await expect.poll(() => service.users[0].onboarding?.name).toBe("Before signup");
   expect(service.users[0].onboarding).toMatchObject({ ownerId: owner, role: "student", goal: "focus", starting: "overwhelmed", current: "account", finished: false });
-  await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Saving answers…" })).toHaveCount(0);
   const fresh = await context.newPage();
   await fresh.goto("/qa-workflows?view=onboarding");
   await expect(fresh.getByRole("heading", { name: "Keep your progress. Connect your calendar.", exact: true })).toBeVisible();
@@ -64,12 +64,12 @@ test("older autosaves cannot overwrite newer typing or Continue", async ({ page,
   await nameField(page).fill("First answer");
   await expect.poll(() => started).toBe(true);
   await nameField(page).fill("Latest answer");
-  await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Saving answers…" })).toBeVisible();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   release();
   await expect(page.getByRole("heading", { name: "Heyo Latest answer! What would you like a hand with?", exact: true })).toBeVisible();
   expect(service.users[0].onboarding).toMatchObject({ name: "Latest answer", current: "goal" });
-  await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Saving answers…" })).toHaveCount(0);
 });
 
 test("failed autosaves show a retry and recover the newest answer", async ({ page, context }) => {
@@ -81,7 +81,7 @@ test("failed autosaves show a retry and recover the newest answer", async ({ pag
   expect(service.users[0].onboarding.name).toBe("Original name");
   await page.getByRole("button", { name: "Retry saving", exact: true }).click();
   await expect.poll(() => service.users[0].onboarding?.name).toBe("Retry this answer");
-  await expect(page.getByRole("status").filter({ hasText: "All changes saved" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Saving answers…" })).toHaveCount(0);
 });
 
 test("an unsaved answer survives closing a tab and retries for the same account", async ({ page, context }) => {
