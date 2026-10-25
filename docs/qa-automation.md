@@ -250,3 +250,5 @@ Each inspected screen saves a full-page screenshot and element-level findings in
 Full `pnpm qa:army`, `pnpm qa:explore` and `pnpm qa:check` runs include this stage; `--quick` omits it. GitHub's blocking browser shards run the same cases and upload `ui-consistency-1`, `ui-consistency-2` and `ui-consistency-3` reports with screenshots for 14 days. Existing complete workflow and authenticated checks remain separate.
 
 The component suite also checks the movable Pip companion. Its native touch cases are registered only in the Chromium projects, which support the required touch protocol; the other movement, boundary, cancellation and chat checks run in all four component configurations. Unsupported touch cases are not registered as skipped work, so a complete local army run can still require zero skipped cases.
+
+On macOS and Linux, the component, workflow and UI suites allow the disposable server to shut down and remove its temporary app copy before forceful termination. Reports remain in the requested report directory.
