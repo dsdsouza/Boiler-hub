@@ -69,12 +69,13 @@ export function boilerVisuals(score: number, zone: Zone): BoilerVisuals {
     bob: s * 0.045,
     bobDur: Math.max(0.45, 2.4 - s * 0.019),
     lift: s * 0.07,
-    flutter: red ? -5 : hot ? -2 : 0,
-    flutterDur: red ? 0.12 : 0.3,
+    flutter: red ? -3 : hot ? -1.5 : 0,
+    flutterDur: red ? 0.22 : 0.35,
+    // A low rumble, not a rattle: the gauge should read as pressure without alarming the owner.
     shake: red
-      ? { x: [0, 2.4, -2.4, 1.2, 0], y: [0, -0.6, 0.6, 0, 0], dur: 0.14 }
+      ? { x: [0, 0.8, -0.8, 0.4, 0], y: [0, -0.25, 0.25, 0, 0], dur: 0.36 }
       : hot
-        ? { x: [0, 0.7, -0.7, 0], y: [0, 0, 0.3, 0], dur: 0.26 }
+        ? { x: [0, 0.3, -0.3, 0], y: [0, 0, 0.12, 0], dur: 0.55 }
         : null,
     glow: red ? { lo: 0.15, hi: 0.5 } : { lo: 0, hi: 0 },
     crack: red,
