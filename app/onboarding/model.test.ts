@@ -13,6 +13,18 @@ describe("onboarding paths and retained progress", () => {
     expect(parseDraft({ role: "helping", name: "Josh" })).toMatchObject({ role: "other", name: "Josh", extensionDeferred: false });
     expect(parseDraft({ role: "other", extensionDeferred: true }).extensionDeferred).toBe(true);
     expect(parseDraft({ extensionDeferred: "true" }).extensionDeferred).toBe(false);
+    expect(parseDraft({ courseworkDeferred: true }).courseworkDeferred).toBe(true);
+    expect(parseDraft({ courseworkDeferred: "true" }).courseworkDeferred).toBe(false);
+  });
+  it("omits the coursework review only after an explicit deferral and lets teachers finish without a manual task", () => {
+    const student = parseDraft({ role: "student", goal: "balance" });
+    expect(stepsFor(student)).toContain("review");
+    expect(stepsFor({ ...student, courseworkDeferred: true })).not.toContain("review");
+    const teacher = parseDraft({ role: "lead", goal: "team", extensionDeferred: true });
+    expect(stepsFor(teacher)).toContain("extension");
+    expect(stepsFor(teacher)).toContain("calendar");
+    expect(isStepValid("recommendation", teacher, true)).toBe(true);
+    expect(recommendation(teacher).href).toBe("/teams");
   });
   it("requires valid answers and an authenticated account to unlock setup", () => {
     const d = parseDraft({

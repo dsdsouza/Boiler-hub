@@ -47,6 +47,7 @@ import {
   DRAFT_KEY,
   goalOptions,
   isStepValid,
+  needsManualTask,
   parseDraft,
   recommendation,
   resolvedGoal,
@@ -299,8 +300,8 @@ export function OnboardingClient({
       );
     }
   }
-  const setupReady = (pip.state === "installed" || draft.extensionDeferred) &&
-    (draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
+  const setupReady = (draft.role === "lead" || pip.state === "installed" || draft.extensionDeferred) &&
+    (draft.role !== "student" || draft.courseworkDeferred || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
   const valid = (step === "recommendation" && draft.finished) || (
     isStepValid(step, draft, signedIn) &&
     (step !== "extension" || pip.state === "installed") &&
@@ -321,11 +322,13 @@ export function OnboardingClient({
     finally { setBusy(false); }
   }
   const canDeferExtension = step === "extension" && ["missing", "outdated"].includes(pip.state);
+  const canDeferCoursework = draft.role === "student" && (step === "calendar" || step === "review");
+  const canDeferSetup = canDeferExtension || (canDeferCoursework && !valid);
   async function advance(skip = false) {
     if (
       busy ||
       sourceBusy ||
-      (skip && !canSkip && !canDeferExtension) ||
+      (skip && !canSkip && !canDeferExtension && !canDeferCoursework) ||
       (!skip && !valid)
     )
       return;
@@ -339,6 +342,8 @@ export function OnboardingClient({
       finished: false,
     };
     if (step === "extension") next = { ...next, extensionDeferred: skip };
+    if (draft.role === "student" && (step === "calendar" || step === "review"))
+      next = { ...next, courseworkDeferred: skip };
     if (skip && step === "team") next = { ...next, inviteCode: "" };
     if (skip && step === "milestone")
       next = { ...next, milestone: "", deadline: "" };
@@ -356,8 +361,7 @@ export function OnboardingClient({
         setJoined(draft.inviteCode);
       }
       const nextSteps = stepsFor(next);
-      next.current =
-        nextSteps[Math.min(nextSteps.indexOf(step) + 1, nextSteps.length - 1)];
+      next.current = steps.slice(index + 1).find((s) => nextSteps.includes(s)) ?? nextSteps[nextSteps.length - 1];
       if (step === "recommendation")
         next = {
           ...next,
@@ -605,13 +609,15 @@ export function OnboardingClient({
             </Disclosure>
             {draft.role === "student" && (
               <div className="mt-5 border-t border-line pt-4">
-                <p role="status" className="text-sm text-body">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <Button className="shrink-0" variant="secondary" disabled={syncing || sourceBusy} onClick={() => void sync()}>{syncing ? "Checking coursework…" : "Check coursework again"}</Button>
+                <p role="status" className="m-0 text-sm leading-relaxed text-body">
                   {courseworkReady(boiler) && reviewReceipt
                     ? `Coursework verified: ${courseworkSources(boiler).map((s) => s.label).join(", ")}. Review its deadlines next.`
-                    : "Connect a readable school calendar with Coursework enabled to continue. Google Calendar alone does not confirm a course import."}
+                    : "Connect a readable school calendar with Coursework enabled to import your courses. Google Calendar alone does not confirm a course import."}
                 </p>
+                </div>
                 {courseworkSources(boiler).filter((s) => s.status !== "ok").map((s) => <p key={s.id} className="text-sm text-redline-ink">{s.label}: {s.error || "This feed could not be read. Check the link and try again."}</p>)}
-                <Button variant="secondary" disabled={syncing || sourceBusy} onClick={() => void sync()}>{syncing ? "Checking coursework…" : "Check coursework again"}</Button>
               </div>
             )}
           </>
@@ -765,7 +771,7 @@ export function OnboardingClient({
               {showPip && <Mascot size={96} score={boiler?.result.score ?? 20} reaction="wave" />}
               <p className="m-0 leading-relaxed text-body">{plan.body}</p>
             </div>
-            {draft.extensionDeferred && !draft.finished && (
+            {needsManualTask(draft) && !draft.finished && (
               <div className="flex flex-col gap-5">
                 <div>
                   <label htmlFor="first-task" className={styles.label}>Your first task</label>
@@ -788,12 +794,15 @@ export function OnboardingClient({
                   <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : "Pip connection needs checking"}</p>
                   <Button variant="ghost" onClick={() => navigate("extension")}>Check Pip</Button>
                 </>}
-                {draft.role === "student" && <>
+                {draft.role === "student" && (draft.courseworkDeferred ? <>
+                <p className="text-sm">Coursework setup saved for later</p>
+                <Button variant="ghost" onClick={() => navigate("calendar")}>Connect coursework</Button>
+                </> : <>
                 <p className="text-sm">{courseworkReady(boiler) && reviewReceipt ? "Coursework import verified" : "Coursework import needs checking"}</p>
                 <Button variant="ghost" onClick={() => navigate("calendar")}>Check coursework</Button>
                 <p className="text-sm">{reviewed && reviewReceipt ? "Deadlines reviewed" : "Deadline review still needed"}</p>
                 <Button variant="ghost" onClick={() => navigate("review")}>Review deadlines</Button>
-                </>}
+                </>)}
               </div>
             )}
             {draft.milestone && (goal === "deadlines" || draft.extensionDeferred) &&
@@ -828,15 +837,7 @@ export function OnboardingClient({
               <br />
               for your week.
             </h2>
-            <p className="m-0 max-w-[24ch] text-sm leading-relaxed text-muted">
-              A little context helps Pip build a boiler that works for you.
-            </p>
           </div>
-          <p className="hidden text-xs leading-relaxed text-muted lg:block">
-            Your calendar stays private.
-            <br />
-            Sharing is always your choice.
-          </p>
         </aside>
         <div className={styles.journey}>
           <div className={styles.progress}>
@@ -959,12 +960,12 @@ export function OnboardingClient({
                     {!(step === "account" && !signedIn) && (
                       <Button
                         variant="primary"
-                        disabled={(!valid && !canDeferExtension) || busy || sourceBusy}
-                        onClick={() => canDeferExtension ? skipDialog.current?.showModal() : void advance()}
+                        disabled={(!valid && !canDeferSetup) || busy || sourceBusy}
+                        onClick={() => canDeferSetup ? skipDialog.current?.showModal() : void advance()}
                       >
                         {busy
                           ? "Saving…"
-                          : canDeferExtension
+                          : canDeferSetup
                             ? "Skip"
                           : step === "recommendation"
                               ? draft.finished ? plan.action : "Finish setup"
@@ -1001,8 +1002,8 @@ export function OnboardingClient({
           )}
         </div>
         <dialog ref={skipDialog} className={styles.skipDialog} aria-labelledby="pip-later-title" aria-describedby="pip-later-description">
-          <h2 id="pip-later-title" className="mt-0 mb-3 font-display text-[32px] font-normal">Complete Pip setup later?</h2>
-          <p id="pip-later-description" className="mt-0 mb-6 text-sm leading-relaxed text-body">You can install Pip anytime in Connect. Would you like to continue and complete it later?</p>
+          <h2 id="pip-later-title" className="mt-0 mb-3 font-display text-[32px] font-normal">{step === "extension" ? "Complete Pip setup later?" : step === "review" ? "Review deadlines later?" : "Connect coursework later?"}</h2>
+          <p id="pip-later-description" className="mt-0 mb-6 text-sm leading-relaxed text-body">{step === "extension" ? "You can install Pip anytime in Connect. Would you like to continue and complete it later?" : "You can connect your school calendar in Connect and review its deadlines later. Would you like to continue without completing coursework setup?"}</p>
           <div className="flex flex-wrap justify-end gap-3">
             <Button variant="ghost" autoFocus onClick={() => skipDialog.current?.close()}>Go back</Button>
             <Button variant="primary" onClick={() => { skipDialog.current?.close(); void advance(true); }}>Complete later</Button>
