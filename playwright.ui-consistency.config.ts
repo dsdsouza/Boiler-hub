@@ -20,5 +20,6 @@ export default defineConfig({
     { name: 'narrow', use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 740 } } },
   ],
   webServer: { command: `node scripts/qa/component-server.mjs`, url: `http://localhost:${port}/qa-workflows`,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
     env: { QA_COMPONENT_PORT: String(port) }, reuseExistingServer: false, timeout: 120_000 },
 });
