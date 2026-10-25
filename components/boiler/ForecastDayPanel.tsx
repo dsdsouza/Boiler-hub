@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import type { Contribution, ForecastDay, LoadItem } from "@/lib/types";
 import { ZoneBadge } from "@/components/ui/ZoneBadge";
 import { ZONE_INK, ZONE_LABEL } from "@/components/ui/zones";
-import { DEFAULT_WEIGHT } from "@/lib/pressure";
+import { resolveWeight } from "@/lib/pressure/compute";
 import { FORECAST_PANEL_ID } from "./ForecastStrip";
 import { CourseChip } from "./TaskList";
 import { WEIGHT_LABEL, formatPoints } from "./format";
@@ -21,7 +21,8 @@ function longDate(ymd: string) {
 
 /**
  * One forecast day: its score and zone in text, the tasks due (open and done) and the events, each with
- * its class chip and current points. `sheet` is the phone bottom sheet (modal, focus trapped); otherwise
+ * its class chip and forecast points. All contributors explain the selected score, even if due later.
+ * `sheet` is the phone bottom sheet (modal, focus trapped); otherwise
  * it is an inline panel under the strip. Esc and Close call `onClose`, which returns focus to the day.
  */
 export function ForecastDayPanel({
@@ -146,6 +147,28 @@ export function ForecastDayPanel({
         </button>
       </div>
 
+      <h4 className="mt-5 mb-1 text-base font-semibold">Why this day is {ZONE_LABEL[day.zone]}</h4>
+      <p className="mt-0 mb-3 text-sm text-muted">
+        {isToday ? "Work adding pressure right now, largest first." : "Work adding pressure at the start of this day, largest first. This includes overdue work and approaching deadlines, even when they fall on another day."}
+      </p>
+      {contributions.length === 0 ? (
+        <p className="m-0 border-t border-line py-2.5 text-sm text-muted">Nothing is adding pressure {isToday ? "right now" : "on this forecast day"}.</p>
+      ) : (
+        <ul aria-label="Pressure contributors" className="m-0 list-none p-0">
+          {contributions.map((c) => (
+            <li key={c.itemId} className="flex items-start gap-3 border-t border-line py-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="break-words text-[15px] font-semibold text-fg">{c.title}</div>
+                <div className="text-[13px] text-muted">{c.reason}</div>
+                <CourseChip course={courses[c.itemId]} />
+              </div>
+              {pts(c.itemId)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-2 mb-0 text-xs text-muted">These are workload points; the gauge converts their total to a score from 0 to 100. Future days assume upcoming tasks are completed by their deadlines; work already overdue stays counted.</p>
+
       <h4 className="mt-4 mb-1 text-[13px] font-semibold tracking-[0.1em] text-muted uppercase">Due</h4>
       {tasks.length === 0 ? (
         <p className="m-0 border-t border-line py-2.5 text-sm text-muted">Nothing due.</p>
@@ -181,7 +204,7 @@ export function ForecastDayPanel({
                   <span>
                     {time.format(new Date(e.start!))}
                     {e.end ? `–${time.format(new Date(e.end))}` : ""} ·{" "}
-                    {e.release ? "Excluded from pressure" : WEIGHT_LABEL[e.weight ?? DEFAULT_WEIGHT]}
+                    {e.release ? "Excluded from pressure" : WEIGHT_LABEL[resolveWeight(e)]}
                   </span>
                   <CourseChip course={courses[e.id]} />
                 </div>
@@ -191,7 +214,7 @@ export function ForecastDayPanel({
           ))}
         </ul>
       )}
-      <p className="mt-3 mb-0 text-xs text-muted">Points are what each item adds to the gauge right now.</p>
+      <p className="mt-3 mb-0 text-xs text-muted">Points above use the selected forecast day. A dash means the item adds no pressure on that day.</p>
     </motion.div>
   );
 

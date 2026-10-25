@@ -12,6 +12,7 @@ export function toMyBoilerData(res: BoilerResponse): MyBoilerData {
     status: res.status.status,
     statusNote: res.status.note ?? "",
     syncedAt: res.computedAt,
+    pressureComputedAt: res.computedAt,
     ...(res.timeZone ? { timeZone: res.timeZone } : {}),
     calendar: res.calendar,
     sources: res.sources ?? [],
