@@ -13,7 +13,8 @@ test('class schedule has its own guide and returns to the schedule import', asyn
   await expect(page.getByRole('heading', { level: 1, name: 'Find your class schedule', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Get your Brightspace schedule link', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open Connect', exact: true })).toHaveAttribute('href', '/settings/sources#class-schedule');
-  await expect(page.getByText('Import schedule', { exact: true })).toBeVisible();
+  // Scoped to the visible guide: the streamed page can briefly hold a second, hidden copy.
+  await expect(page.getByRole('region', { name: 'Get your Brightspace schedule link' }).getByText('Import schedule', { exact: true })).toBeVisible();
   if (process.env.SOURCES_SCREENSHOTS) {
     await mkdir(process.env.SOURCES_SCREENSHOTS, { recursive: true });
     await page.screenshot({ path: `${process.env.SOURCES_SCREENSHOTS}/schedule-guide-${info.project.name}.png`, fullPage: true, animations: 'disabled' });
