@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PIP_ANSWER_RULES, PIP_REFUSAL, PIP_SCOPE, PIP_VOICE, PIP_VOICE_REVIEW_NOTE } from "./policy";
 
-const STEAM_WORDING = ["pressure", "breathing room", "steady steam", "running smoothly", "cooling down", "easing the load", "engine"];
-
 describe("Pip's voice", () => {
   it("reaches both answer paths through the shared rules, after the unchanged scope", () => {
     expect(PIP_ANSWER_RULES.startsWith(PIP_SCOPE)).toBe(true);
@@ -14,10 +12,13 @@ describe("Pip's voice", () => {
     expect(PIP_SCOPE).not.toContain(PIP_VOICE_REVIEW_NOTE);
   });
 
-  it("caps metaphor and rules out roleplay", () => {
-    expect(PIP_VOICE).toContain("at most one light steam-and-steel phrase in a short reply");
+  it("specifies spoken phrasing and examples instead of just naming an accent", () => {
+    for (const phrase of ["we'll", "you've", "let's", "can't", "ain't", "reckon", "ol' friend", "a spell", "Y'all", "Cadence examples"]) {
+      expect(PIP_VOICE).toContain(phrase);
+    }
+    expect(PIP_VOICE).toContain("Don't spell out an accent phonetically");
+    expect(PIP_VOICE).toContain("At most one light steam-and-steel phrase in a short reply");
     expect(PIP_VOICE).toContain("none is required");
-    expect(PIP_VOICE).toContain("Ordinary planning language comes first");
     expect(PIP_VOICE).toContain("No roleplay");
   });
 
@@ -29,7 +30,6 @@ describe("Pip's voice", () => {
       "calendar coverage and anything needing the person's confirmation",
       "study-card titles and goals",
       "citations and quotes",
-      "refusals",
     ]) {
       expect(PIP_VOICE).toContain(literal);
     }
@@ -42,8 +42,14 @@ describe("Pip's voice", () => {
     expect(PIP_VOICE).toContain("Never claim analysis, completed work, or calendar coverage the facts do not show");
   });
 
-  it("leaves the fixed refusal literal", () => {
-    const refusal = PIP_REFUSAL.toLowerCase();
-    for (const word of STEAM_WORDING) expect(refusal).not.toContain(word);
+  it("uses the same short playful redirect for generated and fixed refusals", () => {
+    expect(PIP_REFUSAL).toMatch(/^You know I can't do that, ol' friend!/);
+    expect(PIP_REFUSAL).toContain("What's due next?");
+    expect(PIP_REFUSAL.split(/\s+/).length).toBeLessThan(30);
+    expect(PIP_REFUSAL).not.toMatch(/homework|exam answers|work to submit|unrelated requests|I can help you plan/i);
+    expect(PIP_ANSWER_RULES).toContain(`reply with exactly this line, with no preface, capability list, or explanation: "${PIP_REFUSAL}"`);
+    expect(PIP_VOICE).toContain("Never recite capabilities, forbidden categories, or policy disclaimers");
+    expect(PIP_VOICE_REVIEW_NOTE).toContain("brief playful refusal followed by a planning question");
+    expect(PIP_VOICE_REVIEW_NOTE).toContain("judge the substance against the same scope policy");
   });
 });
