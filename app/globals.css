@@ -160,7 +160,9 @@ input[type="range"] {
   .bp-signin-toast-progress { animation-timing-function: steps(5, end); }
 }
 
-/* Pip's reply is brewing: small steam wisps, with a still reduced-motion state. */
+/* Pip's reply is brewing; dots stay attached to the last word on narrow screens. */
+.bp-pip-dots { display: inline-block; margin-inline-start: 2px; overflow: visible; vertical-align: baseline; }
+.bp-pip-dot { opacity: 0.65; }
 .bp-pip-steam path { opacity: 0.75; }
 @keyframes bp-pip-steam {
   0%, 100% { opacity: 0.25; transform: translateY(2px); }
@@ -171,12 +173,19 @@ input[type="range"] {
   from { opacity: 0.5; }
   to { opacity: 1; }
 }
+@keyframes bp-pip-dot-wave {
+  0%, 40%, 100% { transform: translateY(0); opacity: 0.65; }
+  20% { transform: translateY(-3px); opacity: 1; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .bp-pip-steam path { animation: bp-pip-steam 1800ms ease-in-out infinite; }
   .bp-pip-steam path:nth-child(2) { animation-delay: -600ms; }
   .bp-pip-steam path:nth-child(3) { animation-delay: -1200ms; }
   .bp-pip-thought { animation: bp-pip-thought 200ms ease-out; }
-  .bp-pip-thinking[data-paused] :is(.bp-pip-steam path, .bp-pip-thought) { animation-play-state: paused; }
+  .bp-pip-dot { animation: bp-pip-dot-wave 1200ms ease-in-out infinite; }
+  .bp-pip-dot:nth-child(2) { animation-delay: 160ms; }
+  .bp-pip-dot:nth-child(3) { animation-delay: 320ms; }
+  .bp-pip-thinking[data-paused] :is(.bp-pip-steam path, .bp-pip-thought, .bp-pip-dot) { animation-play-state: paused; }
 }
 
 /* Boiler SVG motion. Liquid periods stay fixed; playback speed preserves phase. */
