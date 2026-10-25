@@ -1,10 +1,11 @@
 .bp-fill-loader {
+  --bp-loader-gray: #66666b;
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-  color: #66666b;
+  color: var(--bp-loader-gray);
 }
 .bp-fill-loader svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .bp-fill-loader-sm { width: 16px; height: 20px; }
@@ -41,6 +42,6 @@
 }
 .bp-fill-loader[data-paused] :is(.bp-fill-loader-fill, .bp-fill-loader-shape) { animation-play-state: paused; }
 @media (forced-colors: active) {
-  .bp-fill-loader { color: GrayText; }
+  .bp-fill-loader { --bp-loader-gray: GrayText; }
   .bp-fill-loader-fill { color: CanvasText; }
 }
