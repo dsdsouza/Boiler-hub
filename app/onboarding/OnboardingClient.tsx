@@ -40,7 +40,7 @@ import {
 import { ExtensionStep } from "./ExtensionStep";
 import { useExtension } from "./useExtension";
 import { useDraftAutosave } from "./useDraftAutosave";
-import { readDraftBackup, rememberDraftBackup } from "./draft-backup";
+import { clearDraftBackup, readDraftBackup, rememberDraftBackup } from "./draft-backup";
 import { DeadlineReview } from "./DeadlineReview";
 import { courseworkReady, courseworkSources, type SetupCheck } from "./setup";
 import {
@@ -73,7 +73,6 @@ const TITLES: Record<StepId, string> = {
   status: "How are you showing up today?",
   team: "Have a team invite?",
   recommendation: "A starting point, just for you.",
-  ready: "Your boiler is ready.",
 };
 const OPTIONAL: StepId[] = [
   "calendar",
@@ -140,6 +139,7 @@ export function OnboardingClient({
     track(next);
     setDraft(next);
     rememberDraftBackup(next);
+    if (next.finished) clearDraftBackup(next);
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(next));
     } catch {
@@ -220,7 +220,7 @@ export function OnboardingClient({
       ...values,
       finished: false,
       completed: draft.completed.filter(
-        (s) => s !== "recommendation" && s !== "ready",
+        (s) => s !== "recommendation",
       ),
     });
   const sync = useCallback(async () => {
@@ -301,18 +301,16 @@ export function OnboardingClient({
   }
   const setupReady = (pip.state === "installed" || draft.extensionDeferred) &&
     (draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
-  const valid =
+  const valid = (step === "recommendation" && draft.finished) || (
     isStepValid(step, draft, signedIn) &&
     (step !== "extension" || pip.state === "installed") &&
     (step !== "calendar" || draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt)) &&
     (step !== "review" || (!!reviewReceipt && reviewed)) &&
-    (step !== "recommendation" || setupReady) &&
-    // Opening the app after saved completion does not submit setup again.
-    // Review receipts intentionally stay in memory and disappear on reload.
-    (step !== "ready" || draft.finished);
+    (step !== "recommendation" || setupReady));
   const canSkip = OPTIONAL.includes(step) && !(draft.role === "student" && step === "calendar");
   async function finishLater() {
     if (!loaded || loadFailed || busy || sourceBusy) return;
+    if (draft.finished) { location.assign(plan.href); return; }
     setBusy(true); setError("");
     const next = { ...draft, finished: false };
     try {
@@ -331,8 +329,7 @@ export function OnboardingClient({
       (!skip && !valid)
     )
       return;
-    if (step === "ready") {
-      if (!draft.finished) return;
+    if (step === "recommendation" && draft.finished) {
       location.assign(plan.href);
       return;
     }
@@ -365,7 +362,6 @@ export function OnboardingClient({
         next = {
           ...next,
           finished: true,
-          completed: [...new Set([...next.completed, "ready" as const])],
         };
       if (signedIn)
         await save(next, {
@@ -377,6 +373,7 @@ export function OnboardingClient({
             : null,
         });
       persist(next);
+      if (next.finished) location.assign(plan.href);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -605,9 +602,6 @@ export function OnboardingClient({
                 onBusyChange={setSourceBusy}
                 onAdded={sourceAdded}
               />
-              <p className="mt-5 mb-0 text-sm text-muted">
-                Titles and dates are fetched live. Private subscription links are stored encrypted.
-              </p>
             </Disclosure>
             {draft.role === "student" && (
               <div className="mt-5 border-t border-line pt-4">
@@ -759,9 +753,6 @@ export function OnboardingClient({
                   className={`${field} font-mono tracking-[0.2em]`}
                   placeholder="ABC123"
                 />
-                <p className="mt-2 mb-0 text-sm text-muted">
-                  Use the six letters and numbers from your invite.
-                </p>
               </>
             )}
           </>
@@ -770,66 +761,50 @@ export function OnboardingClient({
       case "recommendation":
         content = (
           <>
-            <p className={styles.intro}>
-              {draft.goal === "recommend"
-                ? `Based on your answers, ${draft.name.trim()}, Pip recommends this.`
-                : `Here’s where we’ll begin, ${draft.name.trim()}.`}
-            </p>
-            <div className="mb-5 border-y border-line py-4" aria-label="Setup checks">
-              <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : draft.extensionDeferred ? "Pip setup saved for later" : "Pip connection needs checking"}</p>
-              <Button variant="ghost" onClick={() => navigate("extension")}>{draft.extensionDeferred && pip.state !== "installed" ? "Set up Pip" : "Check Pip"}</Button>
-              {draft.role === "student" && <>
+            <div className="mb-6 flex items-center gap-4">
+              {showPip && <Mascot size={96} score={boiler?.result.score ?? 20} reaction="wave" />}
+              <p className="m-0 leading-relaxed text-body">{plan.body}</p>
+            </div>
+            {draft.extensionDeferred && !draft.finished && (
+              <div className="flex flex-col gap-5">
+                <div>
+                  <label htmlFor="first-task" className={styles.label}>Your first task</label>
+                  <input id="first-task" required maxLength={200} value={draft.milestone}
+                    onChange={(e) => patch({ milestone: e.target.value })}
+                    className={field} placeholder="e.g. Finish my project outline" />
+                </div>
+                <div>
+                  <label htmlFor="first-task-due" className={styles.label}>Due date (optional)</label>
+                  <input id="first-task-due" type="date" value={draft.deadline}
+                    onChange={(e) => patch({ deadline: e.target.value })}
+                    onInput={(e) => patch({ deadline: e.currentTarget.value })}
+                    className={field} />
+                </div>
+              </div>
+            )}
+            {!draft.finished && (!draft.extensionDeferred || draft.role === "student") && (
+              <div className="mt-5" aria-label="Setup checks">
+                {!draft.extensionDeferred && <>
+                  <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : "Pip connection needs checking"}</p>
+                  <Button variant="ghost" onClick={() => navigate("extension")}>Check Pip</Button>
+                </>}
+                {draft.role === "student" && <>
                 <p className="text-sm">{courseworkReady(boiler) && reviewReceipt ? "Coursework import verified" : "Coursework import needs checking"}</p>
                 <Button variant="ghost" onClick={() => navigate("calendar")}>Check coursework</Button>
                 <p className="text-sm">{reviewed && reviewReceipt ? "Deadlines reviewed" : "Deadline review still needed"}</p>
                 <Button variant="ghost" onClick={() => navigate("review")}>Review deadlines</Button>
-              </>}
-            </div>
-            <div className="border-y border-line py-6">
-              <h2 className="mt-0 mb-3 font-display text-[32px] font-normal">
-                {plan.title}
-              </h2>
-              <p className="m-0 leading-relaxed text-body">{plan.body}</p>
-              {draft.milestone && goal === "deadlines" && (
-                <p className="mt-4 mb-0 text-sm text-brass-ink">
-                  First task: {draft.milestone}
-                  {draft.deadline
-                    ? ` · ${new Date(`${draft.deadline}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
-                    : " · no deadline yet"}
-                </p>
-              )}
-            </div>
-            <p className="mt-5 mb-0 text-sm text-muted">
-              You can change your setup later. Your team visibility starts
-              hidden.
-            </p>
-          </>
-        );
-        break;
-      case "ready":
-        content = (
-          <>
-            <div className="mb-5 flex items-center gap-4">
-              {showPip && (<Mascot
-                size={96}
-                score={boiler?.result.score ?? 20}
-                reaction="wave"
-              />)}
-              <div>
-                <h2 className="mt-0 mb-2 font-display text-[32px] font-normal">
-                  All set, {draft.name.trim()}.
-                </h2>
-                <p className="m-0 leading-relaxed text-body">
-                  {goal === "team"
-                    ? "Your next step is waiting in Teams."
-                    : "Your calendar, status and starting point are ready in My Boiler."}
-                </p>
+                </>}
               </div>
-            </div>
-            <p className="m-0 border-t border-line pt-5 text-sm text-muted">
-              Pip measures your workload. You’re always the judge of how you
-              feel.
-            </p>
+            )}
+            {draft.milestone && (goal === "deadlines" || draft.extensionDeferred) &&
+              (!draft.extensionDeferred || draft.finished) && (
+              <p className="mt-4 mb-0 text-sm text-brass-ink">
+                First task: {draft.milestone}
+                {draft.deadline
+                  ? ` · ${new Date(`${draft.deadline}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+                  : " · no deadline yet"}
+              </p>
+            )}
           </>
         );
         break;
@@ -912,7 +887,7 @@ export function OnboardingClient({
                       >
                         {titleFor(step)}
                       </h1>
-                      {!["reassurance", "ready"].includes(step) && (
+                      {!["reassurance", "recommendation"].includes(step) && (
                         <div className="hidden shrink-0 sm:block">
                           {showPip && (<Mascot
                             size={64}
@@ -991,10 +966,8 @@ export function OnboardingClient({
                           ? "Saving…"
                           : canDeferExtension
                             ? "Skip"
-                          : step === "ready"
-                            ? plan.action
-                            : step === "recommendation"
-                              ? "Finish setup"
+                          : step === "recommendation"
+                              ? draft.finished ? plan.action : "Finish setup"
                               : step === "team" &&
                                   draft.inviteCode &&
                                   !draft.joinedTeam
