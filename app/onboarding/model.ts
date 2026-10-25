@@ -13,6 +13,7 @@ export type StepId =
   | "account"
   | "extension"
   | "calendar"
+  | "reading"
   | "review"
   | "milestone"
   | "deadline"
@@ -121,6 +122,7 @@ export function stepsFor(draft: OnboardingDraft): StepId[] {
     "account",
     "extension",
     "calendar",
+    ...(!draft.extensionDeferred ? ["reading" as const] : []),
     ...(draft.role === "student" ? ["review" as const] : []),
     ...(goal === "deadlines"
       ? [
@@ -208,6 +210,7 @@ export function parseDraft(value: unknown): OnboardingDraft {
   };
   const all: StepId[] = [
     ...stepsFor(draft),
+    "reading",
     "milestone",
     "deadline",
   ];
@@ -221,6 +224,12 @@ export function parseDraft(value: unknown): OnboardingDraft {
         ),
       ]
     : [];
+  // Completed journeys predate the separate reading page; keep them complete.
+  if (
+    v.version === 2 && draft.finished && !draft.extensionDeferred &&
+    draft.completed.includes("calendar") && !draft.completed.includes("reading")
+  )
+    draft.completed.push("reading");
   if (v.version === 1) {
     draft.finished = false;
     draft.completed = draft.completed.filter((s) => !["extension", "calendar", "review", "recommendation", "ready"].includes(s));

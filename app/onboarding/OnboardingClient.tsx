@@ -66,7 +66,8 @@ const TITLES: Record<StepId, string> = {
   account: "Keep your progress. Connect your calendar.",
   extension: "Meet Pip in your browser.",
   review: "Review your imported deadlines.",
-  calendar: "Bring your week into view.",
+  calendar: "Bring your week into view",
+  reading: "Your first reading",
   milestone: "What’s one thing you want to finish?",
   deadline: "When would you like to finish it?",
   status: "How are you showing up today?",
@@ -135,11 +136,8 @@ export function OnboardingClient({
   const [reviewed, setReviewed] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const navigationLock = useRef(false);
   const loadRequest = useRef(0);
-  const wheelGesture = useRef({ delta: 0, at: 0 });
   const skipDialog = useRef<HTMLDialogElement>(null);
-  const touch = useRef<{ x: number; y: number } | null>(null);
   const persist = useCallback((next: OnboardingDraft) => {
     track(next);
     setDraft(next);
@@ -249,7 +247,7 @@ export function OnboardingClient({
     if (
       signedIn &&
       loaded &&
-      (step === "calendar" || step === "review" || step === "recommendation") &&
+      (step === "calendar" || step === "reading" || step === "review" || step === "recommendation") &&
       !boiler &&
       !syncError &&
       !syncing
@@ -272,27 +270,9 @@ export function OnboardingClient({
   );
   useEffect(() => {
     if (!loaded || loadFailed) return;
-    navigationLock.current = true;
-    wheelGesture.current = { delta: 0, at: 0 };
     viewport.current?.scrollTo({ top: 0, behavior: "instant" });
     heading.current?.focus({ preventScroll: true });
-    const timer = setTimeout(() => {
-      navigationLock.current = false;
-    }, 280);
-    return () => clearTimeout(timer);
   }, [loaded, loadFailed, step]);
-  function scrollToQuestion(direction: number) {
-    if (navigationLock.current || busy || sourceBusy) return;
-    const el = viewport.current;
-    if (!el) return;
-    const atBoundary = direction < 0 ? el.scrollTop <= 1
-      : el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-    const target = steps[index + direction];
-    if (atBoundary && target && steps.indexOf(target) <= unlocked) {
-      navigationLock.current = true;
-      navigate(target);
-    }
-  }
   function revealPanel(e: SyntheticEvent<HTMLDetailsElement>) {
     const panel = e.currentTarget;
     if (!panel.open) return;
@@ -634,9 +614,21 @@ export function OnboardingClient({
                 <Button variant="secondary" disabled={syncing || sourceBusy} onClick={() => void sync()}>{syncing ? "Checking coursework…" : "Check coursework again"}</Button>
               </div>
             )}
+          </>
+        );
+        break;
+      case "reading":
+        content = (
+          <>
+            {syncing && <FlameLoader label="Reading your week…" />}
+            {syncError && (
+              <div role="alert">
+                <p className="text-redline-ink">{syncError}</p>
+                <Button onClick={() => void sync()}>Try calendar again</Button>
+              </div>
+            )}
             {boiler && (
-              <div className="mt-6 border-t border-line pt-5">
-                <p className="mt-0 mb-4 font-semibold">Your first reading</p>
+              <div>
                 <div className="flex items-center gap-5">
                   <Boiler
                     score={boiler.result.score}
@@ -921,39 +913,6 @@ export function OnboardingClient({
               <div
                 ref={viewport}
                 className={styles.viewport}
-                onWheel={(e) => {
-                  if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-                  const now = performance.now();
-                  const gesture = wheelGesture.current;
-                  if (now - gesture.at > 180 || Math.sign(e.deltaY) !== Math.sign(gesture.delta)) gesture.delta = 0;
-                  gesture.at = now;
-                  gesture.delta += e.deltaY;
-                  if (Math.abs(gesture.delta) >= 100) {
-                    scrollToQuestion(Math.sign(gesture.delta));
-                    gesture.delta = 0;
-                  }
-                }}
-                onTouchStart={(e) => {
-                  touch.current = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY,
-                  };
-                }}
-                onTouchEnd={(e) => {
-                  const start = touch.current;
-                  touch.current = null;
-                  if (!start) return;
-                  const dx = e.changedTouches[0].clientX - start.x,
-                    dy = e.changedTouches[0].clientY - start.y;
-                  const el = e.target as HTMLElement;
-                  if (
-                    Math.abs(dy) < 90 ||
-                    Math.abs(dy) < Math.abs(dx) ||
-                    el.closest("input,textarea,select,button,summary,a")
-                  )
-                    return;
-                  scrollToQuestion(dy < 0 ? 1 : -1);
-                }}
               >
                 <section
                   key={step}
