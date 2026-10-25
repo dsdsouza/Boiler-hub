@@ -26,7 +26,6 @@ import {
 import { StatusPicker } from "@/components/boiler/StatusPicker";
 import {
   CalendarFeedForm,
-  GitHubTokenForm,
 } from "@/components/sources/SourceForms";
 import type { AddedSource } from "@/components/sources/api";
 import type { BoilerResponse } from "@/lib/pressure/api-types";
@@ -139,7 +138,6 @@ export function OnboardingClient({
   const [syncError, setSyncError] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [pendingFeed, setPendingFeed] = useState<string | null>(null);
-  const [sourceTab, setSourceTab] = useState<"feed" | "github">("feed");
   const [joined, setJoined] = useState("");
   const [verified, setVerified] = useState({ calendar: false, focus: false });
   const verifyCalendar = useCallback(
@@ -720,7 +718,7 @@ export function OnboardingClient({
         content = (
           <>
             <p className={styles.intro}>
-              Connect coursework, Apple Calendar or GitHub to bring more of your
+              Connect coursework or Apple Calendar to bring more of your
               work together. You can always add these later in Sources.
             </p>
             {boiler?.sources?.length ? (
@@ -728,45 +726,13 @@ export function OnboardingClient({
                 Connected: {boiler.sources.map((s) => s.label).join(", ")}.
               </p>
             ) : null}
-            <div
-              role="group"
-              aria-label="Choose another source"
-              className="mb-5 flex flex-wrap gap-2"
-            >
-              <Button
-                disabled={sourceBusy}
-                aria-pressed={sourceTab === "feed"}
-                variant={sourceTab === "feed" ? "secondary" : "ghost"}
-                onClick={() => setSourceTab("feed")}
-              >
-                Calendar feed
-              </Button>
-              <Button
-                disabled={sourceBusy}
-                aria-pressed={sourceTab === "github"}
-                variant={sourceTab === "github" ? "secondary" : "ghost"}
-                onClick={() => setSourceTab("github")}
-              >
-                GitHub
-              </Button>
-            </div>
-            <div hidden={sourceTab !== "feed"}>
-              <CalendarFeedForm
-                idPrefix="ob-feed"
-                onAdded={sourceAdded}
-                onBusyChange={setSourceBusy}
-              />
-            </div>
-            <div hidden={sourceTab !== "github"}>
-              <GitHubTokenForm
-                idPrefix="ob-gh"
-                onAdded={sourceAdded}
-                onBusyChange={setSourceBusy}
-              />
-            </div>
+            <CalendarFeedForm
+              idPrefix="ob-feed"
+              onAdded={sourceAdded}
+              onBusyChange={setSourceBusy}
+            />
             <p className="mt-5 mb-0 text-sm text-muted">
-              Titles and dates are fetched live. Private subscription links and
-              tokens are stored encrypted.
+              Titles and dates are fetched live. Private subscription links are stored encrypted.
             </p>
           </>
         );

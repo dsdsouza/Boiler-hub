@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { encrypt } from "@/lib/crypto";
 import { parseFeedUrl } from "@/lib/sources/fetch";
 import { defaultFeedLabel, isCourseworkUrl } from "@/lib/sources/hints";
-import { ADAPTERS, errorMessage, fetchNewSource, toSummary } from "@/lib/sources/load";
-import { SOURCE_COLUMNS, SourceError, type SourceKind, type SourceRow } from "@/lib/sources/types";
+import { errorMessage, fetchNewSource, toSummary } from "@/lib/sources/load";
+import { SOURCE_COLUMNS, SourceError, type SourceRow } from "@/lib/sources/types";
 import { badRequest, readJson, requireUser, serverError, syncSelf } from "@/app/api/me/_lib/http";
 import { MAX_SOURCES, itemCounts } from "./_lib";
 
@@ -17,9 +17,9 @@ export async function GET() {
   return NextResponse.json({ sources: (data ?? []).map(toSummary) });
 }
 
-// POST { kind: 'ics', url, label?, coursework? } | { kind: 'github', token, label? }
+// POST { kind: 'ics', url, label?, coursework? }
 // Validates by fetching before saving; a source that cannot be read is not saved (400 with the reason).
-// Encrypts the URL or token, inserts, resyncs. Returns { source, itemCount, tasks, events, boiler }.
+// Encrypts the URL, inserts, resyncs. Returns { source, itemCount, tasks, events, boiler }.
 // The source is saved once inserted: if only the resync fails, it still returns 201, with
 // `boiler: null` and a `warning`, so a retry does not add it twice.
 export async function POST(request: Request) {
@@ -28,9 +28,8 @@ export async function POST(request: Request) {
 
   const body = await readJson(request);
   if (!body) return badRequest("Expected a JSON object");
-  const kind = body.kind as SourceKind;
-  if (kind !== "ics" && kind !== "github") return badRequest("kind must be ics or github");
-  if (!ADAPTERS[kind]) return badRequest(`${kind} sources are not supported yet`);
+  if (body.kind !== "ics") return badRequest("Only calendar feeds are supported.");
+  const kind = "ics";
   if (body.label !== undefined && (typeof body.label !== "string" || body.label.trim().length > 60)) {
     return badRequest("label must be at most 60 characters");
   }
@@ -40,24 +39,16 @@ export async function POST(request: Request) {
   let label: string;
   let coursework = false;
   try {
-    if (kind === "ics") {
-      if (typeof body.url !== "string" || body.url.length > 2048) return badRequest("url is required");
-      secret = parseFeedUrl(body.url).href;
-      label = (body.label as string | undefined)?.trim() || defaultFeedLabel(secret);
-      coursework = (body.coursework as boolean | undefined) ?? isCourseworkUrl(secret);
-    } else {
-      if (typeof body.token !== "string" || !/^[A-Za-z0-9_]{20,255}$/.test(body.token.trim())) {
-        return badRequest("Paste a GitHub personal access token");
-      }
-      secret = body.token.trim();
-      label = (body.label as string | undefined)?.trim() || "GitHub";
-    }
+    if (typeof body.url !== "string" || body.url.length > 2048) return badRequest("url is required");
+    secret = parseFeedUrl(body.url).href;
+    label = (body.label as string | undefined)?.trim() || defaultFeedLabel(secret);
+    coursework = (body.coursework as boolean | undefined) ?? isCourseworkUrl(secret);
   } catch (e) {
     if (e instanceof SourceError) return badRequest(e.message);
     throw e;
   }
 
-  const { count, error: countError } = await auth.supabase.from("sources").select("id", { count: "exact", head: true });
+  const { count, error: countError } = await auth.supabase.from("sources").select("id", { count: "exact", head: true }).eq("kind", "ics");
   if (countError) return serverError("POST /api/sources count", countError);
   if ((count ?? 0) >= MAX_SOURCES) return badRequest(`You can connect up to ${MAX_SOURCES} sources`);
 

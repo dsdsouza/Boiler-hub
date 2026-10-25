@@ -105,17 +105,17 @@ The MVP is six screens plus a demo mode; everything else is stretch.
 1. ~~ICS feed URL import (Canvas, Outlook, Blackboard) as a task and event source.~~ Shipped, see Sources.
 2. Browser extension mock: a floating gauge over Google Calendar, UI only, reading the demo or `/api/me/boiler`.
 3. Pipe reroute: in the Engine Room, drag a team assignment from one member to another and watch both needles move.
-4. ~~GitHub issues assigned to me as a task source, size from `size:S/M/L` labels.~~ Shipped, see Sources.
+4. ~~GitHub issues assigned to me as a task source, size from `size:S/M/L` labels.~~ Retired; see Sources.
 5. Mood check-in modifier (plus or minus up to 10 points), owner-only.
 6. Slack or Discord bot posting redline alerts.
 
 ## Sources
 
-Tasks also come from external sources, not just manual entry. A source is an ICS feed (Brightspace, Canvas, Outlook, any calendar) or a GitHub personal access token, added at `/settings/sources` or in onboarding. Each sync fetches every source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
+Tasks also come from external sources, not just manual entry. A supported source is an ICS feed (Brightspace, Canvas, Outlook, or another calendar), added at `/settings/sources` or in onboarding. Each sync fetches every supported source live and merges its items with the calendar and manual tasks; titles and due dates are never stored, only the owner's overrides.
 
 **ICS.** Fetched with a 10 s timeout behind an SSRF guard (https only; the host and every address it resolves to must be public; redirects re-checked). Events in the next 7 days count. Deadlines in the next 14 days count, with another 7 days fetched for forecast preparation. Deadlines up to 60 days overdue are listed; past 14 overdue days they keep a reduced backlog weight and remain counted. Deadline-like entries (zero-length, a title with due, assignment, quiz, exam, midterm, final, project or lab, or all-day in a *coursework* feed) become tasks due at their time (all-day: 23:59 that day); sized by title, first match wins: L for exam, midterm or final; M for quiz, project, lab, paper, essay, report or presentation; S for homework, assignment, discussion, reading and everything else. Other timed entries become events and can be tagged Light/Normal/Heavy. Brightspace and Canvas feeds are coursework feeds by default. A first sync never guesses that overdue work is done. Owners review overdue assignments before bulk completion, and completed or cleared feed items remain available for individual restoration while present in the feed.
 
-**GitHub** (read-only fine-grained token: Issues, Pull requests, Actions, Metadata). Open issues assigned to me (size from `size:S/M/L` labels, due at the milestone's due date or in 7 days); PRs with my review requested (S, due in 2 days); my open PRs whose latest Actions run failed ("Fix CI: repo#n", S, due in 1 day); issues assigned to me closed as completed and my PRs merged in the last 48 h count as completed tasks with no remaining load or negative credit. Rate limits mark the source as errored with the retry time.
+**Retired GitHub integration.** New GitHub connections and source tests are rejected. Sync, Pip and the deadline calendar ignore historical GitHub sources without decrypting or fetching them. Historical rows are shown disconnected in Sources and can be removed by their owner; there is no automatic token or data purge. Existing kind values remain for compatibility, with no schema migration. See [source connections](sources.md).
 
 **Overrides and health.** Owners can mark source items done or undone and change their size; these live in `source_item_state`, keyed by a SHA-256 of the external id. A failing source is marked `error` with a readable message and skipped; it never fails the sync. Fetches are cached in memory for a few minutes per server instance (best-effort); Refresh bypasses the cache. Team assignment posts do not fetch anyone's calendar or sources: they update existing snapshots with the preview math (keeping each snapshot's original `computed_at`, and creating none for members who never synced), and each member's next sync reconciles.
 
@@ -126,9 +126,9 @@ Tasks also come from external sources, not just manual entry. A source is an ICS
 
 | Method and path | Returns or does |
 | --- | --- |
-| `GET /api/sources`, `POST /api/sources` | List (no secrets); add after validating the URL or token |
+| `GET /api/sources`, `POST /api/sources` | List (no secrets); add a calendar feed after validating its URL |
 | `DELETE /api/sources/[id]` | Remove a source and its overrides |
-| `POST /api/sources/[id]/test` | Refetch and report the item count |
+| `POST /api/sources/[id]/test` | Refetch a calendar feed and report the item count; retired integrations return 410 |
 | `PATCH /api/sources/items` | Mark done or undone, set a size, or clear overdue items without a vent |
 
 ## Visual direction
@@ -158,7 +158,7 @@ The boiler is the product, so the UI track gets the most design time: a warm, ta
 
 Pressure is a pure, deterministic function of events over the next 7 days and tasks due over the next 14 days, plus unfinished overdue work, mapped to 0 to 100. It lives in `lib/pressure`, has no I/O, and is unit tested. All constants sit in one `config.ts` so they can be tuned in minutes.
 
-**Inputs.** Every source (Google events, in-app tasks, team assignments, later ICS and GitHub) is normalized to one `LoadItem` shape before it reaches the engine.
+**Inputs.** Every source (Google events, in-app tasks, team assignments, connected ICS feeds) is normalized to one `LoadItem` shape before it reaches the engine.
 
 **Event filtering (from Google Calendar fields)**
 
@@ -521,4 +521,4 @@ The demo is 3 minutes, built around one moment: a lead previews an assignment an
 - [ ] Final product name and domain (Boilerplate, Redline, Steamworks).
 - [ ] Can we get judge emails before judging to add as Google test users?
 
-**Pitch "next steps" slide.** ICS and Canvas, GitHub and Jira through the same LoadItem adapter; browser extension; Slack alerts; Google verification for public launch.
+**Pitch "next steps" slide.** More coursework providers through the same LoadItem adapter; browser extension; Slack alerts; Google verification for public launch.

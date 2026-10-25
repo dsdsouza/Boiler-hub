@@ -29,7 +29,7 @@ it("imports a Brightspace schedule through the source endpoint without persistin
   const insert = vi.fn((row: Record<string, unknown>) => ({
     select: () => ({ single: async () => ({ data: { ...row, status: "ok", error: null, last_synced_at: now.toISOString() }, error: null }) }),
   }));
-  mocks.requireUser.mockResolvedValue({ user, supabase: { from: () => ({ select: async () => ({ count: 0, error: null }), insert }) } });
+  mocks.requireUser.mockResolvedValue({ user, supabase: { from: () => ({ select: () => ({ eq: async () => ({ count: 0, error: null }) }), insert }) } });
   mocks.syncSelf.mockResolvedValue({ sources: [] });
   const link = "https://purdue.brightspace.com/d2l/le/calendar/feed/user/feed.ics?token=fictional-schedule-token";
 

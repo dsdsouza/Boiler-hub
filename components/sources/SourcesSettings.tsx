@@ -51,7 +51,8 @@ function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChan
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const removeButton = useRef<HTMLButtonElement>(null);
   const confirmButton = useRef<HTMLButtonElement>(null);
-  const ok = source.status === "ok";
+  const ok = source.kind === "ics" && source.status === "ok";
+  const retired = source.kind !== "ics";
   useEffect(() => { if (confirming) confirmButton.current?.focus(); }, [confirming]);
 
   async function test() {
@@ -60,7 +61,7 @@ function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChan
     try {
       const r = await sourcesCall<TestResult>(`/api/sources/${source.id}/test`, "POST");
       onChange(r.source);
-      const found = source.kind === "github" ? `Found ${r.tasks} ${r.tasks === 1 ? "item" : "items"}` : foundLine(r);
+      const found = foundLine(r);
       setNote(r.ok ? { ok: true, text: `${found}.` } : { ok: false, text: r.error ?? "The source did not respond" });
     } catch (e) { setNote({ ok: false, text: (e as Error).message }); }
     finally { setBusy(null); }
@@ -86,16 +87,16 @@ function SourceRow({ source, onChange, onRemoved }: { source: SourceInfo; onChan
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
             <span className={`inline-flex items-center gap-1.5 font-medium ${ok ? "text-cool-ink" : "text-redline-ink"}`}>
               <span aria-hidden="true" className={`size-1.5 rounded-full ${ok ? "bg-zone-cool" : "bg-zone-redline"}`} />
-              {ok ? "Connected" : "Needs attention"}
+              {retired ? "Disconnected" : ok ? "Connected" : "Needs attention"}
             </span>
-            <span className="text-muted">· {source.lastSyncedAt ? `Last synced ${timeAgo(source.lastSyncedAt)}` : "Never synced"}</span>
+            {!retired && <span className="text-muted">· {source.lastSyncedAt ? `Last synced ${timeAgo(source.lastSyncedAt)}` : "Never synced"}</span>}
           </div>
-          {!ok && source.error && <p className="m-0 text-[13px] leading-relaxed text-body wrap-anywhere">{source.error}</p>}
+          {(retired || !ok && source.error) && <p className="m-0 text-[13px] leading-relaxed text-body wrap-anywhere">{retired ? "This integration has been removed." : source.error}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => void test()} aria-label={`Test ${source.label}`} aria-disabled={busy !== null} aria-busy={busy === "test"}>
+          {!retired && <Button onClick={() => void test()} aria-label={`Test ${source.label}`} aria-disabled={busy !== null} aria-busy={busy === "test"}>
             {busy === "test" ? "Testing…" : "Test"}
-          </Button>
+          </Button>}
           <Button ref={removeButton} variant="ghost" onClick={() => { if (!busy) setConfirming(true); }} aria-expanded={confirming} aria-controls={`${uid}-remove`} aria-label={`Remove ${source.label}`} aria-disabled={busy !== null}>Remove</Button>
         </div>
       </div>
