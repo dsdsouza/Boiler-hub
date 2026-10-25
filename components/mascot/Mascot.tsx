@@ -87,7 +87,9 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
   const attentive = reaction === "attentive" || boiling || zone === "redline";
   const greeting = reaction === "greet" && !carried;
   const waving = reaction === "wave" || greeting || (reaction === "idle" && zone === "cool" && !empty);
-  const motion = dancing ? "mp-dance" : boiling ? "mp-boil" : celebrating || greeting ? "mp-hop" : undefined;
+  const dozing = reaction === "doze";
+  const CHAT_MOTION: Partial<Record<Reaction, string>> = { listen: "mp-lean", nod: "mp-nod", bounce: "mp-bop", doze: "mp-doze" };
+  const motion = dancing ? "mp-dance" : boiling ? "mp-boil" : celebrating || greeting ? "mp-hop" : carried ? undefined : CHAT_MOTION[reaction];
   const puffs = empty ? [] : detail ? PUFFS[zone] : PUFFS[zone].slice(0, 2);
   const stroke = detail ? 3.5 : 5;
 
@@ -115,7 +117,7 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
             r={r}
             fill={zone === "cool" ? "var(--rivet)" : "var(--steam)"}
             className="mp-steam"
-            style={{ "--delay": `${delay}s`, "--dx": `${dx}px`, "--dur": zone === "redline" ? "2s" : "3.2s", "--o": zone === "cool" ? 0.7 : 0.85 } as React.CSSProperties}
+            style={{ "--delay": `${delay}s`, "--dx": `${dx}px`, "--dur": dozing ? "6s" : zone === "redline" ? "2s" : "3.2s", "--o": zone === "cool" ? 0.7 : 0.85 } as React.CSSProperties}
           />
         ))}
         {(celebrating || boiling) &&
@@ -141,6 +143,26 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
             [108, 10, 5, 0.6],
           ].map(([x, y, r, delay], i) => (
             <circle key={`t${i}`} cx={x} cy={y} r={r} fill="var(--steam)" className="mp-thought" style={{ "--delay": `${delay}s` } as React.CSSProperties} />
+          ))}
+        {dozing && detail &&
+          [
+            [86, 30, 0.7, 0],
+            [95, 18, 0.95, 0.9],
+            [105, 4, 1.2, 1.8],
+          ].map(([x, y, s, delay], i) => (
+            // The CSS animation owns the path's transform, so placement lives on the group.
+            <g key={`z${i}`} transform={`translate(${x} ${y}) scale(${s})`}>
+              <path
+                d="M-3 -3 H3 L-3 3 H3"
+                fill="none"
+                stroke="var(--steam)"
+                strokeWidth={1.6 / s}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mp-thought"
+                style={{ "--delay": `${delay}s`, animationDuration: "2.7s" } as React.CSSProperties}
+              />
+            </g>
           ))}
         {(zone === "redline" || boiling) && detail && !empty && (
           <>
@@ -237,9 +259,11 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
         )}
         {detail && attentive && <path d="M43 60.5 L51 59.5 M64 55.5 L75 55.5" stroke={ink(58)} strokeWidth="2" strokeLinecap="round" />}
 
-        <g className="mp-blink" transform={thinking ? "translate(1 -2.5)" : undefined}>
-          {celebrating ? (
+        <g className={dozing ? undefined : "mp-blink"} transform={thinking ? "translate(1 -2.5)" : reaction === "listen" ? "translate(-1.5 -0.5)" : undefined}>
+          {celebrating || reaction === "bounce" ? (
             <path d="M44.5 71 q3.5 -4 7 0" fill="none" stroke={ink(70)} strokeWidth="2.4" strokeLinecap="round" />
+          ) : dozing ? (
+            <path d="M44.5 70 q3.5 3 7 0" fill="none" stroke={ink(70)} strokeWidth="2.4" strokeLinecap="round" />
           ) : (
             <circle cx="48" cy="70" r={detail ? 3.6 : 4.4} fill={ink(70)} />
           )}
@@ -280,6 +304,8 @@ export function Mascot({ score, size = 120, reaction = "idle", empty, label, acc
 
 function Mouth({ zone, reaction, attentive, empty, detail, ink }: { zone: Zone; reaction: Reaction; attentive: boolean; empty?: boolean; detail: boolean; ink: string }) {
   const w = detail ? 2.2 : 2.8;
+  if (reaction === "doze") return <path d="M55.5 85 h6" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
+  if (reaction === "bounce") return <path d="M52 82 q6.5 8 13 0 z" fill={ink} stroke={ink} strokeWidth="1.4" strokeLinejoin="round" />;
   if (reaction === "talk") return <ellipse className="mp-talk" cx="58.5" cy="84.5" rx="3.6" ry="2.6" fill={ink} />;
   if (reaction === "greet") return <path d="M53 83 q5.5 5.5 11 0" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;
   if (reaction === "think") return <path d="M55 85 q2 -1.2 4 -0.4 t4 0.4" fill="none" stroke={ink} strokeWidth={w} strokeLinecap="round" />;

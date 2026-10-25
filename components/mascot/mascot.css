@@ -130,6 +130,31 @@
 }
 .mp-talk { transform-box: fill-box; transform-origin: center; animation: mp-talk 0.34s ease-in-out infinite; }
 
+/* Chat body language: lean in while you type, nod on send, a small bounce when a reply lands, doze when quiet. */
+@keyframes mp-lean-in {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-5deg); }
+}
+@keyframes mp-nod {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(2.5px) scale(1.02, 0.96); }
+}
+@keyframes mp-bop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+  70% { transform: translateY(0); }
+  85% { transform: translateY(-1.5px); }
+}
+@keyframes mp-doze {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.01, 1.02); }
+}
+/* The lean is a held pose: it stays tilted (without the ease-in) under reduced motion too. */
+.mp-lean { transform-box: view-box; transform-origin: 60px 126px; transform: rotate(-5deg); animation: mp-lean-in 0.3s ease-out; }
+.mp-nod { transform-box: view-box; transform-origin: 60px 126px; animation: mp-nod 0.35s ease-in-out 2; }
+.mp-bop { transform-box: view-box; transform-origin: 60px 126px; animation: mp-bop 0.6s ease-out 1; }
+.mp-doze { transform-box: view-box; transform-origin: 60px 126px; animation: mp-doze 3.2s ease-in-out infinite; }
+
 .mp-thought { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mp-thought 1.8s ease-in-out infinite; animation-delay: var(--delay, 0s); }
 .mp-ponder { animation: mp-ponder 0.9s ease-in-out infinite alternate; }
 
@@ -141,13 +166,17 @@
 [data-still] .mp-hero-dance,
 [data-still] .mp-hero-arm-l,
 [data-still] .mp-hero-arm-r,
-[data-still] .mp-talk {
+[data-still] .mp-talk,
+[data-still] .mp-lean,
+[data-still] .mp-nod,
+[data-still] .mp-bop,
+[data-still] .mp-doze {
   animation: none;
 }
 [data-still] .mp-thought { animation: none; opacity: 0.85; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder, .mp-hero-dance, .mp-hero-arm-l, .mp-hero-arm-r, .mp-talk { animation: none; }
+  .mp-dance, .mp-arm-l, .mp-arm-r, .mp-boil, .mp-ponder, .mp-hero-dance, .mp-hero-arm-l, .mp-hero-arm-r, .mp-talk, .mp-lean, .mp-nod, .mp-bop, .mp-doze { animation: none; }
   .mp-thought { animation: none; opacity: 0.85; }
 }
 
