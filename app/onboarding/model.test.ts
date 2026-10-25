@@ -46,6 +46,24 @@ describe("onboarding paths and retained progress", () => {
       resolvedGoal(parseDraft({ role: "professional", goal: "recommend" })),
     ).toBe("balance");
   });
+  it("shows the first reading directly after connection unless extension setup was deferred", () => {
+    const draft = parseDraft({ role: "student", name: "Josh", goal: "balance", starting: "fresh" });
+    const steps = stepsFor(draft);
+    expect(steps.slice(steps.indexOf("calendar"), steps.indexOf("review") + 1)).toEqual(["calendar", "reading", "review"]);
+    expect(stepsFor({ ...draft, extensionDeferred: true })).not.toContain("reading");
+    const resumed = parseDraft({ ...draft, current: "reading", completed: steps.slice(0, steps.indexOf("reading")) });
+    expect(resumed.current).toBe("reading");
+    expect(stepsFor(resumed)[unlockedIndex(resumed, true)]).toBe("reading");
+    const retained = parseDraft({ ...draft, extensionDeferred: true, completed: ["reading"] });
+    expect(retained.completed).toContain("reading");
+  });
+  it("keeps previously finished journeys ready after separating the reading page", () => {
+    const draft = parseDraft({ role: "other", name: "Josh", goal: "balance", starting: "fresh" });
+    const finished = parseDraft({ ...draft, current: "ready", finished: true, completed: stepsFor(draft).filter(step => step !== "reading") });
+    expect(finished.current).toBe("ready");
+    expect(finished.finished).toBe(true);
+    expect(stepsFor(finished)[unlockedIndex(finished, true)]).toBe("ready");
+  });
   it("asks only goal-relevant details, while retaining answers when paths change", () => {
     const d = parseDraft({
       role: "student",
