@@ -64,13 +64,22 @@ describe("connecting an Apple Calendar through POST /api/sources", () => {
     const response = await POST(request(label ? { label } : {}));
     const json = await response.json();
     expect(response.status).toBe(201);
-    expect(json).toMatchObject({ source: { label: label ?? "Apple Calendar", kind: "ics", coursework: false }, tasks: 1, events: 8 });
+    expect(json).toMatchObject({ source: { label: label ?? "Apple Calendar", kind: "ics", coursework: false }, tasks: 0, events: 8 });
     expect(db.inserted()).toMatchObject({ user_id: USER.id, label: label ?? "Apple Calendar", kind: "ics", coursework: false });
     expect(Object.keys(db.inserted()!).sort()).toEqual(["coursework", "id", "kind", "label", "secret_encrypted", "user_id"]);
     expect(decrypt(db.inserted()!.secret_encrypted as string)).toBe(LINK.replace("webcal:", "https:"));
     expect(JSON.stringify(json)).not.toContain("example-calendar-token");
     expect(JSON.stringify(json)).not.toContain("secret_encrypted");
     expect(mocks.syncSelf).toHaveBeenCalledWith(USER, { freshSources: true });
+  });
+
+  it("always connects Apple Calendar as a schedule, even when a client requests coursework", async () => {
+    const db = database();
+    mocks.requireUser.mockResolvedValue({ user: USER, supabase: db.client });
+    const response = await POST(request({ coursework: true }));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({ source: { coursework: false }, tasks: 0, events: 8 });
+    expect(db.inserted()).toMatchObject({ coursework: false });
   });
 
   it("requires sign-in before fetching a link or saving a source", async () => {
