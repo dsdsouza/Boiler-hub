@@ -1,6 +1,8 @@
 # Boilerplate QA
 
-The automated suite covers the public site, seeded demo, signed-out route/API boundaries, shipped PostgreSQL row-level security policies, and component save/failure behavior. Signed-in checks and exploration are explicit commands using the private synthetic account bank. A public-demo pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
+The public demo has been removed. Sample workload checks run only in the disposable QA app at `/qa-boiler`; that route is never shipped. Public checks verify `/demo` returns 404 and the home page leads to setup. Historical run counts below describe earlier versions.
+
+The automated suite covers the public site, isolated workload fixtures, signed-out route/API boundaries, shipped PostgreSQL row-level security policies, and component save/failure behavior. Signed-in checks and exploration are explicit commands using the private synthetic account bank. A public-page pass does not prove Google sign-in, calendar access, or live Supabase account behavior.
 
 ## Local QA army
 
@@ -158,7 +160,7 @@ The manual `TesterArmy cloud regression` workflow is ready to queue a saved grou
 
 | ID | Result | Regression coverage |
 | --- | --- | --- |
-| QA-001 | A shared demo owner state supplies Maya's status and note to the team card, including after team switching. Reload resets the fixture. | `tests/e2e/regressions.spec.ts` |
+| QA-001 | A shared demo owner state supplies Maya's status and note to the team card, including after team switching. Reload resets the fixture. | `tests/components/boiler-regressions.spec.ts` |
 | QA-002 | The form offers **No due date**. Undated tasks retain their remaining-work load, render an honest label and complete normally. | Browser regression and existing request/engine contracts |
 | QA-003 | Migration 0005 restricts the hidden-count RPC to leads and suppresses counts below two in SQL itself. | All 32 SQL identities, positive lead aggregates, outsiders, direct RPCs and legacy SQL contract |
 | QA-004 | The newer staging model already removes completion credit. Completed-task resizing preserves other work, and reopening uses the new size. | Normal demo lifecycle regression |

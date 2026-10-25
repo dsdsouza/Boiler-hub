@@ -16,7 +16,7 @@ export function Logo({ size = 30 }: { size?: number }) {
   );
 }
 
-export type NavKey = "boiler" | "calendar" | "teams" | "sources" | "how" | "demo";
+export type NavKey = "boiler" | "calendar" | "teams" | "sources" | "how";
 
 const APP_NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "boiler", href: "/boiler", label: "My Boiler" },

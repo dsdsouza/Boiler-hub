@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:regressions": "playwright test tests/e2e/regressions.spec.ts",
+    "test:e2e:regressions": "playwright test --config=playwright.components.config.ts tests/components/boiler-regressions.spec.ts",
     "test:e2e:all": "playwright test",
     "test:components": "playwright test --config=playwright.components.config.ts",
     "test:ui": "playwright test --config=playwright.ui-consistency.config.ts",
