@@ -125,6 +125,12 @@ test('forecast has seven days and today agrees with the gauge', async ({ page })
 });
 
 test('zone filter supports an empty state and switching teams resets it', async ({ page }) => {
+  // The default "Tomorrow" preview adds less pressure the further away tomorrow's deadline is, so
+  // shortly after midnight a student can stay Cool. Pin the evening the fixture expects.
+  const evening = new Date();
+  evening.setHours(21, 0, 0, 0);
+  await page.clock.install({ time: evening });
+  await openBoilerFixture(page);
   const filters = page.getByRole('group', { name: 'Filter by zone', exact: true });
   await filters.getByRole('button', { name: /^Cool/ }).click();
   await expect(page.getByRole('region', { name: 'AP Bio P3 boilers', exact: true })).toContainText('No visible students in this zone.');
