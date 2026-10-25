@@ -27,7 +27,7 @@ export function SourcesSettings({ initial }: { initial: SourceInfo[] }) {
         </div>
         {sources.length === 0 ? (
           <p className="m-0 border-t border-line py-3 text-sm text-muted">
-            Nothing connected yet. Add Apple Calendar, a coursework feed or GitHub below to include their events and deadlines.
+            Nothing connected yet. Add a feed below to get started!
           </p>
         ) : (
           <ul className="m-0 list-none p-0">
