@@ -8,8 +8,33 @@ import { deploymentRecovery } from "@/lib/deployment-recovery";
 import { PipConversationProvider } from "@/components/mascot/PipConversation";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://boilerplate.select"),
   title: "Boilerplate",
   description: "See who is near the red line before anyone blows.",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Boilerplate",
+    url: "https://boilerplate.select/",
+    title: "Boilerplate",
+    description: "See who is near the red line before anyone blows.",
+    images: [{
+      url: "/social/boilerplate-v1.png",
+      width: 1200,
+      height: 630,
+      type: "image/png",
+      alt: "Boilerplate — See who is near the red line before anyone blows. Pip, the boiler companion, waves beside the tagline.",
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Boilerplate",
+    description: "See who is near the red line before anyone blows.",
+    images: [{
+      url: "/social/boilerplate-v1.png",
+      alt: "Boilerplate — See who is near the red line before anyone blows. Pip, the boiler companion, waves beside the tagline.",
+    }],
+  },
 };
 
 export const viewport: Viewport = {
