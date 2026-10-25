@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
+import { Select } from "@/components/ui/Field";
 import {
   FOCUS_DOMAINS,
   nextStudyOpening,
@@ -235,42 +236,40 @@ export function StudyAccountability({
           </p>
           {tasks.length ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px]">
                 <label
                   className="grid gap-2 text-sm text-body"
                   htmlFor={`${id}-task`}
                 >
                   One task
-                  <select
+                  <Select
                     id={`${id}-task`}
                     value={task?.id ?? ""}
                     onChange={(event) => setSelected(event.target.value)}
-                    className="bp-field min-h-11 min-w-0 rounded-lg border bg-field px-3 text-fg"
                   >
                     {tasks.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.title}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label
                   className="grid gap-2 text-sm text-body"
                   htmlFor={`${id}-minutes`}
                 >
                   Focus time
-                  <select
+                  <Select
                     id={`${id}-minutes`}
                     value={minutes}
                     onChange={(event) => setMinutes(Number(event.target.value))}
-                    className="bp-field min-h-11 rounded-lg border bg-field px-3 text-fg"
                   >
                     {[10, 25, 45].map((value) => (
                       <option key={value} value={value}>
                         {value} minutes
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label
                   className="grid gap-2 text-sm text-body sm:col-span-2"

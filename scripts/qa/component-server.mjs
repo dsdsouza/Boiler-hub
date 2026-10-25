@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 // authentication is added to the shipped app, and no environment files are copied.
 const root = process.cwd();
 const directory = await mkdtemp(join(tmpdir(), 'boilerplate-component-qa-'));
-for (const name of ['app', 'components', 'lib', 'fixtures', 'public', 'package.json', 'tsconfig.json', 'next.config.ts', 'postcss.config.mjs']) {
+for (const name of ['app', 'components', 'lib', 'fixtures', 'public', 'browser-helper', 'package.json', 'tsconfig.json', 'next.config.ts', 'postcss.config.mjs']) {
   await cp(resolve(root, name), join(directory, name), { recursive: true });
 }
 await symlink(resolve(root, 'node_modules'), join(directory, 'node_modules'), 'dir');
