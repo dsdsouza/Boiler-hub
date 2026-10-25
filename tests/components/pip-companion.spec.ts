@@ -184,7 +184,15 @@ test('expanded history keeps the full cloud visible when Pip sits higher on a ph
     await expect.poll(async () => panel.evaluate(el => {
       const cloud = el.querySelector('.pip-speech-bubble')!.getBoundingClientRect();
       const body = el.querySelector('.pip-chat-body')!;
-      return cloud.bottom <= el.getBoundingClientRect().bottom + 1 && body.scrollHeight <= body.clientHeight + 1;
+      const card = el.querySelector('.pip-chat-window')!;
+      const collapse = card.querySelector('[aria-expanded="true"]')!.getBoundingClientRect();
+      const history = card.querySelector('[role="log"]')!;
+      const controls = history.parentElement!;
+      return cloud.bottom <= el.getBoundingClientRect().bottom + 1
+        && body.scrollHeight <= body.clientHeight + 1
+        && collapse.bottom <= card.getBoundingClientRect().bottom - 1
+        && history.getBoundingClientRect().bottom <= controls.getBoundingClientRect().bottom + 1
+        && controls.scrollHeight <= controls.clientHeight + 1;
     })).toBe(true);
     const history = panel.getByRole('log', { name: 'Conversation with Pip', exact: true });
     await expect(history).toBeVisible();
@@ -193,5 +201,9 @@ test('expanded history keeps the full cloud visible when Pip sits higher on a ph
     expect(historyBox.height).toBeLessThanOrEqual(96);
     await expect(panel.getByRole('textbox', { name: 'Message Pip', exact: true })).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Collapse conversation', exact: true })).toBeVisible();
+    if (process.env.PIP_SCREENSHOTS) {
+      await mkdir(process.env.PIP_SCREENSHOTS, { recursive: true });
+      await page.screenshot({ path: `${process.env.PIP_SCREENSHOTS}/pip-expanded-${width}-${test.info().project.name}.png` });
+    }
   }
 });

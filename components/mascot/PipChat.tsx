@@ -54,7 +54,7 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
   return <div className="pip-chat-body flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain">
     <div className="pip-chat-window flex min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-surface">
       {header}
-      <div className="flex min-h-0 flex-col gap-2 px-2 pb-1">
+      <div className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain px-2">
         <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="flex shrink-0 flex-col gap-2">
           <label htmlFor={field} className="sr-only">Message Pip</label>
           <div className="flex items-end gap-1 rounded-lg border border-control bg-field p-1 focus-within:border-brass">
@@ -77,13 +77,13 @@ export function PipChat({ header, autoFocus = false, studyContext, draftRequest,
           </p>)}
           {hasReply && busy && <p className="m-0 text-xs leading-relaxed whitespace-pre-wrap wrap-anywhere text-body"><span className="font-semibold">Pip: </span>{streamingReply}</p>}
         </div>
-        <button type="button" aria-label={expanded ? "Collapse conversation" : "Expand conversation"} aria-controls={conversationId} aria-expanded={expanded}
-          onClick={() => { followHistory.current = true; setExpanded((value) => !value); }}
-          className="bp-control flex min-h-11 w-full shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent text-[11px] leading-none text-muted hover:bg-surface-2 hover:text-fg">
-          <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-180" : undefined}><path d="m3 7 5-5 5 5" /></svg>
-          <span>{expanded ? "Collapse" : "Expand"}</span>
-        </button>
       </div>
+      <button type="button" aria-label={expanded ? "Collapse conversation" : "Expand conversation"} aria-controls={conversationId} aria-expanded={expanded}
+        onClick={() => { followHistory.current = true; setExpanded((value) => !value); }}
+        className="bp-control mx-2 mt-2 mb-1 flex min-h-11 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent text-[11px] leading-none text-muted hover:bg-surface-2 hover:text-fg">
+        <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-180" : undefined}><path d="m3 7 5-5 5 5" /></svg>
+        <span>{expanded ? "Collapse" : "Expand"}</span>
+      </button>
     </div>
     {proposal && <div className="rounded-xl bg-surface p-3"><PipStudyPlan key={`${proposal.taskId}:${proposal.startAt}`} proposal={proposal} ready={remindersReady} replacing={replacing} onAccept={onAcceptProposal} onDismiss={dismissProposal} /></div>}
     {(hasReply || busy) && <div role="status" aria-label="Pip's reply" aria-live="polite" aria-atomic="true" className="pip-speech-bubble">
