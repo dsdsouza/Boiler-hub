@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { askGemini } from "./gemini";
+import { PIP_VOICE } from "./policy";
 const context = { asOf: "2026-10-24T16:00:00Z", timeZone: "UTC", totalOpen: 0, unavailableSources: 0, truncated: false, assignments: [] };
 const completed = () => Response.json({ status: "completed", steps: [{ type: "model_output", content: [{ type: "text", text: "No open assignments." }] }] });
 const unavailable = () => Response.json({ error: { code: 503, message: "Busy", status: "UNAVAILABLE" } }, { status: 503, headers: { "Retry-After": "0" } });
@@ -30,6 +31,7 @@ it("uses the real Google provider protocol with a server key and parses its repl
   expect(JSON.stringify(body.system_instruction)).toContain("untrusted data");
   expect(body.system_instruction).toContain("even ungraded practice");
   expect(body.system_instruction).toContain("For mixed requests");
+  expect(body.system_instruction).toContain(PIP_VOICE);
   expect(JSON.stringify(body.input)).toContain("What should I do?");
 });
 

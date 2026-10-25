@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { askGemini } from "./gemini";
 import type { PipContext } from "./context";
+import { PIP_VOICE } from "./policy";
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -81,6 +82,7 @@ it("routes source questions through non-stored Gemini Interactions with verified
   expect(body.system_instruction).toContain("untrusted data");
   expect(body.system_instruction).toContain("even ungraded practice");
   expect(body.system_instruction).toContain("never quote solutions");
+  expect(body.system_instruction).toContain(PIP_VOICE);
 });
 
 it("rejects invented citations and never silently substitutes a demo answer", async () => {
