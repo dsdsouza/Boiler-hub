@@ -8,6 +8,8 @@ import { VisibilityPicker } from "./_components/VisibilityPicker";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Teams · Boilerplate" };
+
 export default async function TeamsPage() {
   const { supabase, user } = await getCurrentUser();
   if (!user) redirect("/?next=/teams");
