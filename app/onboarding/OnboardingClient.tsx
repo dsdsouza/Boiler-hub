@@ -11,6 +11,7 @@ import { FlameLoader } from "@/components/ui/FlameLoader";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/SiteHeader";
 import { Mascot } from "@/components/mascot/Mascot";
+import { usePipUser } from "@/components/mascot/PipConversation";
 import {
   OnboardingPip,
   FirstReadingPip,
@@ -131,6 +132,8 @@ export function OnboardingClient({
   signedIn: boolean;
   accountName: string;
 }) {
+  const pipUserId = usePipUser();
+  const showPip = signedIn && !!pipUserId;
   const [draft, setDraft] = useState<OnboardingDraft>(() => parseDraft(null));
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -547,7 +550,7 @@ export function OnboardingClient({
                   ? "Pip can help you choose a task and protect a little time to work on it."
                   : "Your forecast can help you spot a heavy week before it arrives."}
             </p>
-            <OnboardingPip />
+            {showPip && <OnboardingPip />}
           </>
         );
         break;
@@ -687,10 +690,10 @@ export function OnboardingClient({
                   </div>
                 </div>
                 <div className="mt-4">
-                  <FirstReadingPip
+                  {showPip && (<FirstReadingPip
                     score={boiler.result.score}
                     zone={boiler.result.zone}
-                  />
+                  />)}
                 </div>
               </div>
             )}
@@ -876,11 +879,11 @@ export function OnboardingClient({
         content = (
           <>
             <div className="mb-5 flex items-center gap-4">
-              <Mascot
+              {showPip && (<Mascot
                 size={96}
                 score={boiler?.result.score ?? 20}
                 reaction="wave"
-              />
+              />)}
               <div>
                 <h2 className="mt-0 mb-2 font-display text-[32px] font-normal">
                   All set, {draft.name.trim()}.
@@ -913,7 +916,7 @@ export function OnboardingClient({
       <main className={styles.layout}>
         <aside className={styles.sidebar} aria-label="Onboarding progress">
           <div className="hidden lg:block">
-            <Mascot size={92} score={20} reaction="wave" />
+            {showPip && <Mascot size={92} score={20} reaction="wave" />}
             <h2 className="mt-5 mb-3 font-display text-[40px] leading-none font-normal">
               Make room
               <br />
@@ -1044,11 +1047,11 @@ export function OnboardingClient({
                           </h1>
                           {!["reassurance", "ready"].includes(s) && (
                             <div className="hidden shrink-0 sm:block">
-                              <Mascot
+                              {showPip && (<Mascot
                                 size={64}
                                 score={20}
                                 reaction={s === "identity" ? "wave" : "idle"}
-                              />
+                              />)}
                             </div>
                           )}
                         </div>
