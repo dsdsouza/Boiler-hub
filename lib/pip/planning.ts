@@ -51,6 +51,12 @@ export function parseStudyProposal(value: unknown): StudyProposal | null {
   return p;
 }
 
+/** Give the model authoritative local labels instead of asking it to convert a tool timestamp. */
+export function proposalLocalTimes(proposal: StudyProposal, timeZone: string) {
+  const format = new Intl.DateTimeFormat("en-US", { timeZone, dateStyle: "full", timeStyle: "long" });
+  return { timeZone, startsAtLocal: format.format(proposal.startAt), endsAtLocal: format.format(proposal.endAt) };
+}
+
 /** Calendar titles, links, and individual events are never sent to Gemini. */
 export function promptContext(context: PipContext) {
   return { ...context, ...(context.schedule ? { schedule: { state: context.schedule.state, windows: context.schedule.windows } } : {}) };

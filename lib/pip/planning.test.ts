@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { promptContext, studyWindows, verifyStudyProposal } from "./planning";
+import { promptContext, proposalLocalTimes, studyWindows, verifyStudyProposal } from "./planning";
 import { askGemini } from "./gemini";
 import type { PipContext } from "./context";
 
@@ -25,6 +25,11 @@ describe("Pip study commitments", () => {
     expect(verifyStudyProposal(input, { ...context, schedule: { ...context.schedule!, state: "disconnected" } }).tentative).toBe(true);
     expect(promptContext(context).schedule).not.toHaveProperty("busy");
   });
+  it("labels UTC study starts in the student's local date and daylight-saving offset", () => {
+    const summer = { taskId: "mine", title: "Checklist", goal: "Review the checklist", tentative: true, startAt: Date.parse("2026-10-25T00:05:00Z"), endAt: Date.parse("2026-10-25T00:15:00Z") };
+    expect(proposalLocalTimes(summer, "America/New_York")).toEqual({ timeZone: "America/New_York", startsAtLocal: "Saturday, October 24, 2026 at 8:05:00 PM EDT", endsAtLocal: "Saturday, October 24, 2026 at 8:15:00 PM EDT" });
+    expect(proposalLocalTimes({ ...summer, startAt: Date.parse("2026-11-01T14:00:00Z"), endAt: Date.parse("2026-11-01T14:10:00Z") }, "America/New_York").startsAtLocal).toBe("Sunday, November 1, 2026 at 9:00:00 AM EST");
+  });
   it("uses Gemini tool calls to prepare a reviewable proposal without taking any action", async () => {
     vi.stubEnv("GEMINI_API_KEY", "synthetic-key-not-real");
     const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ status: "completed", steps: [{ type: "function_call", id: "plan-1", name: "prepareStudySession", arguments: input }] })).mockResolvedValueOnce(Response.json({ status: "completed", steps: [{ type: "model_output", content: [{ type: "text", text: "Review the 25-minute plan below. Accept it when you are ready." }] }] }));
@@ -35,6 +40,10 @@ describe("Pip study commitments", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     for (const [url] of fetcher.mock.calls) expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/interactions");
     expect(JSON.parse(fetcher.mock.calls[1][1].body).store).toBe(false);
-    expect(JSON.stringify(JSON.parse(fetcher.mock.calls[1][1].body).input)).toContain("Awaiting student acceptance");
+    const toolResponse = JSON.stringify(JSON.parse(fetcher.mock.calls[1][1].body).input);
+    expect(toolResponse).toContain("Awaiting student acceptance");
+    expect(toolResponse).toContain("Monday, October 26, 2026 at 10:00:00 AM EDT");
+    expect(toolResponse).toContain("Monday, October 26, 2026 at 10:25:00 AM EDT");
+    expect(toolResponse).toContain("America/New_York");
   });
 });
