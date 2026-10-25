@@ -277,3 +277,6 @@ Full `pnpm qa:army`, `pnpm qa:explore` and `pnpm qa:check` runs include this sta
 The component suite also checks the movable Pip companion. Its native touch cases are registered only in the Chromium projects, which support the required touch protocol; the other movement, boundary, cancellation and chat checks run in all four component configurations. Unsupported touch cases are not registered as skipped work, so a complete local army run can still require zero skipped cases.
 
 On macOS and Linux, the component, workflow and UI suites allow the disposable server to shut down and remove its temporary app copy before forceful termination. Reports remain in the requested report directory.
+
+
+Focus-audit control identity: the auditor retains each actual control node while measuring its pre-focus style, focus and visible indicator. Loading can temporarily remove Refresh from the enabled-control set; indexing that changing set caused the auditor to measure a different button and report false focus loss. A synthetic regression changes the enabled set during focus and verifies the complete sweep, including the last control, across all six UI browser configurations. Focus and visible-indicator assertions are retained. A second regression deliberately loses focus and confirms that genuine failures are still reported.
