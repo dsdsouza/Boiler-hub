@@ -271,13 +271,16 @@ test('signed-in home and Help keep the account and app navigation across screen 
       await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
       const header = page.getByRole('banner');
-      const nav = header.getByRole('navigation', { name: 'Main', exact: true });
+      const bottomNavigation = path === '/' && width < 640;
+      const nav = page.getByRole('navigation', { name: bottomNavigation ? 'App' : 'Main', exact: true });
       await expect(nav).toHaveCount(1);
-      for (const [name, href] of [['My Boiler', '/boiler'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how']]) {
+      const destinations = [[bottomNavigation ? 'Boiler' : 'My Boiler', '/boiler'], ['Calendar', '/calendar'], ['Teams', '/teams'], ['Sources', '/settings/sources'], ['Help', '/how']];
+      for (const [name, href] of destinations) {
         const link = nav.getByRole('link', { name, exact: true });
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute('href', href);
       }
+      if (bottomNavigation) await expect(header.getByRole('navigation', { name: 'Main', exact: true })).toHaveCount(0);
       if (path === '/how') {
         await expect(nav.getByRole('link', { name: 'Help', exact: true })).toHaveAttribute('aria-current', 'page');
       }

@@ -137,7 +137,7 @@ input[type="range"] {
 /* Sign-in feedback floats above the page without moving the hero. */
 .bp-signin-toast {
   right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
+  bottom: calc(72px + max(16px, env(safe-area-inset-bottom)));
   animation: bp-toast-arrive 180ms var(--ease-ui);
 }
 .bp-signin-toast-progress { animation: bp-toast-countdown linear forwards; }

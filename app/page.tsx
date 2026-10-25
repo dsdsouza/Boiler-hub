@@ -3,7 +3,7 @@ import { PageLoading } from "@/components/ui/PageLoading";
 import { Boiler } from "@/components/boiler/Boiler";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkButton } from "@/components/ui/Button";
-import { SiteHeader } from "@/components/ui/SiteHeader";
+import { MobileTabBar, SiteHeader } from "@/components/ui/SiteHeader";
 import { AccountControls, getViewer } from "@/components/ui/Account";
 import { ZONES, ZONE_DESCRIPTION, ZONE_INK, ZONE_LABEL, ZONE_RANGE } from "@/components/ui/zones";
 import { safeNext } from "@/lib/auth";
@@ -25,10 +25,9 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   // Keep the page wrapper and header in the same hydration boundary as its
   // streamed Flight children, so a replay cannot claim the wrapper twice.
   return <Suspense fallback={<PageLoading />}>
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0">
       <SiteHeader
-        variant={viewer ? "app" : "marketing"}
-        mobileNavigation="header"
+        variant="app"
         account={viewer ? (
           <AccountControls viewer={viewer} />
         ) : (
@@ -121,6 +120,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
       </main>
+      <MobileTabBar />
     </div>
   </Suspense>;
 }

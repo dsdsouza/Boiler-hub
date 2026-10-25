@@ -11,7 +11,7 @@ test('navigation responds immediately while the next page is still downloading',
   try {
     await page.goto('/');
     await expect(page.getByRole('slider')).toBeEnabled();
-    const link = page.getByRole('banner').getByRole('link', { name: 'Help', exact: true });
+    const link = page.getByRole('link', { name: 'Help', exact: true });
     await link.click();
     await expect(link.getByRole('status')).toHaveText('Opening Help…');
     finish();
@@ -27,7 +27,7 @@ test('public home offers a working demo and formula link', async ({ page }) => {
   await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await page.goto('/');
-  await page.getByRole('banner').getByRole('link', { name: 'Help', exact: true }).click();
+  await page.getByRole('link', { name: 'Help', exact: true }).click();
   await expect(page).toHaveURL(/\/how$/);
   const helpHeader = page.getByRole('banner');
   await expect(page).toHaveTitle('Help · Boilerplate');
