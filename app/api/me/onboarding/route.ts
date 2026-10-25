@@ -33,6 +33,10 @@ export async function PATCH(request: Request) {
   const body = await readJson(request);
   if (!body || !body.draft || typeof body.draft !== "object")
     return badRequest("Expected onboarding answers");
+  if ((body.autosave === true || body.expectedUserId !== undefined) && body.expectedUserId !== auth.user.id)
+    return NextResponse.json({ error: "Your account changed. Reload onboarding before saving more answers." }, { status: 409 });
+  if (body.autosave === true && (body.draft as Record<string, unknown>).finished === true)
+    return badRequest("Use Finish setup to complete onboarding.");
   const draft = parseDraft(body.draft);
   if ((body.draft as Record<string, unknown>).finished === true && !draft.finished)
     return badRequest("Setup has changed. Refresh and verify Pip and your coursework before finishing.");

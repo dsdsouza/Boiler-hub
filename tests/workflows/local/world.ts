@@ -48,6 +48,8 @@ export function world() {
       if (path === '/api/me/onboarding/check') return reply({ boiler: { ...snapshot(user), sources: [{ id: 'fixture-school', kind: 'ics', label: 'Fictional school calendar', coursework: true, status: 'ok', error: null, lastSyncedAt: new Date().toISOString() }] }, reviewReceipt: 'fixture-review' });
       if (path === '/api/me/onboarding') {
         if (method === 'PATCH') {
+          if ((body.autosave || body.expectedUserId !== undefined) && body.expectedUserId !== user.id) return reply({ error: 'Your account changed. Reload onboarding before saving more answers.' }, 409);
+          if (body.autosave && body.draft?.finished) return reply({ error: 'Use Finish setup to complete onboarding.' }, 400);
           if (body.draft?.finished && (body.extensionVersion !== '0.3.2' || (body.draft.role === 'student' && (body.reviewReceipt !== 'fixture-review' || body.deadlinesReviewed !== true)))) return reply({ error: 'Verify Pip and review coursework first' }, 400);
           user.onboarding = { ...parseDraft(body.draft), ownerId: user.id };
           if (user.onboarding.finished) {
