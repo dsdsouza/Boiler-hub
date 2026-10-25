@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { noOverflow } from './helpers';
 
 test('signed-out public screens keep app navigation out of the header', async ({ page }) => {
-  for (const path of ['/', '/demo', '/how', '/calendar-helper']) {
+  for (const path of ['/', '/how', '/calendar-helper']) {
     await page.goto(path);
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: 'Boilerplate', exact: true })).toBeVisible();
@@ -14,12 +14,13 @@ test('signed-out public screens keep app navigation out of the header', async ({
   }
 });
 
-test('public home offers a working demo and Help stays readable to guests', async ({ page }) => {
+test('public home leads to setup and Help stays readable to guests', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('red line');
   await noOverflow(page);
-  await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByRole('link', { name: 'Try the demo', exact: true })).toHaveCount(0);
+  await page.getByRole('main').getByRole('link', { name: 'Set up my boiler', exact: true }).click();
+  await expect(page).toHaveURL(/\/onboarding$/);
   await page.goto('/');
   await page.goto('/how');
   await expect(page).toHaveURL(/\/how$/);
@@ -88,7 +89,7 @@ test('sign-in return path cannot point at another site', async ({ page }) => {
 test('public routes load their assets without missing chunks or runtime errors', async ({ context }) => {
   const failures: { path: string; status: number }[] = [];
   const errors: string[] = [];
-  for (const path of ['/', '/demo', '/how', '/calendar-helper', '/onboarding', '/privacy']) {
+  for (const path of ['/', '/how', '/calendar-helper', '/onboarding', '/privacy']) {
     // Each route gets a cold document. Closing it after inspection avoids
     // attributing a departing document's cancelled prefetch to the next route.
     const page = await context.newPage();
@@ -129,7 +130,7 @@ test('public routes load their assets without missing chunks or runtime errors',
 
 
 test('guests cannot see or open Pip on public screens', async ({ page }) => {
-  for (const path of ['/', '/demo', '/how', '/onboarding', '/mascot-preview']) {
+  for (const path of ['/', '/how', '/onboarding', '/mascot-preview']) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('[data-pip-companion]')).toHaveCount(0);
@@ -140,4 +141,15 @@ test('guests cannot see or open Pip on public screens', async ({ page }) => {
       await page.screenshot({ path: `${process.env.PIP_ACCESS_SCREENSHOTS}/guest-home.png` });
     }
   }
+});
+
+
+test('the removed demo route returns 404 and has no home page link', async ({ page }) => {
+  for (const path of ['/demo', '/qa-boiler']) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
+  }
+  await page.goto('/');
+  await expect(page.locator('a[href="/demo"]')).toHaveCount(0);
 });

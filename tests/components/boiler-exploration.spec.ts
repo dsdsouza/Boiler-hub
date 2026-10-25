@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { addTask, openDemo, score, noOverflow } from './helpers';
+import { addTask, openBoilerFixture, score, noOverflow } from '../e2e/helpers';
 
 const room = (page: import('@playwright/test').Page) => page.getByRole('region', { name: 'Product Squad boilers', exact: true });
 const maya = (page: import('@playwright/test').Page) => room(page).getByRole('article').filter({ has: page.getByRole('heading', { name: 'Maya', exact: true }) });
 
 test.beforeEach(async ({ page }) => {
-  await openDemo(page);
+  await openBoilerFixture(page);
   await page.getByRole('button', { name: 'Product Squad', exact: true }).click();
 });
 
@@ -63,10 +63,10 @@ test('exploration: returning to the landing page hydrates without browser errors
   // Exercise the product's navigation while collecting every runtime error.
   // Cold-document bootstrap and assets are checked separately in public.spec.
   page.on('pageerror', (e) => errors.push(e.message));
-  for (const path of ['/', '/how', '/', '/demo', '/', '/']) {
+  for (const path of ['/', '/how', '/', '/onboarding', '/', '/']) {
     if (path === '/') await page.getByRole('banner').getByRole('link', { name: 'Boilerplate', exact: true }).click();
     else if (path === '/how') await page.goto('/how');
-    else await page.getByRole('main').getByRole('link', { name: 'Try the demo', exact: true }).click();
+    else await page.getByRole('main').getByRole('link', { name: 'Set up my boiler', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${path === '/' ? '/' : path}$`));
     await expect(page.getByRole('main')).toBeVisible();
     if (path === '/') {
@@ -76,8 +76,6 @@ test('exploration: returning to the landing page hydrates without browser errors
       await expect(slider).toHaveValue('0');
       await slider.press('ArrowRight');
       await expect(page.getByRole('img', { name: /^Boiler at pressure 1, Cool/ })).toBeVisible();
-    } else if (path === '/demo') {
-      await expect(page.getByRole('button', { name: /^Post to / })).toBeEnabled();
     } else {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     }

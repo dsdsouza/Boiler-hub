@@ -20,14 +20,14 @@ async function check(page: Page, info: TestInfo, focusFindings: { rule: string; 
   expect(report.findings, 'Rendered UI inconsistencies; inspect the screenshot and element details in the UI report').toEqual([]);
 }
 
-for (const [name, url] of [['Landing', '/'], ['Demo', '/demo'], ['Help', '/how'], ['Calendar helper', '/calendar-helper']]) {
+for (const [name, url] of [['Landing', '/'], ['Boiler fixture', '/qa-boiler'], ['Help', '/how'], ['Calendar helper', '/calendar-helper']]) {
   test(`${name}: layout, control tokens and text contrast`, async ({ page }, info) => {
     await test.step('Load the public screen', async () => {
       // Wider May date labels exposed clipping that October labels did not.
-      if (url === '/demo') await page.clock.setFixedTime(new Date('2028-05-21T16:00:00Z'));
+      if (url === '/qa-boiler') await page.clock.setFixedTime(new Date('2028-05-21T16:00:00Z'));
       await page.goto(url);
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
-      if (url === '/demo') await expect(page.getByRole('region', { name: 'Tasks', exact: true })).toBeVisible();
+      if (url === '/qa-boiler') await expect(page.getByRole('region', { name: 'Tasks', exact: true })).toBeVisible();
     });
     await test.step('Capture and inspect the rendered UI', () => check(page, info));
   });

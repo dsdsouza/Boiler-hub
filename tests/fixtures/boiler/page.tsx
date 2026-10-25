@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/ui/SiteHeader";
 import { DemoContent } from "./DemoContent";
 
 export const metadata: Metadata = {
-  title: "Demo · Boilerplate",
+  title: "Boiler fixture · QA",
   description: "A seeded class and work team. No sign-in needed.",
 };
 
@@ -23,7 +23,6 @@ export default function DemoPage() {
 
       <SiteHeader
         variant="marketing"
-        current="demo"
         account={
           <span className="hidden sm:inline-flex">
             <LinkButton plain href="/auth/signin?next=/boiler" variant="ghost" className="text-fg">

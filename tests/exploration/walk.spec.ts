@@ -69,8 +69,8 @@ for (let walk = 0; walk < walks; walk++) {
     const record = (kind: string, detail: string) => {
       if (!findings.some((f) => f.kind === kind && f.detail === detail)) findings.push({ step: history.length, kind, detail });
     };
-    await page.goto('/demo');
-    await expect(pressure(page)).toBeVisible();
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     try {
       for (let step = 0; step < steps; step++) {
         paths.add(new URL(page.url()).pathname);
@@ -111,7 +111,7 @@ for (let walk = 0; walk < walks; walk++) {
         // Only follow public same-origin links discovered from the current page.
         for (const href of [...new Set(inventory.links)]) {
           const url = new URL(href);
-          if (url.origin === new URL(page.url()).origin && ['/', '/demo', '/how'].includes(url.pathname)) offer(`navigate:${url.pathname}${url.hash}`, () => page.goto(href));
+          if (url.origin === new URL(page.url()).origin && ['/', '/onboarding', '/how'].includes(url.pathname)) offer(`navigate:${url.pathname}${url.hash}`, () => page.goto(href));
         }
         if (step % 8 === 7) {
           for (const width of [320, 390, 768, 1280]) offer(`resize:${width}`, () => page.setViewportSize({ width, height: 900 }));

@@ -11,6 +11,8 @@ for (const name of ['app', 'components', 'lib', 'fixtures', 'public', 'browser-h
   await cp(resolve(root, name), join(directory, name), { recursive: true });
 }
 await symlink(resolve(root, 'node_modules'), join(directory, 'node_modules'), 'dir');
+// Retired public demo: keep its synthetic controls only inside this disposable QA app.
+await cp(resolve(root, 'tests/fixtures/boiler'), join(directory, 'app/qa-boiler'), { recursive: true });
 const route = join(directory, 'app', 'qa-components');
 await mkdir(route, { recursive: true });
 await writeFile(join(route, 'page.tsx'), `"use client";

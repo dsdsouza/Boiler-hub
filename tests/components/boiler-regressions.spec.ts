@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { addTask, openDemo, score } from './helpers';
+import { addTask, openBoilerFixture, score } from '../e2e/helpers';
 
-test.beforeEach(async ({ page }) => { await openDemo(page); });
+test.beforeEach(async ({ page }) => { await openBoilerFixture(page); });
 
 test('QA-001 personal status propagates to the demo team card', async ({ page }) => {
   await page.getByRole('button', { name: 'Product Squad', exact: true }).click();
