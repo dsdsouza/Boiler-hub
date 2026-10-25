@@ -49,7 +49,7 @@ test('Onboarding through a completed and restored task', plan([
       await page.getByRole('button', { name: 'I already use a calendar', exact: false }).click();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
-      await expect(page.getByText('Signed in as Workflow lead', { exact: true })).toBeVisible();
+      await expect(page.getByText('Sign in complete, Workflow lead!', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await expect(page.getByText('Google Calendar connected', { exact: true })).toBeVisible();

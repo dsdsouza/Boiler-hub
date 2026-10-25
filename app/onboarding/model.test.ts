@@ -9,6 +9,11 @@ import {
 } from "./model";
 
 describe("onboarding paths and retained progress", () => {
+  it("keeps legacy identity answers and only accepts an explicit extension deferral", () => {
+    expect(parseDraft({ role: "helping", name: "Josh" })).toMatchObject({ role: "other", name: "Josh", extensionDeferred: false });
+    expect(parseDraft({ role: "other", extensionDeferred: true }).extensionDeferred).toBe(true);
+    expect(parseDraft({ extensionDeferred: "true" }).extensionDeferred).toBe(false);
+  });
   it("requires valid answers and an authenticated account to unlock setup", () => {
     const d = parseDraft({
       role: "student",

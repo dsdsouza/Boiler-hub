@@ -73,24 +73,6 @@ const TITLES: Record<StepId, string> = {
   recommendation: "A starting point, just for you.",
   ready: "Your boiler is ready.",
 };
-const PHASE: Record<StepId, number> = {
-  identity: 0,
-  name: 0,
-  goal: 0,
-  starting: 0,
-  reassurance: 0,
-  account: 1,
-  extension: 2,
-  review: 2,
-  calendar: 2,
-  milestone: 2,
-  deadline: 2,
-  status: 2,
-  sources: 2,
-  team: 2,
-  recommendation: 3,
-  ready: 3,
-};
 const OPTIONAL: StepId[] = [
   "calendar",
   "milestone",
@@ -151,9 +133,10 @@ export function OnboardingClient({
   const [reviewed, setReviewed] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const sections = useRef<Partial<Record<StepId, HTMLElement>>>({});
   const navigationLock = useRef(false);
-  const userScrollAt = useRef(0);
+  const loadRequest = useRef(0);
+  const wheelGesture = useRef({ delta: 0, at: 0 });
+  const skipDialog = useRef<HTMLDialogElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const persist = useCallback((next: OnboardingDraft) => {
     track(next);
@@ -166,6 +149,7 @@ export function OnboardingClient({
     }
   }, [track]);
   const load = useCallback(async () => {
+    const request = ++loadRequest.current;
     setLoadFailed(false);
     setError("");
     let next = readLocal();
@@ -187,6 +171,8 @@ export function OnboardingClient({
         const saved = await call<{ userId: string; draft: unknown }>(
           "/api/me/onboarding",
         );
+        // A superseded account read must not overwrite a newer save acknowledgment.
+        if (request !== loadRequest.current) return;
         const backup = readDraftBackup(saved.userId);
         const beforeSignIn = next.ownerId === null && (next.name || next.role);
         if (!beforeSignIn) {
@@ -199,6 +185,7 @@ export function OnboardingClient({
         next.ownerId = saved.userId;
         if (!next.name) next.name = accountName.split(" ")[0].slice(0, 60);
       } catch {
+        if (request !== loadRequest.current) return;
         setError(
           "Your saved setup could not be loaded. Try again to keep this account’s answers together.",
         );
@@ -284,30 +271,26 @@ export function OnboardingClient({
   useEffect(() => {
     if (!loaded || loadFailed) return;
     navigationLock.current = true;
-    userScrollAt.current = 0;
-    const el = viewport.current;
-    el?.scrollTo({
-      top: index * el.clientHeight,
-      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "instant"
-        : "smooth",
-    });
+    wheelGesture.current = { delta: 0, at: 0 };
+    viewport.current?.scrollTo({ top: 0, behavior: "instant" });
+    heading.current?.focus({ preventScroll: true });
     const timer = setTimeout(() => {
-      const currentViewport = viewport.current;
-      currentViewport?.scrollTo({ top: index * currentViewport.clientHeight, behavior: "instant" });
       navigationLock.current = false;
-      heading.current?.focus({ preventScroll: true });
-    }, 420);
-    let height = el?.clientHeight;
-    const resize = new ResizeObserver(() => {
-      if (el && el.clientHeight !== height) {
-        height = el.clientHeight;
-        el.scrollTo({ top: index * height, behavior: "instant" });
-      }
-    });
-    if (el) resize.observe(el);
-    return () => { clearTimeout(timer); resize.disconnect(); };
-  }, [loaded, loadFailed, step, index]);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [loaded, loadFailed, step]);
+  function scrollToQuestion(direction: number) {
+    if (navigationLock.current || busy || sourceBusy) return;
+    const el = viewport.current;
+    if (!el) return;
+    const atBoundary = direction < 0 ? el.scrollTop <= 1
+      : el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    const target = steps[index + direction];
+    if (atBoundary && target && steps.indexOf(target) <= unlocked) {
+      navigationLock.current = true;
+      navigate(target);
+    }
+  }
   function signIn() {
     const next = { ...draft, current: "account" as const };
     try {
@@ -321,7 +304,7 @@ export function OnboardingClient({
       );
     }
   }
-  const setupReady = pip.state === "installed" &&
+  const setupReady = (pip.state === "installed" || draft.extensionDeferred) &&
     (draft.role !== "student" || (courseworkReady(boiler) && !!reviewReceipt && reviewed));
   const valid =
     isStepValid(step, draft, signedIn) &&
@@ -344,11 +327,12 @@ export function OnboardingClient({
     } catch { setError("Your progress could not be saved. Try Finish later again before leaving."); }
     finally { setBusy(false); }
   }
+  const canDeferExtension = step === "extension" && ["missing", "outdated"].includes(pip.state);
   async function advance(skip = false) {
     if (
       busy ||
       sourceBusy ||
-      (skip && !canSkip) ||
+      (skip && !canSkip && !canDeferExtension) ||
       (!skip && !valid)
     )
       return;
@@ -362,6 +346,7 @@ export function OnboardingClient({
       completed: [...new Set([...draft.completed, step])],
       finished: false,
     };
+    if (step === "extension") next = { ...next, extensionDeferred: skip };
     if (skip && step === "team") next = { ...next, inviteCode: "" };
     if (skip && step === "milestone")
       next = { ...next, milestone: "", deadline: "" };
@@ -414,15 +399,15 @@ export function OnboardingClient({
       /* No cached handoff. */
     }
   };
+  function titleFor(target: StepId) {
+    return target === "goal" ? `Heyo ${draft.name.trim()}! What would you like a hand with?` : TITLES[target];
+  }
   function renderContent(currentStep: StepId): ReactNode {
     let content: ReactNode;
     switch (currentStep) {
       case "identity":
         content = (
           <>
-            <p className={styles.intro}>
-              A few small questions. A clearer picture of your week.
-            </p>
             <Choices
               label={TITLES.identity}
               value={draft.role}
@@ -446,9 +431,9 @@ export function OnboardingClient({
                   detail: "Keep an eye on my workload and my team’s capacity.",
                 },
                 {
-                  value: "helping",
-                  label: "I’m helping someone get started",
-                  detail: "Set things up together, using their account.",
+                  value: "other",
+                  label: "Other",
+                  detail: "Organizing my life!",
                 },
               ]}
             />
@@ -459,9 +444,7 @@ export function OnboardingClient({
         content = (
           <>
             <p className={styles.intro}>
-              {draft.role === "helping"
-                ? "Use the name of the person whose boiler this will be. They should sign in with their own Google account."
-                : "First name, nickname—whatever feels like you."}
+              First name, nickname—whatever feels like you.
             </p>
             <label htmlFor="onboarding-name" className={styles.label}>
               Your name
@@ -474,7 +457,7 @@ export function OnboardingClient({
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
               className={field}
-              placeholder="e.g. Alex"
+              placeholder="e.g. Josh"
             />
           </>
         );
@@ -482,12 +465,9 @@ export function OnboardingClient({
       case "goal":
         content = (
           <>
-            <p className={styles.intro}>
-              Nice to meet you, {draft.name.trim()}. Let’s give your boiler a
-              purpose.
-            </p>
             <Choices
-              label={TITLES.goal}
+              label={titleFor("goal")}
+              showDetails={false}
               value={draft.goal}
               onChange={(value) =>
                 patch({ goal: value as OnboardingDraft["goal"] })
@@ -500,11 +480,9 @@ export function OnboardingClient({
       case "starting":
         content = (
           <>
-            <p className={styles.intro}>
-              We’ll meet you where you are, {draft.name.trim()}.
-            </p>
             <Choices
               label={TITLES.starting}
+              showDetails={false}
               value={draft.starting}
               onChange={(starting) => patch({ starting })}
               options={[
@@ -539,37 +517,17 @@ export function OnboardingClient({
       case "reassurance":
         content = (
           <>
-            <p className={styles.intro}>
-              {draft.name.trim()},{" "}
-              {draft.starting === "overwhelmed"
-                ? "we’ll start small, with the work already in front of you."
-                : "we’ll bring your week into one place, one connection at a time."}{" "}
-              {goal === "team"
-                ? "You can check team capacity before adding work."
-                : goal === "focus"
-                  ? "Pip can help you choose a task and protect a little time to work on it."
-                  : "Your forecast can help you spot a heavy week before it arrives."}
-            </p>
-            {showPip && <OnboardingPip />}
+            {showPip && (<OnboardingPip />)}
           </>
         );
         break;
       case "account":
         content = (
           <>
-            <p className={styles.intro}>
-              Your answers come with you. Google creates your account or signs
-              you in, and connects your calendar with read-only access.
-            </p>
             {signedIn ? (
               <div className={styles.connection} role="status">
                 <Check />
-                <div>
-                  <strong>Signed in as {accountName}</strong>
-                  <p className="mt-1 mb-0 text-sm text-muted">
-                    Your answers save automatically to this account.
-                  </p>
-                </div>
+                <strong>Sign in complete, {draft.name.trim()}!</strong>
               </div>
             ) : (
               <>
@@ -582,18 +540,8 @@ export function OnboardingClient({
                   <GoogleIcon />
                   Continue with Google
                 </Button>
-                <p className="mt-4 mb-0 text-sm leading-relaxed text-muted">
-                  Already have an account? The same button signs you in.{" "}
-                  {draft.role === "helping"
-                    ? "Ask the person you’re helping to sign in with their own account."
-                    : "You choose what your team can see."}
-                </p>
               </>
             )}
-            <p className="mt-6 mb-0 border-t border-line pt-5 text-sm leading-relaxed text-muted">
-              Calendar titles and dates are fetched live. Teams never see your
-              calendar details. You can disconnect in Connect.
-            </p>
           </>
         );
         break;
@@ -845,8 +793,8 @@ export function OnboardingClient({
                 : `Here’s where we’ll begin, ${draft.name.trim()}.`}
             </p>
             <div className="mb-5 border-y border-line py-4" aria-label="Setup checks">
-              <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : "Pip connection needs checking"}</p>
-              <Button variant="ghost" onClick={() => navigate("extension")}>Check Pip</Button>
+              <p className="mt-0 text-sm">{pip.state === "installed" ? "Pip connected" : draft.extensionDeferred ? "Pip setup saved for later" : "Pip connection needs checking"}</p>
+              <Button variant="ghost" onClick={() => navigate("extension")}>{draft.extensionDeferred && pip.state !== "installed" ? "Set up Pip" : "Check Pip"}</Button>
               {draft.role === "student" && <>
                 <p className="text-sm">{courseworkReady(boiler) && reviewReceipt ? "Coursework import verified" : "Coursework import needs checking"}</p>
                 <Button variant="ghost" onClick={() => navigate("calendar")}>Check coursework</Button>
@@ -914,9 +862,9 @@ export function OnboardingClient({
         </Button>
       </header>
       <main className={styles.layout}>
-        <aside className={styles.sidebar} aria-label="Onboarding progress">
+        <aside className={styles.sidebar}>
           <div className="hidden lg:block">
-            {showPip && <Mascot size={92} score={20} reaction="wave" />}
+            {showPip && (<Mascot size={92} score={20} reaction="wave" />)}
             <h2 className="mt-5 mb-3 font-display text-[40px] leading-none font-normal">
               Make room
               <br />
@@ -926,22 +874,6 @@ export function OnboardingClient({
               A little context helps Pip build a boiler that works for you.
             </p>
           </div>
-          <ol className={styles.phases}>
-            {["About you", "Your account", "Your setup", "Ready to go"].map(
-              (phase, i) => (
-                <li
-                  key={phase}
-                  className={PHASE[step] >= i ? styles.phaseActive : ""}
-                  aria-current={PHASE[step] === i ? "step" : undefined}
-                >
-                  <span className={styles.phaseDot}>
-                    {PHASE[step] > i ? <Check /> : i + 1}
-                  </span>
-                  <span>{phase}</span>
-                </li>
-              ),
-            )}
-          </ol>
           <p className="hidden text-xs leading-relaxed text-muted lg:block">
             Your calendar stays private.
             <br />
@@ -950,18 +882,6 @@ export function OnboardingClient({
         </aside>
         <div className={styles.journey}>
           <div className={styles.progress}>
-            <div className="flex items-center justify-between gap-3 text-xs text-muted">
-              <span>
-                {loaded
-                  ? `Step ${index + 1} of ${steps.length}`
-                  : "Preparing your setup…"}
-              </span>
-              <span role={signedIn ? "status" : undefined}>
-                {signedIn
-                  ? SAVE_LABELS[saveState]
-                  : "Your progress stays with you"}
-              </span>
-            </div>
             <div
               role="progressbar"
               aria-label="Onboarding progress"
@@ -973,6 +893,12 @@ export function OnboardingClient({
               <span
                 style={{ width: `${((index + 1) / steps.length) * 100}%` }}
               />
+            </div>
+            <div className="flex items-center justify-between gap-3 text-[11px] text-muted">
+              <strong className="font-bold tabular-nums">
+                {loaded ? `${index + 1} of ${steps.length}` : "Preparing your setup…"}
+              </strong>
+              {signedIn && <span role="status">{SAVE_LABELS[saveState]}</span>}
             </div>
           </div>
           {!loaded || loadFailed ? (
@@ -987,17 +913,19 @@ export function OnboardingClient({
               <div
                 ref={viewport}
                 className={styles.viewport}
-                onWheel={() => { userScrollAt.current = performance.now(); }}
-                onScroll={() => {
-                  if (navigationLock.current || busy || sourceBusy || performance.now() - userScrollAt.current > 800) return;
-                  const el = viewport.current;
-                  if (!el) return;
-                  const target = Math.round(el.scrollTop / el.clientHeight);
-                  if (target !== index && target <= unlocked && steps[target])
-                    navigate(steps[target]);
+                onWheel={(e) => {
+                  if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+                  const now = performance.now();
+                  const gesture = wheelGesture.current;
+                  if (now - gesture.at > 180 || Math.sign(e.deltaY) !== Math.sign(gesture.delta)) gesture.delta = 0;
+                  gesture.at = now;
+                  gesture.delta += e.deltaY;
+                  if (Math.abs(gesture.delta) >= 100) {
+                    scrollToQuestion(Math.sign(gesture.delta));
+                    gesture.delta = 0;
+                  }
                 }}
                 onTouchStart={(e) => {
-                  userScrollAt.current = performance.now();
                   touch.current = {
                     x: e.touches[0].clientX,
                     y: e.touches[0].clientY,
@@ -1016,71 +944,58 @@ export function OnboardingClient({
                     el.closest("input,textarea,select,button,summary,a")
                   )
                     return;
-                  const panel = sections.current[step];
-                  if (panel && panel.scrollHeight > panel.clientHeight + 4)
-                    return;
-                  const target = steps[index + (dy < 0 ? 1 : -1)];
-                  if (target) navigate(target);
+                  scrollToQuestion(dy < 0 ? 1 : -1);
                 }}
               >
-                {steps.slice(0, unlocked + 1).map((s) => (
-                  <section
-                    key={s}
-                    ref={(el) => {
-                      if (el) sections.current[s] = el;
-                    }}
-                    className={styles.step}
-                    aria-label={s === step ? undefined : TITLES[s]}
-                    aria-hidden={s !== step}
-                    inert={s !== step}
-                  >
-                    {
-                      <div className={styles.stepContent}>
-                        <div className="mb-6 flex items-start justify-between gap-4">
-                          <h1
-                            ref={s === step ? heading : undefined}
-                            tabIndex={-1}
-                            id={`onboarding-title-${s}`}
-                            className={styles.title}
-                          >
-                            {TITLES[s]}
-                          </h1>
-                          {!["reassurance", "ready"].includes(s) && (
-                            <div className="hidden shrink-0 sm:block">
-                              {showPip && (<Mascot
-                                size={64}
-                                score={20}
-                                reaction={s === "identity" ? "wave" : "idle"}
-                              />)}
-                            </div>
-                          )}
+                <section
+                  key={step}
+                  className={styles.step}
+                  aria-label={titleFor(step)}
+                >
+                  <div className={styles.stepContent}>
+                    <div className="mb-6 flex items-start justify-between gap-4">
+                      <h1
+                        ref={heading}
+                        tabIndex={-1}
+                        id={`onboarding-title-${step}`}
+                        className={styles.title}
+                      >
+                        {titleFor(step)}
+                      </h1>
+                      {!["reassurance", "ready"].includes(step) && (
+                        <div className="hidden shrink-0 sm:block">
+                          {showPip && (<Mascot
+                            size={64}
+                            score={20}
+                            reaction={step === "identity" ? "wave" : "idle"}
+                          />)}
                         </div>
-                        <div
-                          onKeyDown={(e) => {
-                            const target = e.target as HTMLElement;
-                            if (
-                              e.key === "Enter" &&
-                              target.tagName === "INPUT" &&
-                              [
-                                "name",
-                                "milestone",
-                                "deadline",
-                                "team",
-                              ].includes(s)
-                            ) {
-                              e.preventDefault();
-                              void advance();
-                            }
-                          }}
-                        >
-                          <fieldset disabled={busy || sourceBusy} className="m-0 min-w-0 border-0 p-0">
-                            <div className={styles.body}>{renderContent(s)}</div>
-                          </fieldset>
-                        </div>
-                      </div>
-                    }
-                  </section>
-                ))}
+                      )}
+                    </div>
+                    <div
+                      onKeyDown={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (
+                          e.key === "Enter" &&
+                          target.tagName === "INPUT" &&
+                          [
+                            "name",
+                            "milestone",
+                            "deadline",
+                            "team",
+                          ].includes(step)
+                        ) {
+                          e.preventDefault();
+                          void advance();
+                        }
+                      }}
+                    >
+                      <fieldset disabled={busy || sourceBusy} className="m-0 min-w-0 border-0 p-0">
+                        <div className={styles.body}>{renderContent(step)}</div>
+                      </fieldset>
+                    </div>
+                  </div>
+                </section>
               </div>
               <div className={styles.controls}>
                 {saveState === "error" && (
@@ -1119,11 +1034,13 @@ export function OnboardingClient({
                     {!(step === "account" && !signedIn) && (
                       <Button
                         variant="primary"
-                        disabled={!valid || busy || sourceBusy}
-                        onClick={() => void advance()}
+                        disabled={(!valid && !canDeferExtension) || busy || sourceBusy}
+                        onClick={() => canDeferExtension ? skipDialog.current?.showModal() : void advance()}
                       >
                         {busy
                           ? "Saving…"
+                          : canDeferExtension
+                            ? "Skip"
                           : step === "ready"
                             ? plan.action
                             : step === "recommendation"
@@ -1147,7 +1064,7 @@ export function OnboardingClient({
                       key={s}
                       type="button"
                       className={styles.stepDot}
-                      aria-label={`Step ${i + 1}: ${TITLES[s]}`}
+                      aria-label={`Step ${i + 1}: ${titleFor(s)}`}
                       aria-current={s === step ? "step" : undefined}
                       disabled={i > unlocked || busy || sourceBusy}
                       onClick={() => navigate(s)}
@@ -1160,6 +1077,14 @@ export function OnboardingClient({
             </>
           )}
         </div>
+        <dialog ref={skipDialog} className={styles.skipDialog} aria-labelledby="pip-later-title" aria-describedby="pip-later-description">
+          <h2 id="pip-later-title" className="mt-0 mb-3 font-display text-[32px] font-normal">Complete Pip setup later?</h2>
+          <p id="pip-later-description" className="mt-0 mb-6 text-sm leading-relaxed text-body">You can install Pip anytime in Connect. Would you like to continue and complete it later?</p>
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button variant="ghost" autoFocus onClick={() => skipDialog.current?.close()}>Go back</Button>
+            <Button variant="primary" onClick={() => { skipDialog.current?.close(); void advance(true); }}>Complete later</Button>
+          </div>
+        </dialog>
       </main>
     </div>
   );
@@ -1169,14 +1094,16 @@ function Choices({
   options,
   value,
   onChange,
+  showDetails = true,
 }: {
   label: string;
   options: { value: string; label: string; detail: string }[];
   value: string;
   onChange: (value: string) => void;
+  showDetails?: boolean;
 }) {
   return (
-    <div role="group" aria-label={label} className={styles.choices}>
+    <div role="group" aria-label={label} className={`${styles.choices} ${showDetails ? "" : styles.compact}`}>
       {options.map((option) => (
         <button
           key={option.value}
@@ -1187,7 +1114,7 @@ function Choices({
         >
           <span>
             <strong>{option.label}</strong>
-            <span>{option.detail}</span>
+            {showDetails && <span>{option.detail}</span>}
           </span>
           <span className={styles.radio} aria-hidden="true">
             {value === option.value && <Check />}

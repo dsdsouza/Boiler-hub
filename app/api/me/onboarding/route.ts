@@ -65,9 +65,11 @@ export async function PATCH(request: Request) {
   // Save real profile changes before marking the journey complete; a retry is idempotent.
   let setup = undefined;
   if (draft.finished) {
-    if (typeof body.extensionVersion !== "string" || !supportsSetup(body.extensionVersion))
+    const extensionVersion = typeof body.extensionVersion === "string" && supportsSetup(body.extensionVersion) ? body.extensionVersion : null;
+    if (!extensionVersion && !draft.extensionDeferred)
       return badRequest("Connect the current Pip extension in this browser before finishing setup.");
-    setup = { version: 2, extensionVersion: body.extensionVersion, checkedAt: new Date().toISOString(), sourceIds: [] as string[], deadlinesReviewedAt: null as string | null };
+    if (extensionVersion) draft.extensionDeferred = false;
+    setup = { version: 2, extensionVersion, extensionDeferred: !extensionVersion && draft.extensionDeferred, checkedAt: new Date().toISOString(), sourceIds: [] as string[], deadlinesReviewedAt: null as string | null };
     if (draft.role === "student") {
       try {
         const boiler = await syncSelf(auth.user, { freshSources: true, persist: "ifStale" });
