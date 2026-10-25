@@ -48,7 +48,6 @@ export function DeadlineCalendar({ month, selected, today, timeZone, data, loadi
           </button>
         </div>
       </div>
-      {loading && <p role="status" className="mx-4 mt-0 mb-4 text-xs leading-relaxed text-muted sm:mx-6">Loading this month’s deadlines…</p>}
       {error && <div role="alert" className="mx-4 mb-4 flex flex-wrap items-center gap-3 text-sm text-hot-ink sm:mx-6"><span>{error}</span><button type="button" className={control} onClick={onRefresh}>Try again</button></div>}
       {!error && data.unavailableSources > 0 && <p role="status" className="mx-4 mb-4 text-sm text-hot-ink sm:mx-6">Some connected sources couldn’t load. Refresh to try again, or check <a href="/settings/sources" className="underline underline-offset-4">Connect</a>.</p>}
       {data.truncated && <p className="mx-4 mb-4 text-sm text-hot-ink sm:mx-6">Showing the first 1,000 saved deadlines, plus imported deadlines.</p>}
