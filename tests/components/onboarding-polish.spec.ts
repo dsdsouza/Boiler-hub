@@ -17,7 +17,7 @@ test("onboarding keeps the requested copy and puts the small bold count below th
   await expect(page.getByText("A few small questions. A clearer picture of your week.")).toHaveCount(0);
   await expect(page.getByText("Your progress stays with you")).toHaveCount(0);
   await expect(page.getByText("About you", { exact: true })).toHaveCount(0);
-  const count = page.getByText("1 of 13", { exact: true });
+  const count = page.getByText("1 of 12", { exact: true });
   await expect(count).toBeVisible();
   const countStyle = await count.evaluate(el => ({ weight: getComputedStyle(el).fontWeight, size: parseFloat(getComputedStyle(el).fontSize), top: el.getBoundingClientRect().top }));
   expect(Number(countStyle.weight)).toBeGreaterThanOrEqual(700);
@@ -112,10 +112,59 @@ test("a failed Pip check can be deferred explicitly and setup still completes af
   await next(page).click();
   await page.getByRole("button", { name: "Skip for now", exact: true }).click();
   await expect(title(page)).toHaveText("A starting point, just for you.");
+  await expect(page.getByRole("button", { name: "Finish setup", exact: true })).toBeDisabled();
+  await page.getByRole("textbox", { name: "Your first task", exact: true }).fill("Plan my week");
+  await page.route("**/boiler", route => route.fulfill({ contentType: "text/html", body: "<h1>My Boiler destination</h1>" }));
   await page.getByRole("button", { name: "Finish setup", exact: true }).click();
-  await expect(title(page)).toHaveText("Your boiler is ready.");
+  await expect(page).toHaveURL(/\/boiler$/);
+  await expect(page.getByRole("heading", { name: "My Boiler destination", exact: true })).toBeVisible();
   expect(service.users[0].onboarding).toMatchObject({ finished: true, extensionDeferred: true, name: "Josh" });
   expect(service.users[0].onboarding?.completed).not.toContain("reading");
+  expect(service.users[0].tasks).toHaveLength(1);
+  expect(service.users[0].tasks[0]).toMatchObject({ title: "Plan my week", source: "manual" });
+});
+
+test("the last page saves a manual task, retries safely, and opens My Boiler directly", async ({ page, context }) => {
+  const service = world(); await service.connect(context, "lead", false);
+  const draft = { ...draftAt("recommendation"), extensionDeferred: true, goal: "focus" as const };
+  draft.completed = stepsFor(draft).slice(0, -1);
+  service.users[0].onboarding = draft;
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("A starting point, just for you.");
+  for (const text of ["Here’s where we’ll begin, Josh.", "Pip setup saved for later", "A little space for focused work", "You can change your setup later. Your team visibility starts hidden.", "Your boiler is ready."])
+    await expect(page.getByText(text, { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Set up Pip", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Step \d+: Your boiler is ready/ })).toHaveCount(0);
+  await expect(page.locator('section svg[width="96"] .mp-wave')).toBeVisible();
+  const finish = page.getByRole("button", { name: "Finish setup", exact: true });
+  await expect(finish).toBeDisabled();
+  await page.getByRole("textbox", { name: "Your first task", exact: true }).fill("Write my project outline");
+  await page.getByLabel("Due date (optional)", { exact: true }).fill("2026-11-02");
+  await expect.poll(() => service.users[0].onboarding?.deadline).toBe("2026-11-02");
+  await expect(page.getByRole("status").filter({ hasText: "Saving answers…" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Your first task", exact: true })).toHaveValue("Write my project outline");
+  await expect(page.getByLabel("Due date (optional)", { exact: true })).toHaveValue("2026-11-02");
+  await page.screenshot({ path: test.info().outputPath("final-manual-task.png"), fullPage: true });
+  await page.route("**/boiler", route => route.fulfill({ contentType: "text/html", body: "<h1>My Boiler destination</h1>" }));
+  service.failOnce("PATCH /api/me/onboarding");
+  await finish.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Workflow service temporarily unavailable" })).toBeVisible();
+  expect(service.users[0].onboarding?.finished).toBe(false);
+  await expect(page.getByRole("textbox", { name: "Your first task", exact: true })).toHaveValue("Write my project outline");
+  await finish.click();
+  await expect(page).toHaveURL(/\/boiler$/);
+  expect(service.users[0].tasks).toHaveLength(1);
+  expect(service.users[0].tasks[0]).toMatchObject({ title: "Write my project outline", source: "manual", size: "M" });
+  expect(service.users[0].tasks[0].dueAt).toBeTruthy();
+  expect(await page.evaluate(owner => localStorage.getItem(`boiler:onboarding:v1:pending:${owner}`), service.users[0].id)).toBeNull();
+  await page.goto("/qa-workflows?view=onboarding");
+  await expect(title(page)).toHaveText("A starting point, just for you.");
+  const writes = service.writes.length;
+  await page.getByRole("button", { name: "Open my boiler", exact: true }).click();
+  await expect(page).toHaveURL(/\/boiler$/);
+  expect(service.writes).toHaveLength(writes);
+  expect(service.users[0].tasks).toHaveLength(1);
 });
 
 test("the first reading follows calendar connection and resumes on its own page", async ({ page, context }) => {
