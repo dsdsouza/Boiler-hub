@@ -18,6 +18,6 @@ describe("heroExpression", () => {
 
   it("celebrates a vent ahead of the zone, without worry", () => {
     const e = heroExpression("redline", { celebrating: true });
-    expect(e).toMatchObject({ eye: "happy", mouth: "open", brows: "none", sweat: false });
+    expect(e).toMatchObject({ eye: "happy", mouth: "open", brows: "none", arm: "cheer", sweat: false });
   });
 });
