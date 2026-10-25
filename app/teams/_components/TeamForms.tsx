@@ -70,7 +70,7 @@ export function CreateTeamForm() {
           {busy ? "Creating…" : "Create team"}
         </button>
         {msg && (
-          <p role={msg.ok ? "status" : "alert"} className="m-0 break-words text-sm" style={{ color: msg.ok ? "#7FB3D5" : "#F25C45" }}>
+          <p role={msg.ok ? "status" : "alert"} className="m-0 break-words text-sm" style={{ color: msg.ok ? "#5b8f63" : "#F25C45" }}>
             {msg.text}
           </p>
         )}
