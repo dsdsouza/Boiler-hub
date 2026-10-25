@@ -8,6 +8,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "qa-runs"],
+    exclude: ["node_modules", ".next", "qa-runs", "output"],
   },
 });
