@@ -1,5 +1,7 @@
 "use client";
 
+import { FlameLoader } from "@/components/ui/FlameLoader";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AssignmentPreview, Size } from "@/lib/types";
@@ -249,11 +251,11 @@ export function AssignmentPanel({
             <div className="text-xs font-semibold tracking-[0.12em]" style={{ color: C.muted }}>
               PRESSURE PREVIEW
             </div>
-            {preview ? (
+            {loading ? <FlameLoader label="Reading the gauges…" /> : preview ? (
               <PreviewTable preview={preview} labels={labels} />
             ) : (
               <div role="status" className={`text-[30px] leading-[1.05] tracking-[0.02em] ${DISPLAY}`} style={{ color: C.text }}>
-                {ready ? (loading ? "Reading the gauges…" : "No preview") : "Add a title to preview"}
+                {ready ? "No preview" : "Add a title to preview"}
               </div>
             )}
           </div>
