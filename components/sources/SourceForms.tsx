@@ -131,6 +131,7 @@ export function CalendarFeedForm({ onAdded, idPrefix = "feed", initialProvider =
             Coursework feed: all-day entries are deadlines
           </label>}
         </div>
+        <p className="m-0 text-sm text-muted">New feeds start with deadlines due today or later.</p>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={!url.trim()} aria-disabled={busy || !url.trim()} aria-busy={busy}>
             {busy ? "Checking the feed…" : isApple ? "Connect Apple Calendar" : isBrightspace ? "Import schedule" : "Add feed"}

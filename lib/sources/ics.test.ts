@@ -9,7 +9,7 @@ const NOW = new Date("2026-10-26T12:00:00Z"); // Monday, 08:00 in New York
 const SOURCE = "11111111-1111-4111-8111-111111111111";
 
 const classify = (coursework: boolean, text = FEED, label?: string) =>
-  classifyIcs(text, { sourceId: SOURCE, coursework, now: NOW, timeZone: "UTC", label });
+  classifyIcs(text, { sourceId: SOURCE, coursework, now: NOW, timeZone: "UTC", label, importedAt: new Date("2026-09-01T12:00:00Z") });
 const byTitle = (items: ReturnType<typeof classify>) => new Map(items.map((i) => [i.title, i]));
 
 describe("classifyIcs (Brightspace-style feed)", () => {
@@ -126,6 +126,36 @@ const feedOf = (entries: { summary: string; location?: string; start: string; en
     ]),
     "END:VCALENDAR",
   ].join("\r\n");
+
+describe("connection-day import boundary", () => {
+  const boundaryFeed = feedOf([
+    { summary: "Yesterday homework - Due", start: "20261026T035900Z" },
+    { summary: "Earlier today homework - Due", start: "20261026T080000Z" },
+    { summary: "Tonight homework - Due", start: "20261027T035900Z" },
+    { summary: "Tomorrow test - Due", start: "20261028T035900Z" },
+  ]);
+  const options = { sourceId: SOURCE, coursework: true, now: NOW, timeZone: "America/New_York" };
+
+  it("imports today and newer, including earlier today, without importing yesterday", () => {
+    const items = classifyIcs(boundaryFeed, options);
+    expect(items.map((i) => i.title)).toEqual(["Earlier today homework", "Tonight homework", "Tomorrow test"]);
+  });
+
+  it("retains work imported on the connection day when it later becomes overdue", () => {
+    const items = classifyIcs(boundaryFeed, { ...options, importedAt: NOW, now: new Date("2026-10-29T12:00:00Z") });
+    expect(items.map((i) => i.title)).toEqual(["Earlier today homework", "Tonight homework", "Tomorrow test"]);
+  });
+
+  it("applies the boundary to month-calendar reads too", () => {
+    const items = classifyIcs(boundaryFeed, { ...options, dateWindow: { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") } });
+    expect(items.some((i) => i.title === "Yesterday homework")).toBe(false);
+  });
+
+  it("uses the connection's local date when UTC has already rolled into tomorrow", () => {
+    const items = classifyIcs(boundaryFeed, { ...options, now: new Date("2026-10-26T02:00:00Z") });
+    expect(items.some((i) => i.title === "Yesterday homework")).toBe(true); // Still October 25 in New York.
+  });
+});
 
 const AMS = "-AMS 210.02 Applied Linear Algebra - Fall 2026";
 
